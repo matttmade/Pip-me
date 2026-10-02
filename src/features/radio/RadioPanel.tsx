@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { emit, pipRgb, useEffectsConfig, usePageVisible, useSettings, useStored } from '../../lib/contracts'
+import { emit, pipRgb, useEffectsConfig, usePageVisible, usePrefersReducedMotion, useSettings, useStored } from '../../lib/contracts'
 import { ListDetail, type ListItem } from '../../shell/ListDetail'
 import { Oscilloscope } from './Oscilloscope'
+import { SoundCloudPlayer, type ScStatus } from './SoundCloudPlayer'
+import { APPALACHIA_ID, APPALACHIA_STATION, buildWidgetUrl, rgbToHex, simulatedSignal } from './soundcloud'
 import { fileStation, STATIONS, YOUR_STATION, type StationFactory, type StationGraph } from './stations'
 
 const OFF = 'OFF'
@@ -14,17 +16,30 @@ type Engine = {
 type Live = { id: string; graph: StationGraph; bus: GainNode }
 
 const pct = (v: number) => `${Math.round(v * 100)}%`
+const simulateLive = (x: number, t: number) => simulatedSignal(x, t, 0.9)
+const SC_STATUS: Record<ScStatus, string> = {
+  loading: 'LOADING SIGNAL…',
+  ready: 'PAUSED IN PLAYER',
+  playing: 'ON AIR',
+  lost: 'SIGNAL LOST',
+}
+
+/** Station list as shown: the streamed station first, then the procedural ones. */
+const LISTED = [APPALACHIA_STATION, ...STATIONS]
 
 export default function RadioPanel() {
   const [settings] = useSettings()
   const [cfg] = useEffectsConfig()
   const visible = usePageVisible()
-  const [selected, setSelected] = useStored('radio:selected', STATIONS[0].id)
+  const [selected, setSelected] = useStored('radio:selected', APPALACHIA_ID)
   const [playing, setPlaying] = useState<string | null>(null)
   const [file, setFile] = useState<{ url: string; name: string } | null>(null)
   const engine = useRef<Engine | null>(null)
   const live = useRef<Live | null>(null)
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
+  const [scStatus, setScStatus] = useState<ScStatus>('loading')
+  const [scAttempt, setScAttempt] = useState(0)
+  const reducedMotion = usePrefersReducedMotion()
 
   const muted = !settings.sound
   const active = muted ? null : playing
@@ -47,9 +62,18 @@ export default function RadioPanel() {
   const tune = useCallback(
     (id: string, url = file?.url) => {
       if (muted) return
-      if (id === OFF || (id === playing && live.current)) {
+      if (id === OFF || (id === playing && (live.current || id === APPALACHIA_ID))) {
         stopCurrent()
         setPlaying(null)
+        return
+      }
+      if (id === APPALACHIA_ID) {
+        // Streamed by the SoundCloud widget (cross-origin iframe), not the Web Audio graph.
+        stopCurrent()
+        setScStatus('loading')
+        setScAttempt((n) => n + 1)
+        setPlaying(id)
+        emit({ type: 'radio-tuned', station: APPALACHIA_STATION.name })
         return
       }
       const factory: StationFactory | undefined =
@@ -131,16 +155,19 @@ export default function RadioPanel() {
   }
 
   const items: ListItem[] = [
-    ...STATIONS.map((s) => ({ id: s.id, label: s.name, right: active === s.id ? '■' : undefined })),
+    ...LISTED.map((s) => ({ id: s.id, label: s.name, right: active === s.id ? '■' : undefined })),
     { id: YOUR_STATION, label: 'YOUR STATION', right: active === YOUR_STATION ? '■' : undefined },
     { id: OFF, label: 'RADIO OFF', right: active ? undefined : '■' },
   ]
 
-  const station = STATIONS.find((s) => s.id === selected)
+  const station = LISTED.find((s) => s.id === selected)
+  const isSc = selected === APPALACHIA_ID
+  const scOn = active === APPALACHIA_ID
   const isYours = selected === YOUR_STATION
   const isOff = selected === OFF
   const on = active != null && active === selected
   const [r, g, b] = pipRgb(cfg.hue)
+  const scLive = scOn && scStatus === 'playing'
 
   const detail = (
     <div className="radio-detail pip-frame">
@@ -149,7 +176,13 @@ export default function RadioPanel() {
         <small className="pip-frame__aside">{isOff ? '--.-' : isYours ? 'LOCAL' : `${station?.freq} MHZ`}</small>
       </h2>
       <div className="radio-scope" data-no-swipe>
-        <Oscilloscope analyser={active ? analyser : null} color={`${r}, ${g}, ${b}`} running={visible && active != null} />
+        <Oscilloscope
+          analyser={active && !scOn ? analyser : null}
+          color={`${r}, ${g}, ${b}`}
+          running={scOn ? visible && scLive && !reducedMotion : visible && active != null}
+          simulate={scLive ? simulateLive : undefined}
+        />
+        {scOn && <span className="radio-scope__tag">SIGNAL SIMULATED</span>}
       </div>
       {muted ? (
         <p className="radio-warn">
@@ -159,7 +192,9 @@ export default function RadioPanel() {
         </p>
       ) : (
         <div className="radio-status">
-          <span className={on ? 'is-live' : undefined}>{on ? 'SIGNAL LOCKED' : active ? 'TUNED ELSEWHERE' : 'NO SIGNAL'}</span>
+          <span className={on && (!isSc || scLive) ? 'is-live' : undefined}>
+            {on ? (isSc ? SC_STATUS[scStatus] : 'SIGNAL LOCKED') : active ? 'TUNED ELSEWHERE' : 'NO SIGNAL'}
+          </span>
           <span>VOL {pct(settings.volume)}</span>
         </div>
       )}
@@ -168,8 +203,27 @@ export default function RadioPanel() {
       ) : (
         <p className="pip-note">{isYours ? 'Play an audio file from this device. It is never uploaded or saved, and is forgotten when you leave.' : station?.desc}</p>
       )}
+      {isSc && on && scStatus === 'lost' && (
+        <p className="radio-warn">The stream could not be reached: you may be offline, or SoundCloud is blocked on this network.</p>
+      )}
+      {isSc && (
+        <a className="radio-sc__credit" href={APPALACHIA_STATION.trackUrl} target="_blank" rel="noopener noreferrer">
+          STREAM VIA SOUNDCLOUD ↗
+        </a>
+      )}
       {!muted && (
         <div className="pip-choices">
+          {isSc && on && scStatus === 'lost' && (
+            <button
+              className="pip-btn"
+              onClick={() => {
+                setScStatus('loading')
+                setScAttempt((n) => n + 1)
+              }}
+            >
+              [ RETRY ]
+            </button>
+          )}
           {isYours && (
             <label className="pip-btn radio-file">
               {file ? '[ CHANGE FILE ]' : '[ LOAD AUDIO FILE ]'}
@@ -190,6 +244,19 @@ export default function RadioPanel() {
         </div>
       )}
       {isYours && file && <p className="pip-note">LOADED: {file.name}</p>}
+      {scOn && (
+        <div className="radio-sc" data-no-swipe>
+          {!isSc && <p className="radio-sc__label">NOW STREAMING: {APPALACHIA_STATION.name}</p>}
+          <SoundCloudPlayer
+            key={scAttempt}
+            src={buildWidgetUrl(APPALACHIA_STATION.trackUrl, { color: rgbToHex([r, g, b]), autoPlay: true })}
+            title={`SoundCloud player: ${APPALACHIA_STATION.name}`}
+            volume={settings.volume}
+            visible={visible}
+            onStatus={setScStatus}
+          />
+        </div>
+      )}
     </div>
   )
 

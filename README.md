@@ -28,6 +28,9 @@ noise that you can tune in **DATA > SYSTEM**.
 - The Pip-Me wordmark and casing are original CSS/SVG work, not Fallout logo or model art.
 - Map data © OpenStreetMap contributors; tiles by OpenFreeMap; weather by Open-Meteo.
 - Sounds are synthesized live with Web Audio.
+- APPALACHIA RADIO streams "Fallout 76 - Appalachia Radio" (uploaded by user-94305073) from SoundCloud
+  through SoundCloud's official embedded player: https://soundcloud.com/user-94305073/fallout-76-appalachia-radio.
+  No audio is downloaded or hosted by this project; all rights belong to their owners.
 
 ## Development
 

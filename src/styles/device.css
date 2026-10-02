@@ -516,3 +516,16 @@ body { overflow: hidden; }
 }
 
 .boot__logo { --logo-size: clamp(44px, 11vmin, 96px); justify-self: start; }
+
+/* ---------- PC-style phosphor cursor (screen only) ---------- */
+.has-pip-cursor .crt { cursor: var(--cur-arrow); }
+.has-pip-cursor .crt :is(
+  button, a[href], label, select, summary,
+  [role='tab'], [role='option'], [role='slider'], [role='switch'], [role='radio'], [role='button'],
+  input[type='range'], input[type='file'], input[type='checkbox'], input[type='radio'],
+  .pip-row:not(.is-disabled), [data-cursor='hover']
+) { cursor: var(--cur-hover); }
+.has-pip-cursor .crt :is(input:not([type]), input[type='text'], input[type='search'], input[type='url'], input[type='number'], textarea) { cursor: text; }
+.has-pip-cursor .crt :is(.maplibregl-canvas-container, .maplibregl-canvas, .leaflet-container, .leaflet-grab, [data-cursor='drag']) { cursor: var(--cur-drag) !important; }
+.has-pip-cursor .crt :is(button, [role='option'], .pip-row):disabled,
+.has-pip-cursor .crt [aria-disabled='true'] { cursor: var(--cur-arrow); }
