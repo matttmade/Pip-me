@@ -145,21 +145,26 @@ export default function MapPanel() {
 
         <div className="map-controls" role="toolbar" aria-label="Map controls">
           <button className="pip-btn map-btn" onClick={locate} aria-label="Locate me">
-            LOCATE
+            <span className="map-btn__ico" aria-hidden>◎</span>
+            <span className="map-btn__txt">LOCATE</span>
           </button>
-          <button className={`pip-btn map-btn${loc.follow ? ' is-active' : ''}`} onClick={toggleFollow} aria-pressed={loc.follow}>
-            FOLLOW
+          <button className={`pip-btn map-btn${loc.follow ? ' is-active' : ''}`} onClick={toggleFollow} aria-pressed={loc.follow} aria-label="Follow">
+            <span className="map-btn__ico" aria-hidden>➤</span>
+            <span className="map-btn__txt">FOLLOW</span>
           </button>
-          <button className={`pip-btn map-btn${searchOpen ? ' is-active' : ''}`} onClick={() => setSearchOpen((o) => !o)} aria-expanded={searchOpen}>
-            SEARCH
+          <button className={`pip-btn map-btn${searchOpen ? ' is-active' : ''}`} onClick={() => setSearchOpen((o) => !o)} aria-expanded={searchOpen} aria-label="Search">
+            <span className="map-btn__ico" aria-hidden>⌕</span>
+            <span className="map-btn__txt">SEARCH</span>
           </button>
           {renderer === 'gl' && (
             <>
-              <button className={`pip-btn map-btn${drawer === 'nearby' ? ' is-active' : ''}`} onClick={() => toggleDrawer('nearby')} aria-expanded={drawer === 'nearby'}>
-                NEARBY
+              <button className={`pip-btn map-btn${drawer === 'nearby' ? ' is-active' : ''}`} onClick={() => toggleDrawer('nearby')} aria-expanded={drawer === 'nearby'} aria-label="Nearby">
+                <span className="map-btn__ico" aria-hidden>≡</span>
+                <span className="map-btn__txt">NEARBY</span>
               </button>
-              <button className={`pip-btn map-btn${drawer === 'legend' ? ' is-active' : ''}`} onClick={() => toggleDrawer('legend')} aria-expanded={drawer === 'legend'}>
-                LEGEND
+              <button className={`pip-btn map-btn${drawer === 'legend' ? ' is-active' : ''}`} onClick={() => toggleDrawer('legend')} aria-expanded={drawer === 'legend'} aria-label="Legend">
+                <span className="map-btn__ico" aria-hidden>?</span>
+                <span className="map-btn__txt">LEGEND</span>
               </button>
             </>
           )}

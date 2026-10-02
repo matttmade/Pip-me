@@ -151,6 +151,7 @@
 .map-btn.is-active { background: var(--band), var(--pip); }
 .map-zoom { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .map-btn--sq { padding: 0; font-size: 20px; line-height: 1; }
+.map-btn__ico { display: none; }
 
 .map-search {
   position: absolute;
@@ -410,9 +411,13 @@
   .map-info__boxes { --rail-gap: 5px; letter-spacing: .02em; }
   .map-info__box { padding: 2px 4px; border-inline-width: var(--hair); }
   .pip-focus__name { font-size: 22px; max-width: 52vw; }
-  .map-controls { gap: 4px; }
-  .map-btn { padding: 2px 6px; font-size: 12px; letter-spacing: .04em; }
-  .map-drawer { width: calc(100% - 108px); min-width: 0; }
+  /* phones: a slim column of 44px symbol buttons so the map stays visible */
+  .map-controls { gap: 4px; top: 6px; right: 6px; }
+  .map-btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; font-size: 18px; }
+  .map-btn__ico { display: block; line-height: 1; }
+  .map-btn__txt { display: none; }
+  .map-zoom { grid-template-columns: 1fr; gap: 4px; }
+  .map-drawer { width: calc(100% - 64px); min-width: 0; }
 }
 
 @media (max-width: 480px) {
