@@ -1,4 +1,5 @@
 import type { Ref } from 'react'
+import type { Poi } from './regions'
 
 /** Imperative controls shared by PipMap (MapLibre) and LeafletFallback. */
 export type MapHandle = {
@@ -6,6 +7,8 @@ export type MapHandle = {
   zoomOut(): void
   /** Fly to the player. */
   recenter(): void
+  /** Pan to a location (NEARBY list). */
+  flyTo?(lon: number, lat: number): void
 }
 
 export type MapViewProps = {
@@ -22,7 +25,17 @@ export type MapViewProps = {
   centerSeq: number
   /** Called when this renderer can't work (no WebGL, style failed): switch to the fallback. */
   onFail?: (reason: string) => void
+  /** Focused location (name shown on the map). Vector renderer only. */
+  selected?: Poi | null
+  /** Draw a dashed route from the player to this location. Vector renderer only. */
+  waypoint?: Poi | null
+  /** Tap/click on a location icon (or on empty map: null). */
+  onSelect?: (poi: Poi | null) => void
+  /** After the view settles: locations on screen and the region under the center. */
+  onScan?: (scan: MapScan) => void
 }
+
+export type MapScan = { pois: Poi[]; region: string | null }
 
 export const START_ZOOM = 14
 

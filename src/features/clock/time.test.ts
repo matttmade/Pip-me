@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { clockParts, daylight, formatDate, formatMinutes, wastelandDate } from './time'
+import { clockParts, clockShort, daylight, formatDate, formatMinutes, wastelandDate, wastelandNumeric } from './time'
+
+describe('wastelandNumeric / clockShort', () => {
+  it('formats MM.DD.YYYY + 261 and a 12-hour clock', () => {
+    expect(wastelandNumeric(new Date(2026, 9, 2, 23, 0))).toBe('10.02.2287')
+    expect(wastelandNumeric(new Date(2026, 0, 9))).toBe('01.09.2287')
+    expect(clockShort(new Date(2026, 9, 2, 23, 0))).toBe('11:00 PM')
+    expect(clockShort(new Date(2026, 9, 2, 0, 5))).toBe('12:05 AM')
+    expect(clockShort(new Date(2026, 9, 2, 12, 30))).toBe('12:30 PM')
+  })
+})
 
 describe('wastelandDate', () => {
   it('adds 261 years: 2026 → 2287', () => {

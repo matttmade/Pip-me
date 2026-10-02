@@ -15,6 +15,17 @@ export function wastelandDate(d: Date): string {
 
 export const weekday = (d: Date) => DAYS[d.getDay()]
 
+/** `10.02.2287`: month.day.year, 261 years on (map info bar). */
+export function wastelandNumeric(d: Date): string {
+  return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}.${d.getFullYear() + WASTELAND_OFFSET}`
+}
+
+/** `9:41 PM` */
+export function clockShort(d: Date): string {
+  const h = d.getHours()
+  return `${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
+}
+
 /** `09:41` + `AM`, 12-hour. */
 export function clockParts(d: Date): { hm: string; ampm: 'AM' | 'PM'; seconds: string } {
   const h = d.getHours()
