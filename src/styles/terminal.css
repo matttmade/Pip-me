@@ -158,6 +158,41 @@
 .radio-file:has(input:focus-visible) { outline: 2px solid var(--pip-hi); outline-offset: 2px; }
 .radio-detail .pip-btn:disabled { opacity: .4; cursor: default; }
 .radio-warn { border: 1px dashed var(--pip-60); padding: 8px 10px; }
+.radio-scope__tag {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  opacity: .55;
+  pointer-events: none;
+}
+.radio-sc { display: grid; gap: 4px; }
+/* Leave room for the player strip under the scope. */
+.radio-detail:has(.radio-sc) .radio-scope { max-height: 26vh; }
+.radio-sc__label { margin: 0; font-size: 13px; opacity: .8; }
+/* The official SoundCloud player stays visible with its branding; only toned down to sit on the CRT. */
+.radio-sc__frame {
+  display: block;
+  width: 100%;
+  height: 120px;
+  border: 1px solid var(--pip-60);
+  background: var(--screen-bg);
+  filter: saturate(.8) brightness(.92);
+  opacity: .92;
+}
+.radio-sc__credit {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+  letter-spacing: .08em;
+  color: var(--pip);
+  text-decoration: none;
+  opacity: .8;
+}
+.radio-sc__credit:hover, .radio-sc__credit:focus-visible { opacity: 1; text-decoration: underline; text-shadow: var(--glow); }
 @media (max-width: 719px) {
   .radio-scope { aspect-ratio: 3 / 1; }
 }

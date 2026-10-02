@@ -6,10 +6,12 @@ type Props = {
   color: string
   /** Animate only while audible and the page is visible; otherwise draw one idle frame. */
   running: boolean
+  /** Draw a synthetic trace instead of reading the analyser: (x 0-1, t seconds) -> -1..1. */
+  simulate?: (x: number, t: number) => number
 }
 
 /** Pip-Boy style waveform: tick ruler on the axes, glowing trace from an AnalyserNode. */
-export function Oscilloscope({ analyser, color, running }: Props) {
+export function Oscilloscope({ analyser, color, running, simulate }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -58,7 +60,17 @@ export function Oscilloscope({ analyser, color, running }: Props) {
       g.shadowColor = `rgba(${color}, 0.9)`
       g.shadowBlur = 10 * dpr
       g.beginPath()
-      if (analyser && running) {
+      if (simulate) {
+        // Static frame when not running (e.g. reduced motion); animated otherwise.
+        const t = running ? performance.now() / 1000 : 1.7
+        const n = 240
+        for (let i = 0; i < n; i++) {
+          const x = (i / (n - 1)) * w
+          const y = h / 2 - simulate(i / (n - 1), t) * h * 0.38
+          if (i) g.lineTo(x, y)
+          else g.moveTo(x, y)
+        }
+      } else if (analyser && running) {
         analyser.getByteTimeDomainData(data)
         // Start at a rising zero crossing so the wave holds still.
         let start = 0
@@ -93,7 +105,7 @@ export function Oscilloscope({ analyser, color, running }: Props) {
       cancelAnimationFrame(raf)
       ro.disconnect()
     }
-  }, [analyser, color, running])
+  }, [analyser, color, running, simulate])
 
   return <canvas ref={ref} aria-label="Signal waveform" role="img" />
 }
