@@ -24,6 +24,8 @@ noise that you can tune in **DATA > SYSTEM**.
   All copy is original.
 - Vault Dweller: built procedurally from three.js primitives. If `public/models/dweller.glb` is
   present it's used instead. Note its source and license here when you add one.
+- Vault Boy rig: user-supplied fan model (Meshy-generated, Mixamo rig) for this non-commercial case study;
+  Vault Boy is © Bethesda. Served from `public/models/vaultboy.glb`.
 - Fonts: Share Tech Mono, VT323 and Alfa Slab One (SIL Open Font License) via Fontsource.
 - The Pip-Me wordmark is original CSS/SVG work, not Fallout logo art.
 - The ON ARM scene (public/scene/: background, arm, Pip-Boy replica photo) was supplied by the

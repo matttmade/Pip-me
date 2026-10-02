@@ -5,10 +5,12 @@ import { DEFAULT_DETAIL, DETAIL_KEY, DETAIL_LEVELS, normalizeDetail, type Detail
 import { isImageFile, PRIVACY_NOTE, useHeadshot } from './headshot'
 import { LIMBS, limbCondition, type Limb } from './limbs'
 import PaperDollFallback from './PaperDollFallback'
+import { DEFAULT_FIGURE, FIGURE_KEY, FIGURE_LABEL, FIGURES, normalizeFigure, type Figure } from './vaultboy/behavior'
 import { hasWebGL } from './webgl'
 
 // three.js only loads with the scene, in its own chunk.
 const DwellerScene = lazy(() => import('./DwellerScene'))
+const VaultBoyScene = lazy(() => import('./VaultBoyScene'))
 
 class SceneBoundary extends Component<{ onError: (e: unknown) => void; children: ReactNode }, { failed: boolean }> {
   state = { failed: false }
@@ -31,7 +33,12 @@ export default function StatusPanel() {
   const [headshot, setHeadshot] = useHeadshot()
   const [storedDetail, setDetail] = useStored<DetailLevel>(DETAIL_KEY, DEFAULT_DETAIL)
   const detail = normalizeDetail(storedDetail)
+  const [storedFigure, setFigure] = useStored<Figure>(FIGURE_KEY, DEFAULT_FIGURE)
+  const figure = normalizeFigure(storedFigure)
   const [failed, setFailed] = useState(() => !hasWebGL())
+  // Vault Boy failed (GLB or WebGL trouble): show the procedural Dweller instead.
+  const [vbFailed, setVbFailed] = useState(false)
+  const showVaultBoy = figure === 'VAULTBOY' && !vbFailed
   const [dragging, setDragging] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -40,6 +47,10 @@ export default function StatusPanel() {
   const onFail = (err: unknown) => {
     console.warn('[dweller] 3D unavailable, using paper doll', err)
     setFailed(true)
+  }
+  const onVbFail = (err: unknown) => {
+    console.warn('[dweller] Vault Boy unavailable, using the Dweller', err)
+    setVbFailed(true)
   }
 
   const pick = (file: File | null | undefined) => {
@@ -73,9 +84,9 @@ export default function StatusPanel() {
           {failed ? (
             <PaperDollFallback />
           ) : (
-            <SceneBoundary onError={onFail}>
+            <SceneBoundary key={showVaultBoy ? 'vb' : 'dweller'} onError={showVaultBoy ? onVbFail : onFail}>
               <Suspense fallback={<p className="loading status-loading">LOADING<span className="cursor">▌</span></p>}>
-                <DwellerScene onFail={onFail} detail={detail} />
+                {showVaultBoy ? <VaultBoyScene onFail={onVbFail} /> : <DwellerScene onFail={onFail} detail={detail} />}
               </Suspense>
             </SceneBoundary>
           )}
@@ -109,6 +120,27 @@ export default function StatusPanel() {
           </li>
         )}
         {!failed && (
+          <li className="dweller-detail dweller-figure" role="group" aria-label="Figure">
+            <span className="dweller-detail__label" aria-hidden>
+              FIGURE
+            </span>
+            {FIGURES.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`pip-btn dweller-detail__opt${f === figure ? ' is-active' : ''}`}
+                aria-pressed={f === figure}
+                onClick={() => {
+                  setVbFailed(false)
+                  setFigure(f)
+                }}
+              >
+                {FIGURE_LABEL[f]}
+              </button>
+            ))}
+          </li>
+        )}
+        {!failed && !showVaultBoy && (
           <li className="dweller-detail" role="group" aria-label="Figure detail">
             <span className="dweller-detail__label" aria-hidden>
               DETAIL

@@ -51,6 +51,10 @@
   filter: drop-shadow(0 0 calc(3px * var(--glow-amt)) var(--pip-15));
 }
 .status-loading { align-self: center; }
+/* Vault Boy hologram: tap for a gesture. Its own bloom, so only a faint CSS halo. */
+.vaultboy-scene { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.vaultboy-scene:focus-visible { outline: 1px dashed var(--pip-60); outline-offset: -4px; }
+.vaultboy-canvas { filter: none; }
 
 /* DETAIL: [RETRO] [CLEAN] [HI-FI] segmented selector */
 .dweller-detail {
