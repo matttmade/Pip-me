@@ -3,6 +3,7 @@ import { PREFIX, readStored, resetAll, subscribeStored, writeStored } from './st
 
 beforeEach(() => {
   sessionStorage.clear()
+  localStorage.clear()
   resetAll()
 })
 
@@ -37,4 +38,14 @@ test('resetAll clears only prefixed keys and notifies', () => {
 test('survives corrupt JSON', () => {
   sessionStorage.setItem(PREFIX + 'bad', '{nope')
   expect(readStored('bad', 'fallback')).toBe('fallback')
+})
+
+test('saved:* keys live in localStorage and survive resetAll', () => {
+  writeStored('saved:presets', [1])
+  expect(localStorage.getItem(PREFIX + 'saved:presets')).toBe('[1]')
+  expect(sessionStorage.getItem(PREFIX + 'saved:presets')).toBeNull()
+  writeStored('other', 1)
+  resetAll()
+  expect(readStored('saved:presets', [])).toEqual([1])
+  expect(readStored('other', 0)).toBe(0)
 })

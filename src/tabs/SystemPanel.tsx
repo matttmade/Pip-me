@@ -6,7 +6,9 @@ import { HUES } from '../effects/presets'
 import type { PresetName } from '../effects/types'
 import { useProfile, useSettings } from '../lib/profile'
 import { resetAll, useStored } from '../lib/store'
+import { PRESETS_KEY, type SavedPreset } from '../lib/systemPresets'
 import { ListDetail, type ListItem } from '../shell/ListDetail'
+import { SavedPresets } from './SavedPresets'
 import { PipSlider } from '../shell/PipSlider'
 import { PipToggle } from '../shell/PipToggle'
 
@@ -28,10 +30,12 @@ export function SystemPanel() {
   const [confirmReset, setConfirmReset] = useState(false)
   const [device, setDevice] = useDeviceSettings()
   const [view, setView] = useView()
+  const [saved] = useStored<SavedPreset[]>(PRESETS_KEY, [])
   const warp = device.warp ?? warpAutoDefault()
 
   const onOff = (on: boolean) => (on ? 'ON' : 'OFF')
   const items: ListItem[] = [
+    { id: 'SAVED', label: 'SAVED PRESETS', right: saved.length || '' },
     { id: 'PRESET', label: 'DISPLAY PRESET', right: cfg.preset },
     { id: 'SCANLINES', label: 'SCANLINES', right: onOff(cfg.scanlines.on) },
     { id: 'NOISE', label: 'NOISE', right: onOff(cfg.noise.on) },
@@ -49,6 +53,12 @@ export function SystemPanel() {
 
   const detail = (() => {
     switch (selected) {
+      case 'SAVED':
+        return (
+          <Detail title="SAVED PRESETS" note="A preset stores display effects, color, device and preferences (not your name, photo or quests). Saved presets stay in this browser after it closes and survive RESET TERMINAL.">
+            <SavedPresets />
+          </Detail>
+        )
       case 'PRESET':
         return (
           <Detail title="DISPLAY PRESET" note="Editing any effect switches the preset to CUSTOM.">

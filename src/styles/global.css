@@ -587,3 +587,35 @@ button, input, select, textarea {
 }
 .status-box--view .status-icon { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: square; }
 .status-box--view:hover { background: var(--pip-30); }
+
+/* ---------- DATA > SYSTEM > SAVED PRESETS ---------- */
+.saved-presets { display: grid; gap: 12px; }
+.saved-presets__save, .saved-presets__import { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+.saved-presets__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.saved-preset {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--pip-30);
+}
+.saved-preset.is-active { border-color: var(--pip); box-shadow: 0 0 8px var(--pip-30); }
+.saved-preset__swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+.saved-preset__name { display: grid; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.saved-preset__name small { font-size: 11px; opacity: .7; }
+.saved-preset__actions { display: flex; gap: 4px; }
+.saved-preset__actions .pip-btn { padding: 4px 8px; }
+.saved-preset__code {
+  grid-column: 1 / -1;
+  min-height: 36px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px dashed var(--pip-60);
+  font-size: 11px;
+  text-transform: none;
+}
+@media (max-width: 480px) {
+  .saved-preset { grid-template-columns: auto 1fr; }
+  .saved-preset__actions { grid-column: 1 / -1; }
+}
