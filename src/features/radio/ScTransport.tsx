@@ -1,6 +1,6 @@
 import { PipSlider } from '../../shell/PipSlider'
 import { SeekBar } from './SeekBar'
-import type { ScStatus } from './SoundCloudPlayer'
+import type { ScStatus } from './radioState'
 import { SKIP_MS } from './transport'
 
 type Props = {

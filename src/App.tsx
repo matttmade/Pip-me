@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, type ComponentType } fr
 import { DeviceStage } from './device/DeviceStage'
 import { EffectsProvider, useEffectsConfig } from './effects/EffectsProvider'
 import { triggerGlitch } from './effects/glitchScheduler'
+import { RadioHost } from './features/radio/RadioHost'
 import { emit } from './lib/events'
 import { closeOverlay, useOverlay, type OverlayId } from './lib/overlay'
 import type { OverlayProps } from './lib/contracts'
@@ -106,6 +107,7 @@ function PipBoy() {
         <BootSequence onDone={() => setBooted(true)} />
       ) : (
         <div className="pip-layout">
+          <RadioHost />
           <header className="pip-header">
             <TopTabs tabs={TABS.map((t) => t.id)} active={nav.tab} onChange={goTab} />
             <SubTabs subs={tab.subs} active={subIndex} onChange={goSub} />

@@ -1,27 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { emit, pipRgb, useEffectsConfig, usePageVisible, usePrefersReducedMotion, useSettings, useStored } from '../../lib/contracts'
+import { useMemo } from 'react'
+import { pipRgb, useEffectsConfig, usePageVisible, usePrefersReducedMotion, useSettings, useStored } from '../../lib/contracts'
 import { ListDetail, type ListItem } from '../../shell/ListDetail'
+import { radio, useRadio } from './engine'
 import { Oscilloscope } from './Oscilloscope'
+import { OFF, type ScStatus } from './radioState'
 import { ScTransport } from './ScTransport'
-import { SoundCloudPlayer, type ScControls, type ScStatus } from './SoundCloudPlayer'
-import { APPALACHIA_ID, APPALACHIA_STATION, buildWidgetUrl, FALLBACK_META, rgbToHex, simulatedSignal, type SoundMeta } from './soundcloud'
-import { fileStation, STATIONS, YOUR_STATION, type StationFactory, type StationGraph } from './stations'
-import { liveOffset, msOfDay, skipBy } from './transport'
-
-const OFF = 'OFF'
-
-type Engine = {
-  ctx: AudioContext
-  analyser: AnalyserNode
-  master: GainNode
-}
-type Live = { id: string; graph: StationGraph; bus: GainNode }
-
-/** Session resume point for the streamed station (null = never tuned: join live). */
-type ScStore = { position: number | null; duration: number }
-const SC_STORE: ScStore = { position: null, duration: 0 }
-/** Persist the playhead at most this often while it runs. */
-const SAVE_EVERY = 5000
+import { APPALACHIA_ID, APPALACHIA_STATION, simulatedSignal } from './soundcloud'
+import { STATIONS, YOUR_STATION } from './stations'
 
 const pct = (v: number) => `${Math.round(v * 100)}%`
 const SC_STATUS: Record<ScStatus, string> = {
@@ -34,192 +19,27 @@ const SC_STATUS: Record<ScStatus, string> = {
 /** Station list as shown: the streamed station first, then the procedural ones. */
 const LISTED = [APPALACHIA_STATION, ...STATIONS]
 
+/**
+ * View/controller of the persistent radio engine. Playback lives in engine.ts and
+ * RadioHost, so unmounting this panel (switching tabs) never stops the audio.
+ */
 export default function RadioPanel() {
   const [settings, setSettings] = useSettings()
   const [cfg] = useEffectsConfig()
   const visible = usePageVisible()
-  const [selected, setSelected] = useStored('radio:selected', APPALACHIA_ID)
-  const [playing, setPlaying] = useState<string | null>(null)
-  const [file, setFile] = useState<{ url: string; name: string } | null>(null)
-  const engine = useRef<Engine | null>(null)
-  const live = useRef<Live | null>(null)
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
-  const [scStatus, setScStatus] = useState<ScStatus>('loading')
-  const [scAttempt, setScAttempt] = useState(0)
   const reducedMotion = usePrefersReducedMotion()
-  const sc = useRef<ScControls>(null)
-  const [scStore, setScStore] = useStored('radio:appalachia', SC_STORE)
-  const [scPos, setScPos] = useState(scStore.position ?? 0)
-  const [scDur, setScDur] = useState(scStore.duration)
-  const [scMeta, setScMeta] = useState<SoundMeta>(FALLBACK_META)
-  const [scMuted, setScMuted] = useState(false)
-  const saved = useRef(scStore.position ?? -Infinity)
-
+  const [selected, setSelected] = useStored('radio:selected', APPALACHIA_ID)
+  const { station: active, sc, file, analyser } = useRadio()
   const muted = !settings.sound
-  const active = muted ? null : playing
-
-  const stopCurrent = useCallback(() => {
-    const e = engine.current
-    const cur = live.current
-    live.current = null
-    if (!e || !cur) return
-    const t = e.ctx.currentTime
-    cur.bus.gain.cancelScheduledValues(t)
-    cur.bus.gain.setTargetAtTime(0, t, 0.04)
-    window.setTimeout(() => {
-      cur.graph.stop()
-      cur.bus.disconnect()
-    }, e.ctx.state === 'running' ? 200 : 0)
-  }, [])
-
-  /** Must run inside a user gesture: creates/resumes the AudioContext. */
-  const tune = useCallback(
-    (id: string, url = file?.url) => {
-      if (muted) return
-      if (id === OFF || (id === playing && (live.current || id === APPALACHIA_ID))) {
-        stopCurrent()
-        setPlaying(null)
-        return
-      }
-      if (id === APPALACHIA_ID) {
-        // Streamed by the SoundCloud widget (cross-origin iframe), not the Web Audio graph.
-        stopCurrent()
-        setScStatus('loading')
-        setScAttempt((n) => n + 1)
-        setPlaying(id)
-        emit({ type: 'radio-tuned', station: APPALACHIA_STATION.name })
-        return
-      }
-      const factory: StationFactory | undefined =
-        id === YOUR_STATION ? (url ? fileStation(url) : undefined) : STATIONS.find((s) => s.id === id)?.start
-      if (!factory) return
-
-      let e = engine.current
-      if (!e) {
-        const ctx = new AudioContext()
-        const analyser = ctx.createAnalyser()
-        analyser.fftSize = 2048
-        const master = ctx.createGain()
-        master.gain.value = settings.volume
-        analyser.connect(master).connect(ctx.destination)
-        e = engine.current = { ctx, analyser, master }
-        setAnalyser(analyser)
-      }
-      void e.ctx.resume()
-      stopCurrent()
-      const bus = e.ctx.createGain()
-      bus.gain.value = 0
-      bus.gain.setTargetAtTime(1, e.ctx.currentTime, 0.15)
-      bus.connect(e.analyser)
-      live.current = { id, graph: factory(e.ctx, bus), bus }
-      setPlaying(id)
-      emit({ type: 'radio-tuned', station: id === YOUR_STATION ? 'YOUR STATION' : (STATIONS.find((s) => s.id === id)?.name ?? id) })
-    },
-    [muted, playing, file, settings.volume, stopCurrent],
-  )
-
-  /* ---------- streamed station: transport + session resume point ---------- */
-  const scLatest = useRef({ pos: scPos, dur: scDur })
-  useEffect(() => {
-    scLatest.current = { pos: scPos, dur: scDur }
-  })
-
-  const saveSc = useCallback(
-    (pos: number, dur: number) => {
-      saved.current = pos
-      setScStore({ position: Math.round(pos), duration: Math.round(dur) })
-    },
-    [setScStore],
-  )
-
-  const onScProgress = useCallback(
-    (pos: number, dur: number) => {
-      setScPos(pos)
-      if (dur > 0) setScDur(dur)
-      if (Math.abs(pos - saved.current) >= SAVE_EVERY) saveSc(pos, dur || scLatest.current.dur)
-    },
-    [saveSc],
-  )
-
-  const onScStatus = useCallback(
-    (s: ScStatus) => {
-      setScStatus(s)
-      // Paused: remember exactly where.
-      if (s === 'ready' && scLatest.current.dur > 0) saveSc(scLatest.current.pos, scLatest.current.dur)
-    },
-    [saveSc],
-  )
-
-  // First tune-in this session starts mid-"broadcast"; afterwards resume where it was.
-  const scStartAt = useCallback(
-    (dur: number) => (scStore.position == null ? liveOffset(msOfDay(new Date()), dur) : scStore.position),
-    [scStore.position],
-  )
-
-  const scSeek = (ms: number) => {
-    // Tuned: move the widget's playhead. Not tuned: just move the resume point.
-    if (playing === APPALACHIA_ID) sc.current?.seek(ms)
-    setScPos(ms)
-    saveSc(ms, scLatest.current.dur)
+  const scStatus = sc.status
+  const tune = (id: string) => {
+    if (!muted) radio.tune(id)
   }
 
-  // Leaving RADIO: keep the playhead for this session (store writes are idempotent).
-  useEffect(
-    () => () => {
-      const { pos, dur } = scLatest.current
-      if (dur > 0) saveSc(pos, dur)
-    },
-    [saveSc],
-  )
-
-  // Volume follows SYSTEM settings.
-  useEffect(() => {
-    const e = engine.current
-    if (e) e.master.gain.setTargetAtTime(settings.volume, e.ctx.currentTime, 0.05)
-  }, [settings.volume])
-
-  // Muting in SYSTEM silences everything.
-  useEffect(() => {
-    // (SOUND lives in DATA > SYSTEM, so in practice this panel remounts with playing = null.)
-    if (muted) stopCurrent()
-  }, [muted, stopCurrent])
-
-  // Hidden tab: suspend the whole graph (and pause media elements).
-  useEffect(() => {
-    const e = engine.current
-    if (!e) return
-    live.current?.graph.setPaused?.(!visible)
-    if (visible && active) void e.ctx.resume()
-    else void e.ctx.suspend()
-  }, [visible, active])
-
-  // Leaving RADIO: stop everything and release the context.
-  useEffect(
-    () => () => {
-      const e = engine.current
-      const cur = live.current
-      engine.current = null
-      live.current = null
-      cur?.graph.stop()
-      if (!e) return
-      void e.ctx.close()
-    },
-    [],
-  )
-
-  // Object URLs are revoked when replaced or when the panel unmounts.
-  useEffect(() => {
-    if (!file) return
-    return () => URL.revokeObjectURL(file.url)
-  }, [file])
-
   const onFile = (f: File | undefined) => {
-    if (!f) return
-    const url = URL.createObjectURL(f)
-    if (playing === YOUR_STATION) stopCurrent()
-    setFile({ url, name: f.name })
+    if (!f || muted) return
     setSelected(YOUR_STATION)
-    tune(YOUR_STATION, url)
+    radio.loadFile(f)
   }
 
   const items: ListItem[] = [
@@ -227,7 +47,6 @@ export default function RadioPanel() {
     { id: YOUR_STATION, label: 'YOUR STATION', right: active === YOUR_STATION ? '■' : undefined },
     { id: OFF, label: 'RADIO OFF', right: active ? undefined : '■' },
   ]
-
 
   const station = LISTED.find((s) => s.id === selected)
   const isSc = selected === APPALACHIA_ID
@@ -238,22 +57,12 @@ export default function RadioPanel() {
   const [r, g, b] = pipRgb(cfg.hue)
   const scLive = scOn && scStatus === 'playing'
   const scHeld = scOn && (scStatus === 'playing' || scStatus === 'ready')
-  const scVolume = scMuted ? 0 : settings.volume
+  const scVolume = sc.muted ? 0 : settings.volume
   // The trace's height follows what you'd hear; paused, it freezes in place.
   const simulateSc = useMemo(() => {
     const level = 0.12 + 0.78 * Math.min(1, scVolume * 1.4)
     return (x: number, t: number) => simulatedSignal(x, t, level)
   }, [scVolume])
-
-  const retrySc = () => {
-    setScStatus('loading')
-    setScAttempt((n) => n + 1)
-  }
-  const scPlayPause = () => {
-    if (!scOn) return tune(APPALACHIA_ID)
-    if (scStatus === 'lost') return retrySc()
-    if (scStatus !== 'loading') sc.current?.toggle()
-  }
 
   const detail = (
     <div className={`radio-detail pip-frame${isSc ? ' radio-detail--sc' : ''}`}>
@@ -295,7 +104,7 @@ export default function RadioPanel() {
       {isSc && on && scStatus === 'lost' && (
         <div className="radio-warn radio-warn--row">
           <span>The stream could not be reached: you may be offline, or SoundCloud is blocked on this network.</span>
-          <button className="pip-btn" onClick={retrySc}>
+          <button className="pip-btn" onClick={radio.retry}>
             [ RETRY ]
           </button>
         </div>
@@ -304,31 +113,31 @@ export default function RadioPanel() {
         <ScTransport
           tuned={scOn}
           status={scStatus}
-          position={scPos}
-          duration={scDur}
+          position={sc.position}
+          duration={sc.duration}
           volume={settings.volume}
-          muted={scMuted}
-          onPlayPause={scPlayPause}
-          onSkip={(d) => scSeek(skipBy(scPos, d, scDur))}
-          onSeek={scSeek}
+          muted={sc.muted}
+          onPlayPause={radio.playPause}
+          onSkip={radio.skip}
+          onSeek={radio.seek}
           onVolume={(v) => {
-            setScMuted(false)
+            radio.setMuted(false)
             setSettings((s) => ({ ...s, volume: v }))
           }}
-          onMute={() => setScMuted((m) => !m)}
-          onJoinLive={() => scSeek(liveOffset(msOfDay(new Date()), scDur))}
-          onFromStart={() => scSeek(0)}
+          onMute={() => radio.setMuted(!sc.muted)}
+          onJoinLive={radio.joinLive}
+          onFromStart={radio.fromStart}
         />
       )}
       {isOff ? (
         <p className="pip-note">Receiver idle. Select a station and press it again (or ENTER) to tune in.</p>
       ) : (
-        !isSc && <p className="pip-note">{isYours ? 'Play an audio file from this device. It is never uploaded or saved, and is forgotten when you leave.' : station?.desc}</p>
+        !isSc && <p className="pip-note">{isYours ? 'Play an audio file from this device. It is never uploaded or saved, and is forgotten when the radio is switched off.' : station?.desc}</p>
       )}
       {isSc && (
-        <a className="radio-credit" href={scMeta.url} target="_blank" rel="noopener noreferrer">
-          <span className="radio-credit__k">TRACK //</span> {scMeta.title.toUpperCase()} <span aria-hidden="true">·</span> UPLOADED BY{' '}
-          {scMeta.uploader.toUpperCase()} <span aria-hidden="true">·</span> <span className="radio-credit__sc">SOUNDCLOUD ↗</span>
+        <a className="radio-credit" href={sc.meta.url} target="_blank" rel="noopener noreferrer">
+          <span className="radio-credit__k">TRACK //</span> {sc.meta.title.toUpperCase()} <span aria-hidden="true">·</span> UPLOADED BY{' '}
+          {sc.meta.uploader.toUpperCase()} <span aria-hidden="true">·</span> <span className="radio-credit__sc">SOUNDCLOUD ↗</span>
         </a>
       )}
       {!muted && !isSc && (
@@ -357,20 +166,6 @@ export default function RadioPanel() {
         <p className="radio-now">
           NOW STREAMING: {APPALACHIA_STATION.name} · {SC_STATUS[scStatus]}
         </p>
-      )}
-      {scOn && (
-        <SoundCloudPlayer
-          key={scAttempt}
-          ref={sc}
-          src={buildWidgetUrl(APPALACHIA_STATION.trackUrl, { color: rgbToHex([r, g, b]), autoPlay: false })}
-          title={`SoundCloud player: ${APPALACHIA_STATION.name}`}
-          volume={scVolume}
-          visible={visible}
-          startAt={scStartAt}
-          onStatus={onScStatus}
-          onProgress={onScProgress}
-          onMeta={setScMeta}
-        />
       )}
     </div>
   )

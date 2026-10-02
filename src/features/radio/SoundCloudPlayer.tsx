@@ -1,15 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
+import type { ScControls } from './engine'
+import type { ScStatus } from './radioState'
 import { loadWidgetApi, soundMeta, widgetVolume, type ScApi, type ScProgress, type ScWidget, type SoundMeta } from './soundcloud'
-
-export type ScStatus = 'loading' | 'ready' | 'playing' | 'lost'
-
-/** Imperative transport for the hidden widget. Calls before READY are ignored. */
-export type ScControls = {
-  play(): void
-  pause(): void
-  toggle(): void
-  seek(ms: number): void
-}
 
 type Props = {
   /** Full widget iframe URL (buildWidgetUrl). Read once on mount. */
@@ -35,8 +27,9 @@ const EVENTS = ['READY', 'PLAY', 'PAUSE', 'FINISH', 'PLAY_PROGRESS', 'ERROR'] as
 /**
  * The official SoundCloud widget, streaming but visually hidden: a real-size iframe
  * clipped inside a 1px box (not display:none, which can stop playback). Our transport
- * drives it through the Widget API, and attribution is shown by the caller.
- * Mounted only while tuned (key it to force a fresh RETRY); unmounting pauses it.
+ * drives it through the Widget API, and attribution is shown by RadioPanel.
+ * Mounted by the always-present RadioHost only while tuned (keyed for a fresh RETRY),
+ * so switching tabs doesn't touch it; unmounting pauses it.
  */
 export function SoundCloudPlayer({ src, title, volume, visible, startAt, onStatus, onProgress, onMeta, ref }: Props) {
   const [api, setApi] = useState<ScApi | null>(null)
