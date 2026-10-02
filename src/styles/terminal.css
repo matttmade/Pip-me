@@ -175,7 +175,7 @@
 .radio-sc__frame {
   display: block;
   width: 100%;
-  height: 120px;
+  height: 166px; /* SoundCloud classic player height; smaller crops it */
   border: 1px solid var(--pip-60);
   background: var(--screen-bg);
   filter: saturate(.8) brightness(.92);
