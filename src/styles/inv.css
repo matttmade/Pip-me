@@ -1,0 +1,154 @@
+/* ---------- INV (holotapes, aid) + DATA > QUESTS ---------- */
+.inv-panel {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.inv-panel > .inv-status:first-child { margin-top: 2px; }
+.inv-body { flex: 1; min-height: 0; }
+
+.inv-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inv-toolbar .pip-btn { flex: none; padding: 6px 10px; white-space: nowrap; }
+
+.inv-search {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch);
+  padding: 0 10px;
+  border-bottom: 1px solid var(--pip-60);
+}
+.inv-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  caret-color: var(--pip);
+}
+.inv-search:focus-within { border-bottom-color: var(--pip); box-shadow: 0 2px 6px -4px var(--pip); }
+.inv-search input::placeholder,
+.inv-form input::placeholder { color: var(--pip-60); opacity: 1; }
+.inv-search input::-webkit-search-cancel-button { display: none; }
+
+.inv-status {
+  margin: 0;
+  font-size: 12px;
+  opacity: .75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid var(--pip-30);
+  padding-bottom: 4px;
+}
+
+/* long titles truncate inside list rows */
+.inv-panel .pip-row__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- detail ---------- */
+.inv-detail { display: grid; gap: 12px; align-content: start; }
+.inv-detail__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: normal;
+  font-size: clamp(24px, 5vw, 30px);
+  line-height: 1.05;
+  border-bottom: 1px solid var(--pip-60);
+  padding-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+.inv-detail__sub { margin: -6px 0 0; opacity: .75; font-size: 13px; overflow-wrap: anywhere; }
+
+.inv-facts { margin: 0; display: grid; gap: 2px; }
+.inv-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 8px;
+  background: var(--pip-15);
+}
+.inv-facts dt { opacity: .8; }
+.inv-facts dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+
+.inv-copy { margin: 0; font-size: 14px; line-height: 1.45; opacity: .9; }
+.inv-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--pip-60);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.inv-error { margin: 0; font-size: 13px; color: var(--pip-hi); }
+.inv-error::before { content: '! '; }
+.inv-form { display: grid; gap: 12px; }
+.inv-form input[aria-invalid='true'] { border-color: var(--pip-hi); border-style: dashed; }
+
+.pip-btn:disabled { cursor: default; }
+
+/* ---------- quests ---------- */
+.quest-xp { margin-left: auto; font-size: 13px; opacity: .85; white-space: nowrap; }
+.quest-done { opacity: .55; }
+.pip-row.is-selected .quest-done { opacity: .8; }
+.quest-check { display: inline-block; width: 1.4em; }
+.quest-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-size: 12px;
+  opacity: .9;
+}
+.quest-divider::after { content: ''; flex: 1; height: 1px; background: var(--pip-60); }
+.pip-row__label:has(.quest-divider) { flex: 1; }
+.pip-row:has(.quest-divider) { min-height: 28px; cursor: default; opacity: 1; }
+
+/* LEVEL UP flash */
+.level-up {
+  position: absolute;
+  inset: 30% 0 auto;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 14px 12px;
+  background: var(--screen-bg);
+  border-top: var(--rule) solid var(--pip);
+  border-bottom: var(--rule) solid var(--pip);
+  box-shadow: 0 0 24px var(--pip-30), inset 0 0 18px var(--pip-15);
+  pointer-events: none;
+  animation: level-up-fade 2.2s ease forwards;
+}
+.level-up__title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 11vw, 64px);
+  line-height: 1;
+  text-shadow: 0 0 4px var(--pip), 0 0 18px var(--pip);
+  animation: level-up-in 2.2s steps(1) forwards;
+}
+.level-up__sub { font-size: 14px; }
+@keyframes level-up-in {
+  0%, 16%, 32% { opacity: 1; }
+  8%, 24% { opacity: .35; }
+}
+@keyframes level-up-fade {
+  0%, 80% { transform: scaleY(1); }
+  100% { transform: scaleY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .level-up, .level-up__title { animation: none; }
+}
