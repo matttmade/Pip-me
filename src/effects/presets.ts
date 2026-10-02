@@ -91,3 +91,17 @@ export function stillVersion(cfg: EffectsConfig): EffectsConfig {
     rollBar: { ...cfg.rollBar, on: false },
   }
 }
+
+/** Fill any missing or malformed fields of a stored config from defaults, so bad storage can't crash the app. */
+export function normalizeConfig(raw: unknown, fallback: EffectsConfig = DEFAULT_EFFECTS): EffectsConfig {
+  if (!raw || typeof raw !== 'object') return fallback
+  const r = raw as Record<string, unknown>
+  const out = { ...fallback } as Record<string, unknown>
+  for (const k of Object.keys(fallback) as (keyof EffectsConfig)[]) {
+    const def = fallback[k]
+    const v = r[k]
+    if (def && typeof def === 'object') out[k] = v && typeof v === 'object' ? { ...def, ...(v as object) } : def
+    else if (v !== undefined && typeof v === typeof def) out[k] = v
+  }
+  return out as EffectsConfig
+}

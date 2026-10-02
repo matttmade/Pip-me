@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, type ReactNode } from 'react'
 import { usePrefersReducedMotion } from '../lib/hooks'
 import { useStored } from '../lib/store'
-import { applyPreset, DEFAULT_EFFECTS, patchConfig, stillVersion } from './presets'
+import { applyPreset, DEFAULT_EFFECTS, normalizeConfig, patchConfig, stillVersion } from './presets'
 import type { EffectsConfig, EffectsPatch } from './types'
 
 type Ctx = [EffectsConfig, (patch: EffectsPatch) => void]
@@ -12,7 +12,7 @@ export function EffectsProvider({ children }: { children: ReactNode }) {
   const [stored, setStored] = useStored<EffectsConfig | null>('effects', null)
   // Reduced motion is a default, not a lock: once the user edits SYSTEM, their choice wins.
   const cfg = useMemo(
-    () => stored ?? (reduced ? stillVersion(applyPreset('SUBTLE')) : DEFAULT_EFFECTS),
+    () => (stored ? normalizeConfig(stored) : reduced ? stillVersion(applyPreset('SUBTLE')) : DEFAULT_EFFECTS),
     [stored, reduced],
   )
   const update = useCallback((patch: EffectsPatch) => setStored(patchConfig(cfg, patch)), [cfg, setStored])

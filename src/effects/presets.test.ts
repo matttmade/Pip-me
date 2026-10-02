@@ -48,3 +48,14 @@ test('still version removes all motion', () => {
   expect(s.noise.fps).toBe(0)
   expect(s.glitch.on || s.flicker.on || s.rollBar.on).toBe(false)
 })
+
+test('partial or malformed stored configs are repaired', async () => {
+  const { normalizeConfig } = await import('./presets')
+  const fixed = normalizeConfig({ hue: 38, scanlines: { opacity: 0.5 }, glow: 'x' })
+  expect(fixed.hue).toBe(38)
+  expect(fixed.scanlines.on).toBe(DEFAULT_EFFECTS.scanlines.on)
+  expect(fixed.scanlines.opacity).toBe(0.5)
+  expect(fixed.glitch).toEqual(DEFAULT_EFFECTS.glitch)
+  expect(fixed.glow).toBe(DEFAULT_EFFECTS.glow)
+  expect(normalizeConfig(null)).toBe(DEFAULT_EFFECTS)
+})
