@@ -36,8 +36,8 @@ export default function PerksPanel() {
       selected={perk.id}
       onSelect={setSelected}
       detail={
-        <div className={`perk-detail${has ? ' is-earned' : ''}`}>
-          <h2>{perk.name}</h2>
+        <div className={`perk-detail pip-frame${has ? ' is-earned' : ''}`}>
+          <h2 className="pip-frame__title">{perk.name}</h2>
           <PerkBadge name={perk.name} earned={has} />
           <p className="perk-detail__state">{has ? 'RANK 1 · EARNED' : 'LOCKED'}</p>
           <p>{has ? perk.desc : perk.hint}</p>

@@ -197,8 +197,8 @@ export function SystemPanel() {
 
 function Detail({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
-    <div className="system-detail">
-      <h2>{title}</h2>
+    <div className="system-detail pip-frame">
+      <h2 className="pip-frame__title">{title}</h2>
       {children}
       {note && <p className="pip-note">{note}</p>}
     </div>

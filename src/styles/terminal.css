@@ -64,7 +64,7 @@
   text-align: center;
 }
 .term__chars > .is-hl {
-  background: var(--pip);
+  background: var(--band), var(--pip);
   color: var(--screen-bg);
   text-shadow: none;
   box-shadow: 0 0 6px var(--pip-60);
@@ -110,13 +110,14 @@
 }
 .term__result-title {
   font-family: var(--font-display);
+  letter-spacing: var(--track-display);
   font-size: clamp(36px, 7vw, 64px);
   line-height: 1;
   padding: 2px 10px;
   border: var(--rule) solid var(--pip);
   box-shadow: var(--glow), inset 0 0 18px var(--pip-30);
 }
-.term__result.is-granted .term__result-title { background: var(--pip); color: var(--screen-bg); text-shadow: none; }
+.term__result.is-granted .term__result-title { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; }
 .term__note { opacity: .7; font-size: .85em; }
 .term__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 
@@ -138,6 +139,8 @@
   gap: 12px;
 }
 .radio-detail h2 small { font-family: var(--font-ui); font-size: 14px; align-self: end; opacity: .8; }
+.radio-detail h2 { letter-spacing: var(--track-display); text-shadow: var(--bloom); }
+.radio-detail.pip-frame > h2 small { align-self: center; opacity: 1; text-shadow: var(--glow); }
 .radio-scope {
   position: relative;
   width: 100%;

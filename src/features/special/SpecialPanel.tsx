@@ -60,9 +60,9 @@ export default function SpecialPanel() {
       selected={key}
       onSelect={setSelected}
       detail={
-        <div className="special-detail">
-          <h2>
-            {info.name} <span className="special-detail__value">{value}</span>
+        <div className="special-detail pip-frame">
+          <h2 className="pip-frame__title">
+            <span>{info.name}</span> <span className="special-detail__value pip-frame__aside">{value}</span>
           </h2>
           <div className="seg-bar" role="meter" aria-label={`${info.name} ${value} of ${STAT_MAX}`} aria-valuemin={1} aria-valuemax={STAT_MAX} aria-valuenow={value}>
             {Array.from({ length: STAT_MAX }, (_, i) => (

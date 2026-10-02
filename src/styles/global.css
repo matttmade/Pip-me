@@ -14,6 +14,7 @@ body {
   letter-spacing: .04em;
   text-transform: uppercase;
   text-shadow: var(--glow);
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -68,6 +69,7 @@ button, input, select, textarea {
   height: 100%;
   display: grid;
   grid-template-rows: auto 1fr auto auto;
+  grid-template-columns: minmax(0, 1fr);
   padding: 10px clamp(10px, 3vw, 28px) 0;
   gap: 8px;
 }
@@ -78,22 +80,25 @@ button, input, select, textarea {
   overflow: hidden;
 }
 
-/* ---------- top tabs: line with a notched bracket around the active tab ---------- */
+/* ---------- top tabs: line with a bracket around the active tab ---------- */
 .top-tabs {
   position: relative;
   display: flex;
   justify-content: space-around;
-  padding-top: 10px;
+  padding: 10px 6px 0;
 }
 .top-tabs::after {
+  /* the header rule, with short down-ticks at both ends */
   content: '';
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: var(--rule);
-  background: var(--pip);
-  box-shadow: var(--glow);
+  bottom: -6px;
+  height: calc(6px + var(--rule));
+  border: var(--rule) solid var(--pip);
+  border-bottom: 0;
+  filter: drop-shadow(0 0 calc(4px * var(--glow-amt)) var(--pip-60));
+  pointer-events: none;
 }
 .top-tab {
   position: relative;
@@ -107,33 +112,41 @@ button, input, select, textarea {
   font-family: var(--font-display);
   font-size: clamp(22px, 4.6vw, 32px);
   line-height: 1;
-  opacity: .9;
+  letter-spacing: clamp(.02em, .6vw - .5px, var(--track-display));
+  opacity: .72;
+  transition: opacity .15s;
 }
+.top-tab:hover { opacity: .95; }
 .top-tab.is-active {
   opacity: 1;
   background: var(--screen-bg);
+  /* open at the bottom: the tab's fill hides the header rule beneath it */
   border: var(--rule) solid var(--pip);
-  border-bottom-color: var(--screen-bg);
-  margin-bottom: calc(var(--rule) * -1);
-  box-shadow: 0 -2px 8px var(--pip-30);
+  border-bottom: 0;
+  padding-inline: clamp(8px, 2.2vw, 22px);
+  text-shadow: var(--bloom);
+  box-shadow: 0 -2px calc(10px * var(--glow-amt)) var(--pip-30);
 }
 .top-tab.is-active::before,
 .top-tab.is-active::after {
-  /* notches at the bracket feet */
+  /* bracket feet: short bright serifs where the bracket meets the header rule */
   content: '';
   position: absolute;
-  bottom: calc(var(--rule) * -1);
+  bottom: 0;
   width: 6px;
   height: var(--rule);
-  background: var(--screen-bg);
+  background: var(--pip-hi);
+  box-shadow: 0 0 4px var(--pip);
 }
-.top-tab.is-active::before { left: -8px; }
-.top-tab.is-active::after { right: -8px; }
+.top-tab.is-active::before { left: calc(var(--rule) * -1 - 6px); }
+.top-tab.is-active::after { right: calc(var(--rule) * -1 - 6px); }
 
-/* ---------- sub tabs ---------- */
+/* ---------- sub tabs: thin secondary rule under the strip (FO4) ---------- */
 .sub-tabs {
+  position: relative;
   overflow: hidden;
-  padding: 4px 0;
+  padding: 6px 0 3px;
+  border-bottom: var(--hair) solid var(--pip-30);
   mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
 }
 .sub-tabs__strip {
@@ -143,15 +156,29 @@ button, input, select, textarea {
   white-space: nowrap;
 }
 .sub-tab {
+  position: relative;
   min-height: 36px;
   padding: 2px 4px;
   background: none;
   border: 0;
   cursor: pointer;
   font-size: 16px;
+  letter-spacing: .1em;
   transition: opacity .2s;
 }
-.sub-tab.is-active { font-weight: bold; }
+.sub-tab.is-active { font-weight: bold; text-shadow: var(--bloom); }
+.sub-tab.is-active::after {
+  /* tick that sits on the secondary rule */
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 18px;
+  height: var(--rule);
+  background: var(--pip);
+  transform: translateX(-50%);
+  box-shadow: var(--glow);
+}
 
 /* ---------- list + detail ---------- */
 .list-detail {
@@ -170,9 +197,11 @@ button, input, select, textarea {
 }
 
 .pip-list {
+  --bracket: 7px;
   position: relative;
   margin: 0;
-  padding: 0;
+  /* room for the corner brackets, which sit just outside the bar */
+  padding: 4px 5px;
   list-style: none;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -180,13 +209,31 @@ button, input, select, textarea {
 }
 .pip-list__bar {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 5px;
+  right: 5px;
   top: 0;
-  background: var(--pip);
-  box-shadow: var(--glow);
+  background: var(--band), var(--pip);
+  box-shadow: var(--bloom);
   transition: transform .16s cubic-bezier(.2, .8, .2, 1), height .16s;
   pointer-events: none;
+}
+.pip-list__bar::before {
+  /* Shelter-style corner brackets: four L shapes just outside the bar */
+  content: '';
+  position: absolute;
+  inset: -4px;
+  --c: linear-gradient(var(--pip-hi), var(--pip-hi));
+  background:
+    var(--c) top left / var(--bracket) var(--rule),
+    var(--c) top left / var(--rule) var(--bracket),
+    var(--c) top right / var(--bracket) var(--rule),
+    var(--c) top right / var(--rule) var(--bracket),
+    var(--c) bottom left / var(--bracket) var(--rule),
+    var(--c) bottom left / var(--rule) var(--bracket),
+    var(--c) bottom right / var(--bracket) var(--rule),
+    var(--c) bottom right / var(--rule) var(--bracket);
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 calc(3px * var(--glow-amt)) var(--pip-60));
 }
 .pip-row {
   position: relative;
@@ -196,11 +243,24 @@ button, input, select, textarea {
   gap: 12px;
   align-items: center;
   min-height: var(--touch);
-  padding: 4px 12px;
+  padding: 4px 12px 4px 26px;
   cursor: pointer;
   user-select: none;
 }
 .pip-row.is-selected { color: var(--screen-bg); text-shadow: none; }
+.pip-row.is-selected::before {
+  /* FO3 notice cursor */
+  content: '>';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-52%);
+  font-family: var(--font-display);
+  font-size: 1.35em;
+  line-height: 1;
+  animation: pip-cursor-in .16s steps(2, end);
+}
+@keyframes pip-cursor-in { from { opacity: 0; } }
 .pip-row.is-disabled { opacity: .45; cursor: default; }
 .pip-row__right { opacity: .85; white-space: nowrap; }
 
@@ -221,10 +281,56 @@ button, input, select, textarea {
   margin: 0;
   font-family: var(--font-display);
   font-weight: normal;
-  font-size: 28px;
+  font-size: var(--fs-xl);
+  letter-spacing: var(--track-display);
+  text-shadow: var(--bloom);
   border-bottom: 1px solid var(--pip-60);
   padding-bottom: 4px;
 }
+
+/* ---------- panel frame: a rule that breaks for its title (FO3 notice) ---------- */
+.pip-frame {
+  --frame-c: var(--pip-60);
+  --frame-pad: clamp(10px, 2vw, 16px);
+  position: relative;
+  /* the title's line sits half a title-height above the content box */
+  margin-top: calc(var(--frame-title-h, 28px) / 2);
+  padding: 0 var(--frame-pad) var(--frame-pad);
+  border: var(--rule) solid var(--frame-c);
+  border-top: 0;
+}
+.pip-frame > .pip-frame__title,
+.pip-frame > h2.pip-frame__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: var(--frame-title-h, 28px);
+  margin: calc(var(--frame-title-h, 28px) / -2) calc(var(--frame-pad) * -1 - var(--rule)) 0;
+  padding: 0;
+  border: 0;
+  line-height: 1;
+}
+.pip-frame__title::before,
+.pip-frame__title::after {
+  content: '';
+  flex: 0 0 12px;
+  height: var(--rule);
+  background: var(--frame-c);
+}
+.pip-frame__title::after { flex: 1 1 12px; min-width: 12px; }
+/* a right-hand aside in the rule: ─ TITLE ────── 88.1 MHZ ─ */
+.pip-frame__title:has(> .pip-frame__aside)::after { order: 1; }
+.pip-frame__aside { order: 2; display: flex; align-items: center; gap: 10px; flex: none; }
+.pip-frame__aside::after { content: ''; width: 12px; height: var(--rule); background: var(--frame-c); }
+.pip-frame__title > :first-child:not(:only-child) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pip-detail:has(> .pip-frame) { border-top: 0; padding-top: 0; }
+
 .pip-note { margin: 0; opacity: .7; font-size: 13px; text-transform: none; }
 
 /* ---------- controls ---------- */
@@ -237,7 +343,7 @@ button, input, select, textarea {
   box-shadow: inset 0 0 6px var(--pip-15);
 }
 .pip-btn:hover { background: var(--pip-15); }
-.pip-btn.is-active { background: var(--pip); color: var(--screen-bg); text-shadow: none; }
+.pip-btn.is-active { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; box-shadow: var(--glow); }
 .pip-btn--danger { border-style: dashed; }
 
 .pip-choices { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -287,7 +393,8 @@ button, input, select, textarea {
   position: absolute;
   inset: 3px 3px;
   background: repeating-linear-gradient(to right, var(--pip) 0 6px, transparent 6px 9px);
-  clip-path: inset(0 calc(100% - var(--pct)) 0 0);
+  /* angled lead-in, cut off at --pct */
+  clip-path: polygon(var(--notch) 0, max(var(--notch), var(--pct)) 0, var(--pct) 100%, 0 100%);
   filter: drop-shadow(0 0 3px var(--pip-60));
 }
 .pip-slider__track::after {
@@ -295,6 +402,7 @@ button, input, select, textarea {
   position: absolute;
   inset: 3px 3px;
   background: repeating-linear-gradient(to right, var(--pip-15) 0 6px, transparent 6px 9px);
+  clip-path: polygon(var(--notch) 0, 100% 0, 100% 100%, 0 100%);
   z-index: -1;
 }
 .pip-slider input {
@@ -321,14 +429,18 @@ button, input, select, textarea {
   caret-color: var(--pip);
 }
 
-/* ---------- status bar ---------- */
+/* ---------- status bar: FO3-style bottom rail ---------- */
 .status-bar {
+  --rail-gap: clamp(6px, 1.6vw, 14px);
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1.6fr 1fr auto;
-  gap: 6px;
+  gap: var(--rail-gap);
   font-size: clamp(12px, 2.6vw, 16px);
+  letter-spacing: .06em;
 }
 .status-box {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,22 +448,78 @@ button, input, select, textarea {
   min-height: 34px;
   padding: 2px 8px;
   background: var(--pip-15);
+  /* bracket end-caps make each box a segment of the rail */
+  border-inline: var(--rule) solid var(--pip-60);
   white-space: nowrap;
 }
+.status-box + .status-box::before {
+  /* dashed joint between neighbouring boxes */
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: calc(100% + var(--rule));
+  width: var(--rail-gap);
+  height: var(--rule);
+  margin-top: calc(var(--rule) / -2);
+  background: repeating-linear-gradient(to right, var(--pip-60) 0 3px, transparent 3px 5px);
+}
 .status-box--meta { flex-direction: column; gap: 0; line-height: 1.1; font-size: .85em; }
+@media (max-width: 480px) {
+  .status-bar { --rail-gap: 5px; letter-spacing: .02em; }
+  .status-box { padding: 2px 4px; gap: 5px; border-inline-width: var(--hair); }
+}
+
+/* angled lead-in bars (Shelter): track + fill share one notched polygon */
+.xp-bar,
+.limb__bar {
+  --bar-shape: polygon(var(--notch) 0, 100% 0, 100% 100%, 0 100%);
+  position: relative;
+  display: block;
+  filter: drop-shadow(0 0 calc(3px * var(--glow-amt)) var(--pip-60));
+}
+.xp-bar::before,
+.limb__bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--pip-15);
+  clip-path: var(--bar-shape);
+}
+.xp-bar > span,
+.limb__bar > span {
+  position: relative;
+  display: block;
+  height: 100%;
+  background: var(--band), var(--pip);
+  clip-path: var(--bar-shape);
+}
 .xp-bar {
   flex: 1;
   max-width: 160px;
+  min-width: 18px;
   height: 10px;
-  border: 1px solid var(--pip);
 }
-.xp-bar > span {
-  display: block;
-  height: 100%;
-  background: var(--pip);
-  box-shadow: var(--glow);
-  transition: width .6s ease;
+.xp-bar > span { transition: width .6s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .xp-bar > span { transition: none; }
 }
+
+/* ---------- display utilities ---------- */
+/* Dot-matrix fill for big display numbers (PIXEL BLAST). Use sparingly. */
+.pip-halftone {
+  --dot: max(3px, .045em);
+  color: transparent;
+  text-shadow: none;
+  background:
+    radial-gradient(circle at center, var(--pip-hi) 0 42%, var(--pip) 52%, transparent 66%)
+    0 0 / var(--dot) var(--dot);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter:
+    drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip))
+    drop-shadow(0 0 calc(12px * var(--glow-amt)) var(--pip-60));
+}
+.pip-bloom { text-shadow: var(--bloom); }
 
 /* ---------- misc ---------- */
 .disclaimer {
@@ -391,5 +559,8 @@ button, input, select, textarea {
 .boot__skip { opacity: .6; font-size: 12px; text-align: center; }
 
 @media (prefers-reduced-motion: reduce) {
-  .cursor { animation: none; }
+  .cursor,
+  .pip-row.is-selected::before { animation: none; }
+  .pip-list__bar,
+  .sub-tabs__strip { transition: none; }
 }
