@@ -26,3 +26,6 @@ dist-ssr
 # Pip-Boy reference screenshots (never shipped)
 /reference
 shots/
+
+# agent worktrees
+.claude/worktrees/
