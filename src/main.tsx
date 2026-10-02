@@ -7,12 +7,16 @@ import './index.css'
 import App from './App.tsx'
 import { startPerkTracking } from './features/perks/perks'
 import { startSfx } from './features/sound/sfx'
+import { afterLoader } from './loader/handoff'
 
 startSfx()
 startPerkTracking()
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+// The inline boot loader (index.html) powers off, then React mounts underneath it.
+afterLoader(() =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  ),
 )
