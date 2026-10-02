@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 
 export function InvDetail({ title, sub, children }: { title: ReactNode; sub?: ReactNode; children?: ReactNode }) {
   return (
-    <div className="inv-detail">
-      <h2 className="inv-detail__title">{title}</h2>
+    <div className="inv-detail pip-frame">
+      <h2 className="inv-detail__title pip-frame__title">{title}</h2>
       {sub && <p className="inv-detail__sub">{sub}</p>}
       {children}
     </div>

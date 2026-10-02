@@ -143,10 +143,10 @@ export default function RadioPanel() {
   const [r, g, b] = pipRgb(cfg.hue)
 
   const detail = (
-    <div className="radio-detail">
-      <h2>
+    <div className="radio-detail pip-frame">
+      <h2 className="pip-frame__title">
         <span>{isOff ? 'RADIO OFF' : isYours ? 'YOUR STATION' : station?.name}</span>
-        <small>{isOff ? '--.-' : isYours ? 'LOCAL' : `${station?.freq} MHZ`}</small>
+        <small className="pip-frame__aside">{isOff ? '--.-' : isYours ? 'LOCAL' : `${station?.freq} MHZ`}</small>
       </h2>
       <div className="radio-scope" data-no-swipe>
         <Oscilloscope analyser={active ? analyser : null} color={`${r}, ${g}, ${b}`} running={visible && active != null} />

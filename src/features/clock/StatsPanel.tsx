@@ -22,7 +22,7 @@ export default function StatsPanel() {
     <div className="stats-panel">
       <section className="stats-box stats-clock" aria-label="Clock">
         <div className="stats-time">
-          <span className="stats-time__hm">{t.hm}</span>
+          <span className="stats-time__hm pip-halftone">{t.hm}</span>
           <span className="stats-time__side">
             <span>{t.ampm}</span>
             <span className="stats-time__sec">{t.seconds}</span>
@@ -39,8 +39,8 @@ export default function StatsPanel() {
         )}
       </section>
 
-      <section className="stats-box" aria-label="Location">
-        <h3>LOCATION</h3>
+      <section className="stats-box pip-frame" aria-label="Location">
+        <h3 className="pip-frame__title">LOCATION</h3>
         <p className="stats-big">[ {place} ]</p>
         <dl className="stats-dl">
           <dt>COORDINATES</dt>
@@ -50,8 +50,8 @@ export default function StatsPanel() {
         </dl>
       </section>
 
-      <section className="stats-box" aria-label="Conditions">
-        <h3>CONDITIONS</h3>
+      <section className="stats-box pip-frame" aria-label="Conditions">
+        <h3 className="pip-frame__title">CONDITIONS</h3>
         {w ? (
           <>
             <p className="stats-big">
@@ -81,8 +81,8 @@ export default function StatsPanel() {
         )}
       </section>
 
-      <section className="stats-box stats-day" aria-label="Day cycle">
-        <h3>DAY CYCLE</h3>
+      <section className="stats-box stats-day pip-frame" aria-label="Day cycle">
+        <h3 className="pip-frame__title">DAY CYCLE</h3>
         {w?.sunrise != null && w.sunset != null ? (
           <>
             <div

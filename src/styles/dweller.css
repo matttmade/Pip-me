@@ -53,20 +53,13 @@
   line-height: 1;
   pointer-events: none;
 }
+/* shape + fill come from the shared angled-bar rule in global.css */
 .limb__bar {
-  display: block;
+  --notch: 5px;
   width: 100%;
-  height: 8px;
-  border: 1px solid var(--pip-60);
-  padding: 1px;
+  height: 7px;
 }
-.limb__bar > span {
-  display: block;
-  height: 100%;
-  background: var(--pip);
-  box-shadow: var(--glow);
-}
-.limb__label { opacity: .7; }
+.limb__label { opacity: .7; letter-spacing: .1em; }
 .limb--head  { top: 2%;  left: 50%; transform: translateX(-50%); }
 .limb--l-arm { top: 30%; left: 2%; }
 .limb--r-arm { top: 30%; right: 2%; }
@@ -83,6 +76,8 @@
   font-family: var(--font-display);
   font-size: clamp(20px, 4.4vw, 26px);
   line-height: 1;
+  letter-spacing: var(--track-display);
+  text-shadow: var(--bloom);
   border-top: 1px solid var(--pip-60);
   border-bottom: 1px solid var(--pip-60);
   padding: 4px 18px;
@@ -107,7 +102,7 @@
 }
 .status-action:hover,
 .status-action:focus-visible {
-  background: var(--pip);
+  background: var(--band), var(--pip);
   color: var(--screen-bg);
   text-shadow: none;
   box-shadow: var(--glow);
@@ -177,7 +172,9 @@
   justify-self: stretch;
   font-family: var(--font-display);
   font-weight: normal;
-  font-size: 28px;
+  font-size: var(--fs-xl);
+  letter-spacing: var(--track-display);
+  text-shadow: var(--bloom);
   border-bottom: 1px solid var(--pip-60);
   padding-bottom: 4px;
 }
@@ -230,7 +227,9 @@
   justify-content: space-between;
   font-family: var(--font-display);
   font-weight: normal;
-  font-size: 28px;
+  font-size: var(--fs-xl);
+  letter-spacing: var(--track-display);
+  text-shadow: var(--bloom);
   border-bottom: 1px solid var(--pip-60);
   padding-bottom: 4px;
 }
@@ -246,7 +245,7 @@
   border-right: 2px solid var(--pip);
 }
 .seg-bar > span { background: var(--pip-15); }
-.seg-bar > span.is-on { background: var(--pip); box-shadow: 0 0 4px var(--pip-60); }
+.seg-bar > span.is-on { background: var(--band), var(--pip); box-shadow: 0 0 4px var(--pip-60); }
 
 /* ---------- PERKS ---------- */
 .perk-mark { display: inline-block; width: 1em; }

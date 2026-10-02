@@ -68,6 +68,8 @@
   font-weight: normal;
   font-size: clamp(24px, 5vw, 30px);
   line-height: 1.05;
+  letter-spacing: var(--track-display);
+  text-shadow: var(--bloom);
   border-bottom: 1px solid var(--pip-60);
   padding-bottom: 4px;
   overflow-wrap: anywhere;
@@ -115,7 +117,7 @@
 }
 .quest-divider::after { content: ''; flex: 1; height: 1px; background: var(--pip-60); }
 .pip-row__label:has(.quest-divider) { flex: 1; }
-.pip-row:has(.quest-divider) { min-height: 28px; cursor: default; opacity: 1; }
+.pip-row:has(.quest-divider) { min-height: 28px; padding-left: 12px; cursor: default; opacity: 1; }
 
 /* LEVEL UP flash */
 .level-up {
@@ -135,6 +137,7 @@
 }
 .level-up__title {
   font-family: var(--font-display);
+  letter-spacing: var(--track-display);
   font-size: clamp(40px, 11vw, 64px);
   line-height: 1;
   text-shadow: 0 0 4px var(--pip), 0 0 18px var(--pip);
