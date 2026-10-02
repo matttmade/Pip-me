@@ -4,8 +4,8 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
-  // three.js lives in its own lazy chunk (~600 kB); the main bundle stays small.
-  build: { chunkSizeWarningLimit: 700 },
+  // three.js and maplibre-gl live in their own lazy chunks; the main bundle stays small.
+  build: { chunkSizeWarningLimit: 1100 },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.ts'],
