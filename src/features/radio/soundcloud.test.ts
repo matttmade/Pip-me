@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { pipRgb } from '../../effects/color'
-import { APPALACHIA_TRACK_URL, buildWidgetUrl, rgbToHex, simulatedSignal, widgetVolume } from './soundcloud'
+import { APPALACHIA_TRACK_URL, buildWidgetUrl, FALLBACK_META, rgbToHex, simulatedSignal, soundMeta, widgetVolume } from './soundcloud'
 
 describe('rgbToHex', () => {
   it('pads, clamps and rounds', () => {
@@ -56,5 +56,19 @@ describe('simulatedSignal', () => {
   })
   it('is deterministic', () => {
     expect(simulatedSignal(0.42, 3.3, 0.8)).toBe(simulatedSignal(0.42, 3.3, 0.8))
+  })
+})
+
+describe('soundMeta', () => {
+  it('reads title, uploader and link from the widget sound', () => {
+    const m = soundMeta({ title: 'Real Title', permalink_url: 'https://soundcloud.com/a/b', user: { username: 'u', full_name: 'Full Name' } })
+    expect(m).toEqual({ title: 'Real Title', uploader: 'Full Name', url: 'https://soundcloud.com/a/b' })
+  })
+  it('falls back per field and rejects non-SoundCloud links', () => {
+    expect(soundMeta(null)).toEqual(FALLBACK_META)
+    const m = soundMeta({ title: '  ', permalink_url: 'javascript:alert(1)', user: { username: 'uploader' } })
+    expect(m.title).toBe(FALLBACK_META.title)
+    expect(m.uploader).toBe('uploader')
+    expect(m.url).toBe(APPALACHIA_TRACK_URL)
   })
 })

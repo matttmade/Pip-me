@@ -13,6 +13,8 @@ type Props = {
 /** Pip-Boy style waveform: tick ruler on the axes, glowing trace from an AnalyserNode. */
 export function Oscilloscope({ analyser, color, running, simulate }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
+  /** Last animated time, so a paused trace freezes where it was. */
+  const frozenT = useRef(1.7)
 
   useEffect(() => {
     const canvas = ref.current
@@ -61,8 +63,8 @@ export function Oscilloscope({ analyser, color, running, simulate }: Props) {
       g.shadowBlur = 10 * dpr
       g.beginPath()
       if (simulate) {
-        // Static frame when not running (e.g. reduced motion); animated otherwise.
-        const t = running ? performance.now() / 1000 : 1.7
+        // Frozen frame when not running (paused, reduced motion); animated otherwise.
+        const t = running ? (frozenT.current = performance.now() / 1000) : frozenT.current
         const n = 240
         for (let i = 0; i < n; i++) {
           const x = (i / (n - 1)) * w
