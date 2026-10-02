@@ -37,7 +37,7 @@ layout and spacing. Never import or ship files from /reference.
   branches consume the shared contracts and only touch their own folders.
 
 ## Always
-- Footer disclaimer on every view.
+- Disclaimer visible in the ON ARM view and in DATA > SYSTEM > ABOUT / LEGAL.
 - Colors only from tokens.css / the hue in EffectsConfig.
 - Respect prefers-reduced-motion and the SYSTEM settings.
 - Pause animation loops (three.js, noise, radio) when hidden.

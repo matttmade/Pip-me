@@ -68,9 +68,9 @@ button, input, select, textarea {
 .pip-layout {
   height: 100%;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto 1fr auto;
   grid-template-columns: minmax(0, 1fr);
-  padding: 10px clamp(10px, 3vw, 28px) 0;
+  padding: 10px clamp(10px, 3vw, 28px) clamp(10px, 2vh, 18px);
   gap: 8px;
 }
 
@@ -564,3 +564,15 @@ button, input, select, textarea {
   .pip-list__bar,
   .sub-tabs__strip { transition: none; }
 }
+
+/* view switch box beside AP (desktop only) */
+.status-bar:has(.status-box--view) { grid-template-columns: 1fr 1.6fr 1fr auto auto; }
+.status-box--view {
+  min-width: 44px;
+  padding: 0 10px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.status-box--view svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; filter: drop-shadow(0 0 3px var(--pip-60)); }
+.status-box--view:hover { background: var(--pip-30); }

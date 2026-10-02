@@ -43,6 +43,7 @@ export function SystemPanel() {
     { id: 'DEVICE', label: 'DEVICE + CRT', right: view === 'arm' ? 'ON ARM' : 'SCREEN' },
     { id: 'IDENTITY', label: 'DWELLER ID' },
     { id: 'PREFS', label: 'PREFERENCES' },
+    { id: 'ABOUT', label: 'ABOUT / LEGAL' },
     { id: 'RESET', label: 'RESET TERMINAL' },
   ]
 
@@ -137,6 +138,16 @@ export function SystemPanel() {
             <PipToggle label="CRT WARP" on={warp} onChange={(w) => setDevice({ ...device, warp: w })} />
             <PipToggle label="PIP CURSOR" on={device.cursor !== false} onChange={(cursor) => setDevice({ ...device, cursor })} />
             <PipSlider label="CURVATURE" value={cfg.curvature} min={0} max={1} onChange={(curvature) => update({ curvature })} format={pct} />
+          </Detail>
+        )
+      case 'ABOUT':
+        return (
+          <Detail title="ABOUT / LEGAL">
+            <p className="pip-note">
+              Pip-Me is an unofficial fan-made case study. Not affiliated with or endorsed by Bethesda Softworks, ZeniMax or Microsoft.
+              Fallout, Pip-Boy and Vault-Tec are trademarks of their respective owners. Non-commercial: no ads, no accounts, no tracking.
+            </p>
+            <p className="pip-note">Your photo, settings and quests stay in this browser session. Map tiles, weather and place names come from OpenFreeMap, Open-Meteo and Nominatim; Appalachia Radio streams from SoundCloud.</p>
           </Detail>
         )
       case 'IDENTITY':

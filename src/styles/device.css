@@ -13,10 +13,22 @@ body { overflow: hidden; }
     radial-gradient(ellipse 70% 60% at 50% 45%, hsl(var(--pip-hue) 100% 45% / .10), transparent 70%),
     radial-gradient(ellipse at 50% 40%, #0d120e 0%, #050706 60%, #000 100%);
 }
-.stage.is-switching .screen-host,
-.stage.is-switching .scene,
-.stage.is-switching .screen-rim { opacity: 0; transform: scaleY(.02); }
-.stage .screen-host, .stage .scene, .stage .screen-rim { transition: opacity .18s ease, transform .18s ease; }
+.stage.is-switching .front,
+.stage.is-switching .scene { opacity: 0; }
+.stage .front, .stage .scene { transition: opacity .18s ease; }
+
+/* the live screen and (in ON ARM) the Pip-Boy photo move as ONE layer */
+.front { position: absolute; }
+.front--arm { transform: translate3d(calc(var(--px) * -8px), calc(var(--py) * -5px), 0); will-change: transform; }
+.front__pipboy {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 24px 30px rgb(0 0 0 / .55)) drop-shadow(0 6px 8px rgb(0 0 0 / .5));
+}
 
 /* ---------- SCREEN view: glowing rim + light spilling onto the surround ---------- */
 .screen-rim {
@@ -56,22 +68,32 @@ body { overflow: hidden; }
   height: 108%;
   object-fit: cover;
   filter: blur(1.5px) brightness(.72) saturate(.9);
-  transform: translate3d(calc(var(--px) * -10px), calc(var(--py) * -7px), 0);
+  transform: translate3d(calc(var(--px) * -3px), calc(var(--py) * -2px), 0);
 }
 .scene__arm {
   filter: brightness(.9) drop-shadow(0 30px 40px rgb(0 0 0 / .45));
-  transform: translate3d(calc(var(--px) * -18px), calc(var(--py) * -12px), 0);
+  transform: translate3d(calc(var(--px) * -5px), calc(var(--py) * -3px), 0);
   /* soften the hard cut at the sleeve end on very wide windows */
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%);
   mask-image: linear-gradient(90deg, transparent 0, #000 6%);
 }
-.scene__front { transform: translate3d(calc(var(--px) * -28px), calc(var(--py) * -18px), 0); }
-.scene__pipboy { width: 100%; height: 100%; filter: drop-shadow(0 24px 30px rgb(0 0 0 / .55)) drop-shadow(0 6px 8px rgb(0 0 0 / .5)); }
-.screen-host--arm {
-  transform: translate3d(calc(var(--px) * -28px), calc(var(--py) * -18px), 0);
-  /* phosphor light spilling onto the photo bezel */
-  box-shadow: 0 0 22px 4px hsl(var(--pip-hue) 100% 50% / .22), 0 0 60px 10px hsl(var(--pip-hue) 100% 50% / .1);
+/* legal line, only in the wide view */
+.stage__legal {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 6px;
+  z-index: 40;
+  pointer-events: none;
 }
+.stage__legal .disclaimer {
+  padding: 0;
+  font: 10px/1.3 -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color: rgb(255 255 255 / .55);
+  text-shadow: 0 1px 2px rgb(0 0 0 / .8);
+  opacity: 1;
+}
+.stage--arm .dock { bottom: 30px; }
 .screen-host--arm .crt__edge { box-shadow: inset 0 0 calc(30px + var(--curve) * 50px) rgb(0 0 0 / .95), inset 0 0 6px 4px #000; }
 
 /* ---------- liquid glass dock ---------- */
@@ -202,8 +224,8 @@ body { overflow: hidden; }
 .dock__range input { width: 120px; accent-color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage .screen-host, .stage .scene, .stage .screen-rim, .dock__pop { transition: none; animation: none; }
-  .scene__bg, .scene__arm, .scene__front, .screen-host--arm { transform: none; }
+  .stage .front, .stage .scene, .dock__pop { transition: none; animation: none; }
+  .scene__bg, .scene__arm, .front--arm { transform: none; }
   .screen-host.is-degaussing .crt, .screen-host.is-degaussing .crt__tube { animation: none; }
 }
 
@@ -357,3 +379,6 @@ body { overflow: hidden; }
 .has-pip-cursor .crt :is(button, [role='option'], .pip-row):disabled,
 .has-pip-cursor .crt [aria-disabled='true'] { cursor: var(--cur-arrow); }
 
+
+/* ON ARM: keep content clear of the bezel's rounded corners */
+.screen-host--arm .pip-layout { padding: 16px 36px 46px; }

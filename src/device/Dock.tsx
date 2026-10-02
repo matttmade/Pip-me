@@ -4,7 +4,6 @@ import { triggerGlitch } from '../effects/glitchScheduler'
 import { HUES } from '../effects/presets'
 import type { PresetName } from '../effects/types'
 import { useSettings } from '../lib/profile'
-import type { View } from './deviceSettings'
 
 const COLORS: [string, number][] = [
   ['Green', HUES.GREEN],
@@ -18,8 +17,8 @@ const label = (p: string) => p.charAt(0) + p.slice(1).toLowerCase()
 
 type Pop = 'sound' | 'color' | 'signal' | null
 
-/** Floating "liquid glass" action bar: view, sound, color, signal, degauss, fullscreen. */
-export function Dock({ view, onView, onDegauss }: { view: View; onView: (v: View) => void; onDegauss: () => void }) {
+/** Floating "liquid glass" action bar for the ON ARM view: back to screen, sound, color, signal, degauss, full screen. */
+export function Dock({ onScreen, onDegauss }: { onScreen: () => void; onDegauss: () => void }) {
   const [cfg, update] = useEffectsConfig()
   const [settings, setSettings] = useSettings()
   const [pop, setPop] = useState<Pop>(null)
@@ -45,16 +44,7 @@ export function Dock({ view, onView, onDegauss }: { view: View; onView: (v: View
 
   return (
     <div className="dock" ref={ref} role="toolbar" aria-label="Pip-Me controls">
-      <div className="dock__seg" role="radiogroup" aria-label="View">
-        <button role="radio" aria-checked={view === 'screen'} className={`dock__segbtn${view === 'screen' ? ' is-on' : ''}`} onClick={() => onView('screen')}>
-          <Icon d="M4 6h16v11H4z M9 20h6" /> Screen
-        </button>
-        <button role="radio" aria-checked={view === 'arm'} className={`dock__segbtn${view === 'arm' ? ' is-on' : ''}`} onClick={() => onView('arm')}>
-          <Icon d="M7 7h10v10H7z M9 4h6 M9 20h6 M17 10h2v4h-2" /> On arm
-        </button>
-      </div>
-      <span className="dock__sep" aria-hidden />
-
+      <DockItem label="Screen view" onClick={onScreen} icon="M4 5h16v11H4z M9 20h6 M12 16v4" />
       <DockItem
         label={settings.sound ? 'Sound on' : 'Sound off'}
         active={pop === 'sound'}

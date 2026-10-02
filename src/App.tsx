@@ -7,7 +7,6 @@ import { closeOverlay, useOverlay, type OverlayId } from './lib/overlay'
 import type { OverlayProps } from './lib/contracts'
 import { useStored } from './lib/store'
 import { BootSequence } from './shell/BootSequence'
-import { Disclaimer } from './shell/Disclaimer'
 import { PipBoyScreen } from './shell/PipBoyScreen'
 import { StatusBar } from './shell/StatusBar'
 import { SubTabs } from './shell/SubTabs'
@@ -137,7 +136,6 @@ function PipBoy() {
             )}
           </main>
           <StatusBar />
-          <Disclaimer />
         </div>
       )}
     </PipBoyScreen>

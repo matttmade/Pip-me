@@ -5,6 +5,8 @@ import { buildCursors } from './cursors'
 import { CrtGlass } from './CrtGlass'
 import { useDeviceSettings, useView, warpAutoDefault, type View } from './deviceSettings'
 import { Dock } from './Dock'
+import { ViewContext } from './viewContext'
+import { Disclaimer } from '../shell/Disclaimer'
 import { armLayout, DESIGN, isCompact, screenRect, type Insets } from './scene'
 
 function readSafeArea(): Insets {
@@ -54,10 +56,10 @@ function useParallax(el: React.RefObject<HTMLDivElement | null>, on: boolean) {
     const tick = (now: number) => {
       const idle = (now - t0) / 1000
       // a slow idle sway so the scene breathes even without a mouse
-      const gx = tx + Math.sin(idle * 0.35) * 0.18
-      const gy = ty + Math.cos(idle * 0.27) * 0.12
-      x += (gx - x) * 0.06
-      y += (gy - y) * 0.06
+      const gx = tx + Math.sin(idle * 0.35) * 0.1
+      const gy = ty + Math.cos(idle * 0.27) * 0.08
+      x += (gx - x) * 0.16
+      y += (gy - y) * 0.16
       node.style.setProperty('--px', x.toFixed(4))
       node.style.setProperty('--py', y.toFixed(4))
       raf = requestAnimationFrame(tick)
@@ -126,15 +128,20 @@ export function DeviceStage({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [compact, view, changeView])
 
+  const ctx = useMemo(() => ({ view, canArm: !compact, setView: changeView }), [view, compact, changeView])
+
+  let front: React.CSSProperties
   let host: React.CSSProperties
   let inner: React.CSSProperties
   let arm: ReturnType<typeof armLayout> | null = null
   if (view === 'arm') {
     arm = armLayout(vp.w, vp.h)
-    host = { left: arm.glass.x, top: arm.glass.y, width: arm.glass.w, height: arm.glass.h, borderRadius: arm.glass.r }
+    front = { left: arm.pipboy.x, top: arm.pipboy.y, width: arm.pipboy.w, height: arm.pipboy.h }
+    host = { left: arm.screen.x, top: arm.screen.y, width: arm.screen.w, height: arm.screen.h, borderRadius: arm.screen.r }
     inner = { width: DESIGN.w, height: DESIGN.h, transform: `scale(${arm.uiScale})`, transformOrigin: '0 0' }
   } else {
     const r = screenRect(vp.w, vp.h, vp.safe)
+    front = { left: 0, top: 0, width: '100%', height: '100%' }
     host = { left: r.x, top: r.y, width: r.w, height: r.h }
     inner = { width: '100%', height: '100%' }
   }
@@ -144,31 +151,41 @@ export function DeviceStage({ children }: { children: ReactNode }) {
     : {}
 
   return (
-    <div ref={stage} className={`stage stage--${view}${compact ? ' stage--compact' : ''}${switching ? ' is-switching' : ''}`}>
-      {arm && (
-        <div className="scene" aria-hidden>
-          <img className="scene__layer scene__bg" src="/scene/background.webp" alt="" draggable={false} />
-          <img
-            className="scene__layer scene__arm"
-            src="/scene/arm.webp"
-            alt=""
-            draggable={false}
-            style={{ left: arm.arm.x, top: arm.arm.y, width: arm.arm.w, height: arm.arm.h }}
-          />
-          <div className="scene__front" style={{ left: arm.pipboy.x, top: arm.pipboy.y, width: arm.pipboy.w, height: arm.pipboy.h }}>
-            <img className="scene__pipboy" src="/scene/pipboy.webp" alt="" draggable={false} />
+    <ViewContext.Provider value={ctx}>
+      <div ref={stage} className={`stage stage--${view}${compact ? ' stage--compact' : ''}${switching ? ' is-switching' : ''}`}>
+        {arm && (
+          <div className="scene" aria-hidden>
+            <img className="scene__layer scene__bg" src="/scene/background.webp" alt="" draggable={false} />
+            <img
+              className="scene__layer scene__arm"
+              src="/scene/arm.webp"
+              alt=""
+              draggable={false}
+              style={{ left: arm.arm.x, top: arm.arm.y, width: arm.arm.w, height: arm.arm.h }}
+            />
           </div>
+        )}
+        {/* one moving layer: the live screen sits UNDER the Pip-Boy photo, whose glass is cut out */}
+        <div className={`front front--${view}`} style={front}>
+          <div className={`screen-host screen-host--${view}${degauss ? ' is-degaussing' : ''}${pipCursor ? ' has-pip-cursor' : ''}`} style={{ ...host, ...cursorVars }}>
+            <div className="screen-host__inner" style={inner}>
+              <CrtGlass curvature={cfg.curvature} warp={warp}>
+                {children}
+              </CrtGlass>
+            </div>
+          </div>
+          {view === 'screen' && <div className="screen-rim" style={host} aria-hidden />}
+          {arm && <img className="front__pipboy" src="/scene/pipboy.webp" alt="" draggable={false} aria-hidden />}
         </div>
-      )}
-      {view === 'screen' && <div className="screen-rim" style={host} aria-hidden />}
-      <div className={`screen-host screen-host--${view}${degauss ? ' is-degaussing' : ''}${pipCursor ? ' has-pip-cursor' : ''}`} style={{ ...host, ...cursorVars }}>
-        <div className="screen-host__inner" style={inner}>
-          <CrtGlass curvature={cfg.curvature} warp={warp}>
-            {children}
-          </CrtGlass>
-        </div>
+        {view === 'arm' && (
+          <>
+            <Dock onDegauss={degaussNow} onScreen={() => changeView('screen')} />
+            <div className="stage__legal">
+              <Disclaimer />
+            </div>
+          </>
+        )}
       </div>
-      {!compact && <Dock view={view} onView={changeView} onDegauss={degaussNow} />}
-    </div>
+    </ViewContext.Provider>
   )
 }
