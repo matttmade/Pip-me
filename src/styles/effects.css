@@ -1,0 +1,80 @@
+/* CRT effect layers. Values come from CSS vars set by EffectsProvider. */
+.fx-noise,
+.fx-scanlines,
+.fx-roll,
+.fx-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fx-noise {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  mix-blend-mode: screen;
+}
+.fx-noise--back { z-index: 0; }
+.fx-noise--front { z-index: 3; }
+
+.fx-scanlines {
+  z-index: 2;
+  display: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / var(--scan-opacity)) 0,
+    rgb(0 0 0 / var(--scan-opacity)) calc(var(--scan-period) / 2),
+    transparent calc(var(--scan-period) / 2),
+    transparent var(--scan-period)
+  );
+}
+[data-fx-scan='true'] .fx-scanlines { display: block; }
+[data-fx-scan-move='true'] .fx-scanlines { animation: scan-drift var(--scan-duration) linear infinite; }
+@keyframes scan-drift {
+  to { background-position: 0 var(--scan-period); }
+}
+
+.fx-roll {
+  z-index: 4;
+  display: none;
+  overflow: hidden;
+}
+.fx-roll::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18%;
+  top: -20%;
+  background: linear-gradient(to bottom, transparent, hsl(var(--pip-hue) 100% 70% / .06) 50%, transparent);
+  animation: roll var(--roll-interval) linear infinite;
+}
+[data-fx-roll='true'] .fx-roll { display: block; }
+@keyframes roll {
+  0% { transform: translateY(0); }
+  25%, 100% { transform: translateY(700%); }
+}
+
+.fx-vignette {
+  z-index: 5;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / calc(var(--vignette) * .85)) 100%);
+  box-shadow: inset 0 0 calc(var(--curve) * 60px) rgb(0 0 0 / calc(.4 + var(--curve) * .5));
+}
+
+[data-fx-flicker='true'] .pip-content { animation: flicker 3.2s steps(1) infinite; }
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  7% { opacity: calc(1 - var(--flicker-amt)); }
+  9% { opacity: 1; }
+  41% { opacity: calc(1 - var(--flicker-amt) * .6); }
+  43% { opacity: 1; }
+  77% { opacity: calc(1 - var(--flicker-amt)); }
+  78% { opacity: 1; }
+}
+
+.fx-defs { position: absolute; width: 0; height: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sub-tabs__strip, .pip-list__bar { transition: none !important; }
+}
