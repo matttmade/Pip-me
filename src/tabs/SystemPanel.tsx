@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useEffectsConfig } from '../effects/EffectsProvider'
 import { triggerGlitch } from '../effects/glitchScheduler'
+import { FINISHES, useDeviceSettings, useZoom, warpAutoDefault } from '../device/deviceSettings'
 import { HUES } from '../effects/presets'
 import type { PresetName } from '../effects/types'
 import { useProfile, useSettings } from '../lib/profile'
@@ -15,7 +16,8 @@ const COLORS: [string, number][] = [
   ['GREEN', HUES.GREEN],
   ['AMBER', HUES.AMBER],
   ['BLUE', HUES.BLUE],
-  ['TEAL', HUES.WHITE],
+  ['TEAL', HUES.TEAL],
+  ['LCD', HUES.LCD],
 ]
 
 export function SystemPanel() {
@@ -24,6 +26,9 @@ export function SystemPanel() {
   const [settings, setSettings] = useSettings()
   const [selected, setSelected] = useStored('system:selected', 'PRESET')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [device, setDevice] = useDeviceSettings()
+  const [, setZoom] = useZoom()
+  const warp = device.warp ?? warpAutoDefault()
 
   const onOff = (on: boolean) => (on ? 'ON' : 'OFF')
   const items: ListItem[] = [
@@ -35,6 +40,7 @@ export function SystemPanel() {
     { id: 'ROLL', label: 'ROLL BAR', right: onOff(cfg.rollBar.on) },
     { id: 'SCREEN', label: 'GLOW + SCREEN' },
     { id: 'COLOR', label: 'PHOSPHOR COLOR', right: cfg.hue },
+    { id: 'DEVICE', label: 'DEVICE + CRT', right: device.finish },
     { id: 'IDENTITY', label: 'DWELLER ID' },
     { id: 'PREFS', label: 'PREFERENCES' },
     { id: 'RESET', label: 'RESET TERMINAL' },
@@ -116,6 +122,23 @@ export function SystemPanel() {
               ))}
             </div>
             <PipSlider label="HUE" value={cfg.hue} min={0} max={360} step={1} onChange={(hue) => update({ hue })} format={(v) => `${v}°`} />
+          </Detail>
+        )
+      case 'DEVICE':
+        return (
+          <Detail title="DEVICE + CRT" note="Curvature uses a live displacement filter. It is off by default on phones and Safari to save battery. The knobs on the casing mirror these settings.">
+            <button className="pip-btn" onClick={() => setZoom('out')}>
+              [ VIEW DEVICE ]
+            </button>
+            <PipToggle label="CRT WARP" on={warp} onChange={(w) => setDevice({ ...device, warp: w })} />
+            <PipSlider label="CURVATURE" value={cfg.curvature} min={0} max={1} onChange={(curvature) => update({ curvature })} format={pct} />
+            <div className="pip-choices">
+              {FINISHES.map((f) => (
+                <button key={f} className={`pip-btn${device.finish === f ? ' is-active' : ''}`} onClick={() => setDevice({ ...device, finish: f })}>
+                  {f}
+                </button>
+              ))}
+            </div>
           </Detail>
         )
       case 'IDENTITY':

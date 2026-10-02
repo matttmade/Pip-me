@@ -376,7 +376,8 @@ button, input, select, textarea {
 .boot {
   height: 100%;
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(12px, 3vh, 28px);
   padding: clamp(16px, 4vw, 40px);
   cursor: pointer;
 }

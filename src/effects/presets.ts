@@ -2,7 +2,7 @@ import type { EffectsConfig, EffectsPatch, PresetName } from './types'
 
 type Look = Omit<EffectsConfig, 'preset' | 'hue'>
 
-export const HUES = { GREEN: 135, AMBER: 38, BLUE: 200, WHITE: 160 } as const
+export const HUES = { GREEN: 135, AMBER: 38, BLUE: 200, TEAL: 160, LCD: 85 } as const
 export const DEFAULT_HUE = HUES.GREEN
 
 export const PRESETS: Record<Exclude<PresetName, 'CUSTOM'>, Look> = {

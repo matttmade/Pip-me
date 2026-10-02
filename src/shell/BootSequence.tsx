@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
+import { PipMeLogo } from '../device/PipMeLogo'
 import { useProfile } from '../lib/profile'
 
 // Original boot copy written for this project (not game text).
 const lines = (name: string, vault: string) => [
-  'VAULT-TEC WRIST TERMINAL  //  FIRMWARE 3.0.MK4',
+  'PIP-ME 3000 WRIST TERMINAL  //  FIRMWARE 3.0.MK4',
   '(C) VAULT-TEC PERSONAL SYSTEMS DIVISION',
   '',
   'PHOSPHOR CALIBRATION ........ OK',
@@ -40,6 +41,7 @@ export function BootSequence({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="boot" onClick={onDone} role="status" aria-label="Booting. Press any key to skip.">
+      <PipMeLogo variant="halftone" tagline className="boot__logo" />
       <pre className="boot__text">
         {all.slice(0, count).join('\n')}
         <span className="cursor">▌</span>

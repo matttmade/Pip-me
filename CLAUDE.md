@@ -16,6 +16,9 @@ contracts, ownership).
 - MAP: real MapLibre map centered on the user's geolocation, Pip-Boy styled.
 - Works with zero setup; customizations persist via src/lib/store.ts
   (sessionStorage today).
+- Device: src/device/ renders the flat UI on a curved CRT (CrtGlass, SVG barrel
+  warp) inside the procedural "Pip-Me 3000" casing with knobs; a camera zooms
+  between screen (IN) and whole device (OUT). Art direction: ART-DIRECTION.md.
 
 ## Recreate faithfully
 Pip-Boy layout (STAT INV DATA MAP RADIO, sub-tabs, bottom status bar, inverted

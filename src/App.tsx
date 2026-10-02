@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, type ComponentType } from 'react'
+import { DeviceStage } from './device/DeviceStage'
 import { EffectsProvider, useEffectsConfig } from './effects/EffectsProvider'
 import { triggerGlitch } from './effects/glitchScheduler'
 import { emit } from './lib/events'
@@ -146,7 +147,9 @@ function PipBoy() {
 export default function App() {
   return (
     <EffectsProvider>
-      <PipBoy />
+      <DeviceStage>
+        <PipBoy />
+      </DeviceStage>
     </EffectsProvider>
   )
 }
