@@ -1,5 +1,6 @@
-import { Color, SRGBColorSpace, Vector2 } from 'three'
+import { Color, DataTexture, LinearFilter, RGBAFormat, SRGBColorSpace, Vector2 } from 'three'
 import { hslToRgb, pipRgb } from '../../lib/contracts'
+import { bakeRamp } from './fidelity'
 
 /**
  * Pip-Boy monochrome post-process: luminance → 4 tones of the current Pip hue with
@@ -81,4 +82,85 @@ export function setPipHue(u: Uniforms, hue: number): void {
   srgb(u.tone1.value, pipRgb(hue, 0.2))
   srgb(u.tone2.value, pipRgb(hue, 0.4))
   srgb(u.tone3.value, pipRgb(hue, 0.62))
+}
+
+/**
+ * CLEAN / HI-FI post-process: luminance → a continuous dark→pip→pip-hi ramp (a baked 1D
+ * lookup texture), with an antialiased silhouette line, and very faint horizontal scan
+ * banding so it still reads as a CRT readout. Input is MSAA-resolved, so its alpha is coverage:
+ * colour is un-premultiplied before the lookup and the output is premultiplied again.
+ */
+export const PipSmoothShader = {
+  name: 'PipSmoothShader',
+  uniforms: {
+    tDiffuse: { value: null },
+    tRamp: { value: null as DataTexture | null },
+    resolution: { value: new Vector2(240, 320) },
+    lift: { value: 0.12 },
+    outlinePx: { value: 1.25 },
+    outline: { value: 0.75 },
+    scanPeriod: { value: 3 },
+    scanDepth: { value: 0.12 },
+  },
+  vertexShader: PipMonochromeShader.vertexShader,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform sampler2D tRamp;
+    uniform vec2 resolution;
+    uniform float lift;
+    uniform float outlinePx;
+    uniform float outline;
+    uniform float scanPeriod;
+    uniform float scanDepth;
+    varying vec2 vUv;
+
+    vec3 ramp(float t) { return texture2D(tRamp, vec2(clamp(t, 0.0, 1.0), 0.5)).rgb; }
+
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      float a = clamp(c.a, 0.0, 1.0);
+      vec3 rgb = a > 0.001 ? c.rgb / a : vec3(0.0);
+      float l = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+      l = lift + (1.0 - lift) * sqrt(clamp(l, 0.0, 1.0));
+      vec3 col = ramp(l);
+
+      // Silhouette line: how much more covered the neighbourhood is than this pixel.
+      vec2 d = outlinePx / resolution;
+      float n = 0.0;
+      n = max(n, texture2D(tDiffuse, vUv + vec2(d.x, 0.0)).a);
+      n = max(n, texture2D(tDiffuse, vUv - vec2(d.x, 0.0)).a);
+      n = max(n, texture2D(tDiffuse, vUv + vec2(0.0, d.y)).a);
+      n = max(n, texture2D(tDiffuse, vUv - vec2(0.0, d.y)).a);
+      n = max(n, 0.8 * texture2D(tDiffuse, vUv + d * 0.7071).a);
+      n = max(n, 0.8 * texture2D(tDiffuse, vUv - d * 0.7071).a);
+      n = max(n, 0.8 * texture2D(tDiffuse, vUv + vec2(d.x, -d.y) * 0.7071).a);
+      n = max(n, 0.8 * texture2D(tDiffuse, vUv + vec2(-d.x, d.y) * 0.7071).a);
+      float edge = clamp(n - a, 0.0, 1.0) * outline;
+
+      vec3 outc = col * a + ramp(0.9) * edge;
+      float outa = clamp(a + edge, 0.0, 1.0);
+
+      // Faint scan banding: a soft dip once per period, like the --band token.
+      float ph = fract(gl_FragCoord.y / scanPeriod);
+      float band = 1.0 - scanDepth * smoothstep(0.45, 0.75, ph) * smoothstep(1.0, 0.8, ph);
+      gl_FragColor = vec4(outc * band, outa);
+    }
+  `,
+}
+
+/** Bake (or re-bake) the smooth ramp for `hue` into the shader's lookup texture. */
+export function setSmoothHue(u: typeof PipSmoothShader.uniforms, hue: number): void {
+  const data = bakeRamp(hue, 256)
+  let tex = u.tRamp.value
+  if (!tex) {
+    tex = new DataTexture(data, 256, 1, RGBAFormat)
+    tex.colorSpace = SRGBColorSpace
+    tex.magFilter = LinearFilter
+    tex.minFilter = LinearFilter
+    tex.generateMipmaps = false
+    u.tRamp.value = tex
+  } else {
+    ;(tex.image.data as Uint8Array).set(data)
+  }
+  tex.needsUpdate = true
 }

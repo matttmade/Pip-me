@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react'
-import { openOverlay, useProfile } from '../../lib/contracts'
+import { openOverlay, useProfile, useStored } from '../../lib/contracts'
 import { startPerkTracking } from '../perks/perks'
+import { DEFAULT_DETAIL, DETAIL_KEY, DETAIL_LEVELS, normalizeDetail, type DetailLevel } from './fidelity'
 import { isImageFile, PRIVACY_NOTE, useHeadshot } from './headshot'
 import { LIMBS, limbCondition, type Limb } from './limbs'
 import PaperDollFallback from './PaperDollFallback'
@@ -28,6 +29,8 @@ export default function StatusPanel() {
   useEffect(startPerkTracking, [])
   const [profile] = useProfile()
   const [headshot, setHeadshot] = useHeadshot()
+  const [storedDetail, setDetail] = useStored<DetailLevel>(DETAIL_KEY, DEFAULT_DETAIL)
+  const detail = normalizeDetail(storedDetail)
   const [failed, setFailed] = useState(() => !hasWebGL())
   const [dragging, setDragging] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -72,7 +75,7 @@ export default function StatusPanel() {
           ) : (
             <SceneBoundary onError={onFail}>
               <Suspense fallback={<p className="loading status-loading">LOADING<span className="cursor">▌</span></p>}>
-                <DwellerScene onFail={onFail} />
+                <DwellerScene onFail={onFail} detail={detail} />
               </Suspense>
             </SceneBoundary>
           )}
@@ -103,6 +106,24 @@ export default function StatusPanel() {
             <button type="button" className="status-action" onClick={() => setHeadshot(null)}>
               REMOVE HEADSHOT
             </button>
+          </li>
+        )}
+        {!failed && (
+          <li className="dweller-detail" role="group" aria-label="Figure detail">
+            <span className="dweller-detail__label" aria-hidden>
+              DETAIL
+            </span>
+            {DETAIL_LEVELS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                className={`pip-btn dweller-detail__opt${l === detail ? ' is-active' : ''}`}
+                aria-pressed={l === detail}
+                onClick={() => setDetail(l)}
+              >
+                {l}
+              </button>
+            ))}
           </li>
         )}
       </ul>
