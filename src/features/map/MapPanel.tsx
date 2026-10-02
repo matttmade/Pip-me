@@ -1,13 +1,16 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useEffectsConfig } from '../../effects/EffectsProvider'
 import { usePrefersReducedMotion } from '../../lib/hooks'
+import { useStored } from '../../lib/store'
 import { radsLevel } from '../weather/openMeteo'
 import { useWeather } from '../weather/useWeather'
 import { formatCoords, searchPlaces, type Place } from './geo'
 import { requestOrientationPermission, useHeading } from './heading'
 import { useLocation, type LocationStatus } from './useLocation'
+import { LegendDrawer, MapInfoBar, NearbyDrawer, PoiCard } from './MapOverlays'
+import { nearestPois, type LngLat, type Poi } from './regions'
 import { usePlaceName } from './usePlaceName'
-import { webglSupported, type MapHandle } from './view'
+import { webglSupported, type MapHandle, type MapScan } from './view'
 
 // Both renderers are split out, so only the one in use is downloaded.
 const PipMap = lazy(() => import('./PipMap'))
@@ -32,7 +35,19 @@ export default function MapPanel() {
   const { lat, lon } = loc.coords
   const [renderer, setRenderer] = useState<'gl' | 'raster'>(() => (webglSupported() ? 'gl' : 'raster'))
   const [searchOpen, setSearchOpen] = useState(false)
+  const [drawer, setDrawer] = useState<'nearby' | 'legend' | null>(null)
+  const [selected, setSelected] = useState<Poi | null>(null)
+  const [waypoint, setWaypoint] = useStored<Poi | null>('map:waypoint', null)
+  const [scan, setScan] = useState<MapScan>({ pois: [], region: null })
   const mapRef = useRef<MapHandle>(null)
+  const from: LngLat = useMemo(() => [lon, lat], [lon, lat])
+  const nearby = useMemo(() => nearestPois(scan.pois, from, 8), [scan.pois, from])
+  const onScan = useCallback((s: MapScan) => setScan(s), [])
+  const toggleDrawer = (d: 'nearby' | 'legend') => setDrawer((cur) => (cur === d ? null : d))
+  const pickNearby = (p: Poi) => {
+    setSelected(p)
+    mapRef.current?.flyTo?.(p.lon, p.lat)
+  }
 
   // Fly to the player when a requested fix (first load, LOCATE, search pick) lands.
   const [centerSeq, setCenterSeq] = useState(0)
@@ -69,8 +84,18 @@ export default function MapPanel() {
   const status = loc.source === 'search' && loc.status === 'idle' ? 'MANUAL FIX' : STATUS_TEXT[loc.status]
   const lost = loc.source === 'default' && (loc.status === 'denied' || loc.status === 'timeout' || loc.status === 'unavailable' || loc.status === 'unsupported')
 
+  const region = (scan.region ?? place.split(',')[0]).toUpperCase()
+
   return (
-    <div className="map-panel">
+    <div
+      className="map-panel"
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape' || (!selected && !drawer)) return
+        e.stopPropagation()
+        if (drawer) setDrawer(null)
+        else setSelected(null)
+      }}
+    >
       <header className="map-head">
         <h2 className="map-head__place">[ {place} ]</h2>
         <span className="map-head__meta">
@@ -97,6 +122,10 @@ export default function MapPanel() {
               reducedMotion={reducedMotion}
               centerSeq={centerSeq}
               onFail={() => setRenderer('raster')}
+              selected={selected}
+              waypoint={waypoint}
+              onSelect={setSelected}
+              onScan={onScan}
             />
           ) : (
             <LeafletFallback
@@ -124,6 +153,16 @@ export default function MapPanel() {
           <button className={`pip-btn map-btn${searchOpen ? ' is-active' : ''}`} onClick={() => setSearchOpen((o) => !o)} aria-expanded={searchOpen}>
             SEARCH
           </button>
+          {renderer === 'gl' && (
+            <>
+              <button className={`pip-btn map-btn${drawer === 'nearby' ? ' is-active' : ''}`} onClick={() => toggleDrawer('nearby')} aria-expanded={drawer === 'nearby'}>
+                NEARBY
+              </button>
+              <button className={`pip-btn map-btn${drawer === 'legend' ? ' is-active' : ''}`} onClick={() => toggleDrawer('legend')} aria-expanded={drawer === 'legend'}>
+                LEGEND
+              </button>
+            </>
+          )}
           <div className="map-zoom">
             <button className="pip-btn map-btn map-btn--sq" onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in">
               +
@@ -136,6 +175,19 @@ export default function MapPanel() {
 
         {searchOpen && <SearchBox onPick={pick} onClose={() => setSearchOpen(false)} />}
 
+        {drawer === 'nearby' && <NearbyDrawer items={nearby} selectedKey={selected?.key} onPick={pickNearby} onClose={() => setDrawer(null)} />}
+        {drawer === 'legend' && <LegendDrawer onClose={() => setDrawer(null)} />}
+
+        {selected && (
+          <PoiCard
+            poi={selected}
+            from={from}
+            isWaypoint={waypoint?.key === selected.key}
+            onWaypoint={() => setWaypoint(waypoint?.key === selected.key ? null : selected)}
+            onClose={() => setSelected(null)}
+          />
+        )}
+
         <div className="map-foot">
           <span>{formatCoords(lat, lon)}</span>
           {renderer === 'raster' && <span>RASTER MODE</span>}
@@ -147,6 +199,8 @@ export default function MapPanel() {
           </p>
         )}
       </div>
+
+      <MapInfoBar region={region} from={from} waypoint={waypoint} onClearWaypoint={() => setWaypoint(null)} />
     </div>
   )
 }
