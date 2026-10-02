@@ -7,6 +7,8 @@ export type DeviceSettings = {
   finish: Finish
   /** Real barrel warp of the screen. null = auto (on for desktop Chromium/Firefox). */
   warp: boolean | null
+  /** PC-style phosphor cursor on the screen (desktop pointers only). */
+  cursor?: boolean
 }
 
 export const DEFAULT_DEVICE: DeviceSettings = { finish: 'OLIVE', warp: null }

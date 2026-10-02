@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react'
 import { useEffectsConfig } from '../effects/EffectsProvider'
 import { usePrefersReducedMotion } from '../lib/hooks'
 import { cameraFor, layoutDevice, type Insets } from './camera'
 import { ControlPanel } from './ControlPanel'
+import { buildCursors } from './cursors'
 import { CrtGlass } from './CrtGlass'
 import { useDeviceSettings, useZoom, warpAutoDefault } from './deviceSettings'
 import { PipMeLogo } from './PipMeLogo'
@@ -49,6 +50,11 @@ export function DeviceStage({ children }: { children: ReactNode }) {
   const [degauss, setDegauss] = useState(false)
   const [ready, setReady] = useState(false)
   const warp = device.warp ?? warpAutoDefault()
+  const pipCursor = device.cursor !== false
+  const cursors = useMemo(() => buildCursors(cfg.hue), [cfg.hue])
+  const cursorVars = pipCursor
+    ? ({ '--cur-arrow': cursors.arrow, '--cur-hover': cursors.hover, '--cur-drag': cursors.drag } as React.CSSProperties)
+    : undefined
 
   const L = layoutDevice(vp.w, vp.h, vp.safe)
   const cam = cameraFor(zoom, L, vp.w, vp.h, vp.safe)
@@ -98,8 +104,8 @@ export function DeviceStage({ children }: { children: ReactNode }) {
         ))}
         <div className="device__well" style={{ left: L.screen.x - 8, top: L.screen.y - 8, width: L.screen.w + 16, height: L.screen.h + 16 }} aria-hidden />
         <div
-          className={`device__screen${degauss ? ' is-degaussing' : ''}`}
-          style={{ left: L.screen.x, top: L.screen.y, width: L.screen.w, height: L.screen.h }}
+          className={`device__screen${degauss ? ' is-degaussing' : ''}${pipCursor ? ' has-pip-cursor' : ''}`}
+          style={{ left: L.screen.x, top: L.screen.y, width: L.screen.w, height: L.screen.h, ...cursorVars }}
         >
           <CrtGlass curvature={cfg.curvature} warp={warp}>
             {children}

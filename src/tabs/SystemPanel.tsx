@@ -131,6 +131,7 @@ export function SystemPanel() {
               [ VIEW DEVICE ]
             </button>
             <PipToggle label="CRT WARP" on={warp} onChange={(w) => setDevice({ ...device, warp: w })} />
+            <PipToggle label="PIP CURSOR" on={device.cursor !== false} onChange={(cursor) => setDevice({ ...device, cursor })} />
             <PipSlider label="CURVATURE" value={cfg.curvature} min={0} max={1} onChange={(curvature) => update({ curvature })} format={pct} />
             <div className="pip-choices">
               {FINISHES.map((f) => (
