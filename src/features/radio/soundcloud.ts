@@ -1,6 +1,7 @@
 /**
  * SoundCloud-streamed station. Nothing is downloaded or self-hosted: the official
- * SoundCloud widget (iframe + Widget API) streams the track and carries its branding.
+ * SoundCloud widget (iframe + Widget API) streams the track. The iframe is kept
+ * visually hidden, so attribution and the link back live in our own UI.
  */
 
 export const APPALACHIA_ID = 'APPALACHIA'
@@ -12,7 +13,32 @@ export const APPALACHIA_STATION = {
   freq: '97.6',
   desc: 'A wandering signal out of the hills. Streamed live from SoundCloud.',
   trackUrl: APPALACHIA_TRACK_URL,
+  /** Shown until the widget reports the real metadata. */
+  title: 'Fallout 76 – Appalachia Radio',
+  uploader: 'Carlos Lopez',
 } as const
+
+export type SoundMeta = { title: string; uploader: string; url: string }
+
+export const FALLBACK_META: SoundMeta = {
+  title: APPALACHIA_STATION.title,
+  uploader: APPALACHIA_STATION.uploader,
+  url: APPALACHIA_TRACK_URL,
+}
+
+const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+
+/** Widget getCurrentSound() payload → attribution, falling back field by field. Only https links are kept. */
+export function soundMeta(sound: unknown, fallback: SoundMeta = FALLBACK_META): SoundMeta {
+  const s = (sound && typeof sound === 'object' ? sound : {}) as Record<string, unknown>
+  const user = (s.user && typeof s.user === 'object' ? s.user : {}) as Record<string, unknown>
+  const url = str(s.permalink_url)
+  return {
+    title: str(s.title) ?? fallback.title,
+    uploader: str(user.full_name) ?? str(user.username) ?? fallback.uploader,
+    url: url && /^https:\/\/soundcloud\.com\//.test(url) ? url : fallback.url,
+  }
+}
 
 export const SC_PLAYER_ORIGIN = 'https://w.soundcloud.com'
 export const SC_API_SRC = `${SC_PLAYER_ORIGIN}/player/api.js`
@@ -72,9 +98,16 @@ export type ScWidget = {
   unbind(event: string): void
   play(): void
   pause(): void
+  toggle(): void
   seekTo(ms: number): void
   setVolume(v: number): void
+  getDuration(cb: (ms: number) => void): void
+  getPosition(cb: (ms: number) => void): void
+  getCurrentSound(cb: (sound: unknown) => void): void
+  isPaused(cb: (paused: boolean) => void): void
 }
+/** PLAY_PROGRESS / PLAY / PAUSE payload. */
+export type ScProgress = { currentPosition?: number; relativePosition?: number; loadProgress?: number }
 export type ScApi = { Widget: ((el: HTMLIFrameElement) => ScWidget) & { Events: Bindable } }
 
 declare global {

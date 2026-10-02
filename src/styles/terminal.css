@@ -167,35 +167,139 @@
   opacity: .55;
   pointer-events: none;
 }
-.radio-sc { display: grid; gap: 4px; }
-/* Leave room for the player strip under the scope. */
-.radio-detail:has(.radio-sc) .radio-scope { max-height: 26vh; }
-.radio-sc__label { margin: 0; font-size: 13px; opacity: .8; }
-/* The official SoundCloud player stays visible with its branding; only toned down to sit on the CRT. */
-.radio-sc__frame {
-  display: block;
-  width: 100%;
-  height: 166px; /* SoundCloud classic player height; smaller crops it */
-  border: 1px solid var(--pip-60);
-  background: var(--screen-bg);
-  filter: saturate(.8) brightness(.92);
-  opacity: .92;
+.radio-status__tags { display: inline-flex; gap: 8px; }
+.radio-tag { border: 1px solid var(--pip-60); padding: 0 6px; font-size: 12px; letter-spacing: .08em; line-height: 18px; }
+.radio-warn--row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.radio-warn--row > span { flex: 1 1 16em; }
+.radio-now { margin: 0; font-size: 13px; letter-spacing: .06em; opacity: .8; }
+
+/* Streamed station: a shorter scope leaves room for the deck. */
+.radio-detail--sc { gap: 8px; }
+.radio-detail--sc .radio-scope { aspect-ratio: 4 / 1; max-height: 22vh; }
+
+/* The SoundCloud widget streams from a real-size iframe that is clipped out of sight
+   (display:none can stop playback). Attribution is rendered by .radio-credit instead. */
+.radio-sc__hide {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  pointer-events: none;
 }
-.radio-sc__credit {
-  justify-self: start;
-  display: inline-flex;
+.radio-sc__frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300px;
+  height: 166px;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- transport deck ---------- */
+.radio-tx { display: grid; gap: 4px; }
+.radio-tx__main {
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
   align-items: center;
-  min-height: 44px;
-  font-size: 13px;
-  letter-spacing: .08em;
+  gap: 8px;
+}
+.radio-tx__opts { justify-self: end; }
+.radio-tx .pip-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: .08em; }
+.radio-tx__play { min-width: 7.5em; font-size: 18px; text-shadow: var(--glow); }
+.radio-tx__play.is-active { text-shadow: none; }
+.radio-tx__play[aria-busy] { animation: radio-pulse 1.2s steps(1) infinite; }
+.radio-tx__icon { width: 14px; height: 14px; flex: none; filter: drop-shadow(0 0 2px var(--pip-60)); }
+.radio-tx__play.is-active .radio-tx__icon { filter: none; }
+.radio-tx__skip { min-width: var(--touch); padding: 6px 10px; }
+.radio-tx .pip-btn:disabled { opacity: .4; cursor: default; }
+.radio-tx .pip-btn:disabled:hover { background: transparent; }
+.radio-tx .pip-slider { grid-template-columns: auto minmax(60px, 1fr) 4.5em; }
+.radio-tx__opts { display: flex; gap: 6px; }
+.radio-tx__small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
+
+.radio-seek {
+  display: grid;
+  grid-template-columns: auto minmax(40px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.radio-seek.is-disabled { opacity: .45; }
+.radio-seek.is-disabled .radio-seek__head { display: none; }
+.radio-seek__time { white-space: nowrap; }
+.radio-seek__time--total { opacity: .7; }
+.radio-seek__bar {
+  position: relative;
+  height: var(--touch);
+  cursor: pointer;
+  touch-action: none;
+  outline: none;
+}
+.radio-seek.is-disabled .radio-seek__bar { cursor: default; }
+/* bracket ends + dim segments (the empty track) */
+.radio-seek__bar::before {
+  content: '';
+  position: absolute;
+  inset: 13px 0;
+  border-left: 2px solid var(--pip);
+  border-right: 2px solid var(--pip);
+  background: repeating-linear-gradient(to right, var(--pip-15) 0 6px, transparent 6px 9px) content-box;
+  padding: 3px;
+}
+.radio-seek__fill {
+  position: absolute;
+  inset: 16px auto 16px 5px;
+  width: calc((100% - 10px) * var(--pct-n, 0));
+  background: repeating-linear-gradient(to right, var(--pip) 0 6px, transparent 6px 9px);
+  clip-path: polygon(var(--notch) 0, 100% 0, 100% 100%, 0 100%);
+  filter: drop-shadow(0 0 3px var(--pip-60));
+}
+.radio-seek__head {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: calc(5px + (100% - 10px) * var(--pct-n, 0) - 1px);
+  width: 3px;
+  background: var(--pip-hi);
+  box-shadow: var(--glow);
+}
+.radio-seek__bar:focus-visible::before { outline: 2px solid var(--pip-hi); outline-offset: 4px; }
+
+.radio-credit {
+  justify-self: start;
+  display: inline-block;
+  min-height: var(--touch);
+  padding: 12px 0 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: .06em;
   color: var(--pip);
   text-decoration: none;
-  opacity: .8;
+  opacity: .75;
 }
-.radio-sc__credit:hover, .radio-sc__credit:focus-visible { opacity: 1; text-decoration: underline; text-shadow: var(--glow); }
+.radio-credit__k { opacity: .7; }
+.radio-credit__sc { white-space: nowrap; }
+.radio-credit:hover, .radio-credit:focus-visible { opacity: 1; text-shadow: var(--glow); }
+.radio-credit:hover .radio-credit__sc, .radio-credit:focus-visible .radio-credit__sc { text-decoration: underline; }
+@media (max-width: 560px) {
+  .radio-tx__main { grid-template-columns: 1fr auto auto; }
+  .radio-tx__play { min-width: 0; }
+  .radio-tx__opts { grid-column: 1 / -1; justify-self: stretch; }
+  .radio-tx__opts > * { flex: 1 1 0; }
+  .radio-tx .pip-slider { grid-template-columns: auto minmax(60px, 1fr) 4.5em; }
+  .radio-tx .pip-slider label { grid-column: auto; }
+  .radio-detail--sc .radio-scope { max-height: 72px; }
+}
 @media (max-width: 719px) {
   .radio-scope { aspect-ratio: 3 / 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .radio-status .is-live { animation: none; }
+  .radio-status .is-live, .radio-tx__play[aria-busy] { animation: none; }
 }
