@@ -1,19 +1,18 @@
 import { useStored } from '../lib/store'
 
-export type Finish = 'OLIVE' | 'GUNMETAL' | 'RUST' | 'KHAKI'
-export const FINISHES: Finish[] = ['OLIVE', 'GUNMETAL', 'RUST', 'KHAKI']
+export type View = 'screen' | 'arm'
 
 export type DeviceSettings = {
-  finish: Finish
   /** Real barrel warp of the screen. null = auto (on for desktop Chromium/Firefox). */
   warp: boolean | null
   /** PC-style phosphor cursor on the screen (desktop pointers only). */
   cursor?: boolean
 }
 
-export const DEFAULT_DEVICE: DeviceSettings = { finish: 'OLIVE', warp: null }
+export const DEFAULT_DEVICE: DeviceSettings = { warp: null }
 export const useDeviceSettings = () => useStored<DeviceSettings>('device', DEFAULT_DEVICE)
-export const useZoom = () => useStored<'in' | 'out'>('device:zoom', 'in')
+/** Desktop view: just the screen, or the Pip-Boy on an arm. Phones always get the screen. */
+export const useView = () => useStored<View>('device:view', 'arm')
 
 export function warpAutoDefault(): boolean {
   if (typeof navigator === 'undefined') return false

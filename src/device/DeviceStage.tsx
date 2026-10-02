@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useEffectsConfig } from '../effects/EffectsProvider'
-import { usePrefersReducedMotion } from '../lib/hooks'
-import { cameraFor, layoutDevice, type Insets } from './camera'
-import { ControlPanel } from './ControlPanel'
+import { usePageVisible, usePrefersReducedMotion } from '../lib/hooks'
 import { buildCursors } from './cursors'
 import { CrtGlass } from './CrtGlass'
-import { useDeviceSettings, useZoom, warpAutoDefault } from './deviceSettings'
-import { PipMeLogo } from './PipMeLogo'
+import { useDeviceSettings, useView, warpAutoDefault, type View } from './deviceSettings'
+import { Dock } from './Dock'
+import { armLayout, DESIGN, isCompact, screenRect, type Insets } from './scene'
 
 function readSafeArea(): Insets {
   const probe = document.createElement('div')
@@ -37,89 +36,139 @@ function useViewport() {
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
 
+/** Pointer-driven parallax: writes --px/--py (-1..1, eased) on the stage without re-rendering. */
+function useParallax(el: React.RefObject<HTMLDivElement | null>, on: boolean) {
+  useEffect(() => {
+    const node = el.current
+    if (!node || !on) return
+    let tx = 0
+    let ty = 0
+    let x = 0
+    let y = 0
+    let raf = 0
+    const t0 = performance.now()
+    const move = (e: PointerEvent) => {
+      tx = (e.clientX / window.innerWidth) * 2 - 1
+      ty = (e.clientY / window.innerHeight) * 2 - 1
+    }
+    const tick = (now: number) => {
+      const idle = (now - t0) / 1000
+      // a slow idle sway so the scene breathes even without a mouse
+      const gx = tx + Math.sin(idle * 0.35) * 0.18
+      const gy = ty + Math.cos(idle * 0.27) * 0.12
+      x += (gx - x) * 0.06
+      y += (gy - y) * 0.06
+      node.style.setProperty('--px', x.toFixed(4))
+      node.style.setProperty('--py', y.toFixed(4))
+      raf = requestAnimationFrame(tick)
+    }
+    window.addEventListener('pointermove', move)
+    raf = requestAnimationFrame(tick)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      cancelAnimationFrame(raf)
+      node.style.setProperty('--px', '0')
+      node.style.setProperty('--py', '0')
+    }
+  }, [el, on])
+}
+
 /**
- * The physical Pip-Me 3000: casing, CRT, controls, and a camera that frames either the
- * screen (IN) or the whole device (OUT). The UI inside keeps one flat size in both.
+ * Two ways to look at the Pip-Me: SCREEN (the CRT fills the window, glowing rim) and ARM
+ * (the user's photo composite with the live screen pinned on the Pip-Boy glass, parallaxed).
+ * The live UI stays mounted in the same place in the tree in both, so switching views never
+ * restarts the Dweller, the radio or the map. Phones always get SCREEN and no dock.
  */
 export function DeviceStage({ children }: { children: ReactNode }) {
   const vp = useViewport()
-  const [zoom, setZoom] = useZoom()
+  const [stored, setView] = useView()
   const [device] = useDeviceSettings()
   const [cfg] = useEffectsConfig()
   const reduced = usePrefersReducedMotion()
+  const visible = usePageVisible()
+  const compact = isCompact(vp.w) || vp.h < 520
+  const view: View = compact ? 'screen' : stored
   const [degauss, setDegauss] = useState(false)
-  const [ready, setReady] = useState(false)
+  const [switching, setSwitching] = useState(false)
+  const stage = useRef<HTMLDivElement>(null)
   const warp = device.warp ?? warpAutoDefault()
   const pipCursor = device.cursor !== false
   const cursors = useMemo(() => buildCursors(cfg.hue), [cfg.hue])
-  const cursorVars = pipCursor
-    ? ({ '--cur-arrow': cursors.arrow, '--cur-hover': cursors.hover, '--cur-drag': cursors.drag } as React.CSSProperties)
-    : undefined
 
-  const L = layoutDevice(vp.w, vp.h, vp.safe)
-  const cam = cameraFor(zoom, L, vp.w, vp.h, vp.safe)
+  useParallax(stage, view === 'arm' && !reduced && visible)
+
   const degaussNow = useCallback(() => {
     setDegauss(true)
     window.setTimeout(() => setDegauss(false), 900)
   }, [])
-  const toggle = useCallback(() => setZoom((z) => (z === 'in' ? 'out' : 'in')), [setZoom])
 
-  useLayoutEffect(() => {
-    // no camera tween on first paint
-    const t = requestAnimationFrame(() => setReady(true))
-    return () => cancelAnimationFrame(t)
-  }, [])
+  // quick CRT-style blink between views instead of tweening the live UI's size
+  const changeView = useCallback(
+    (v: View) => {
+      if (v === view) return
+      if (reduced) return setView(v)
+      setSwitching(true)
+      window.setTimeout(() => {
+        setView(v)
+        window.setTimeout(() => setSwitching(false), 60)
+      }, 180)
+    },
+    [view, reduced, setView],
+  )
 
   useEffect(() => {
+    if (compact) return
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.key.toLowerCase() === 'z') toggle()
-      else if (e.key === 'Escape' && zoom === 'out') setZoom('in')
+      if (e.key.toLowerCase() === 'v') changeView(view === 'arm' ? 'screen' : 'arm')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [toggle, zoom, setZoom])
+  }, [compact, view, changeView])
 
-  const knobSize = L.orientation === 'landscape' ? Math.round(Math.min(72, L.panel.w * 0.3)) : Math.round(Math.min(64, L.panel.w / 5.4))
+  let host: React.CSSProperties
+  let inner: React.CSSProperties
+  let arm: ReturnType<typeof armLayout> | null = null
+  if (view === 'arm') {
+    arm = armLayout(vp.w, vp.h)
+    host = { left: arm.glass.x, top: arm.glass.y, width: arm.glass.w, height: arm.glass.h, borderRadius: arm.glass.r }
+    inner = { width: DESIGN.w, height: DESIGN.h, transform: `scale(${arm.uiScale})`, transformOrigin: '0 0' }
+  } else {
+    const r = screenRect(vp.w, vp.h, vp.safe)
+    host = { left: r.x, top: r.y, width: r.w, height: r.h }
+    inner = { width: '100%', height: '100%' }
+  }
+
+  const cursorVars = pipCursor
+    ? ({ '--cur-arrow': cursors.arrow, '--cur-hover': cursors.hover, '--cur-drag': cursors.drag } as React.CSSProperties)
+    : {}
 
   return (
-    <div className={`stage stage--${zoom}${ready && !reduced ? ' is-animated' : ''}`}>
-      <div
-        className={`device device--${L.orientation} finish--${device.finish.toLowerCase()}`}
-        style={{
-          width: L.device.w,
-          height: L.device.h,
-          transform: `translate3d(${cam.x}px, ${cam.y}px, 0) scale(${cam.scale})`,
-          '--bezel': `${L.bezel}px`,
-          '--bezel-top': `${L.bezelTop}px`,
-        } as React.CSSProperties}
-      >
-        <div className="device__grain" aria-hidden />
-        <button className="device__notch" onClick={toggle} aria-label={zoom === 'in' ? 'Zoom out to device controls' : 'Zoom in to screen'} aria-pressed={zoom === 'out'}>
-          <PipMeLogo variant="emboss" />
-          <span className="device__notch-icon" aria-hidden>{zoom === 'in' ? '⤢' : '⤡'}</span>
-        </button>
-        {['tl', 'tr', 'bl', 'br'].map((c) => (
-          <span key={c} className={`device__screw device__screw--${c}`} aria-hidden />
-        ))}
-        <div className="device__well" style={{ left: L.screen.x - 8, top: L.screen.y - 8, width: L.screen.w + 16, height: L.screen.h + 16 }} aria-hidden />
-        <div
-          className={`device__screen${degauss ? ' is-degaussing' : ''}${pipCursor ? ' has-pip-cursor' : ''}`}
-          style={{ left: L.screen.x, top: L.screen.y, width: L.screen.w, height: L.screen.h, ...cursorVars }}
-        >
+    <div ref={stage} className={`stage stage--${view}${compact ? ' stage--compact' : ''}${switching ? ' is-switching' : ''}`}>
+      {arm && (
+        <div className="scene" aria-hidden>
+          <img className="scene__layer scene__bg" src="/scene/background.webp" alt="" draggable={false} />
+          <img
+            className="scene__layer scene__arm"
+            src="/scene/arm.webp"
+            alt=""
+            draggable={false}
+            style={{ left: arm.arm.x, top: arm.arm.y, width: arm.arm.w, height: arm.arm.h }}
+          />
+          <div className="scene__front" style={{ left: arm.pipboy.x, top: arm.pipboy.y, width: arm.pipboy.w, height: arm.pipboy.h }}>
+            <img className="scene__pipboy" src="/scene/pipboy.webp" alt="" draggable={false} />
+          </div>
+        </div>
+      )}
+      {view === 'screen' && <div className="screen-rim" style={host} aria-hidden />}
+      <div className={`screen-host screen-host--${view}${degauss ? ' is-degaussing' : ''}${pipCursor ? ' has-pip-cursor' : ''}`} style={{ ...host, ...cursorVars }}>
+        <div className="screen-host__inner" style={inner}>
           <CrtGlass curvature={cfg.curvature} warp={warp}>
             {children}
           </CrtGlass>
-          {zoom === 'out' && <button className="device__screen-catch" onClick={() => setZoom('in')} aria-label="Zoom in to screen" />}
         </div>
-        <div className="device__panel" style={{ left: L.panel.x, top: L.panel.y, width: L.panel.w, height: L.panel.h }}>
-          <div inert={zoom === 'in' ? true : undefined}>
-            <ControlPanel warp={warp} onDegauss={degaussNow} knobSize={knobSize} />
-          </div>
-          {zoom === 'in' && <button className="device__panel-catch" onClick={() => setZoom('out')} aria-label="Zoom out to device controls" tabIndex={-1} />}
-        </div>
-        <span className="device__led" aria-hidden />
       </div>
+      {!compact && <Dock view={view} onView={changeView} onDegauss={degaussNow} />}
     </div>
   )
 }

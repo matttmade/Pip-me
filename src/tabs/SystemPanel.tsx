@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useEffectsConfig } from '../effects/EffectsProvider'
 import { triggerGlitch } from '../effects/glitchScheduler'
-import { FINISHES, useDeviceSettings, useZoom, warpAutoDefault } from '../device/deviceSettings'
+import { useDeviceSettings, useView, warpAutoDefault } from '../device/deviceSettings'
 import { HUES } from '../effects/presets'
 import type { PresetName } from '../effects/types'
 import { useProfile, useSettings } from '../lib/profile'
@@ -27,7 +27,7 @@ export function SystemPanel() {
   const [selected, setSelected] = useStored('system:selected', 'PRESET')
   const [confirmReset, setConfirmReset] = useState(false)
   const [device, setDevice] = useDeviceSettings()
-  const [, setZoom] = useZoom()
+  const [view, setView] = useView()
   const warp = device.warp ?? warpAutoDefault()
 
   const onOff = (on: boolean) => (on ? 'ON' : 'OFF')
@@ -40,7 +40,7 @@ export function SystemPanel() {
     { id: 'ROLL', label: 'ROLL BAR', right: onOff(cfg.rollBar.on) },
     { id: 'SCREEN', label: 'GLOW + SCREEN' },
     { id: 'COLOR', label: 'PHOSPHOR COLOR', right: cfg.hue },
-    { id: 'DEVICE', label: 'DEVICE + CRT', right: device.finish },
+    { id: 'DEVICE', label: 'DEVICE + CRT', right: view === 'arm' ? 'ON ARM' : 'SCREEN' },
     { id: 'IDENTITY', label: 'DWELLER ID' },
     { id: 'PREFS', label: 'PREFERENCES' },
     { id: 'RESET', label: 'RESET TERMINAL' },
@@ -126,20 +126,17 @@ export function SystemPanel() {
         )
       case 'DEVICE':
         return (
-          <Detail title="DEVICE + CRT" note="Curvature uses a live displacement filter. It is off by default on phones and Safari to save battery. The knobs on the casing mirror these settings.">
-            <button className="pip-btn" onClick={() => setZoom('out')}>
-              [ VIEW DEVICE ]
-            </button>
-            <PipToggle label="CRT WARP" on={warp} onChange={(w) => setDevice({ ...device, warp: w })} />
-            <PipToggle label="PIP CURSOR" on={device.cursor !== false} onChange={(cursor) => setDevice({ ...device, cursor })} />
-            <PipSlider label="CURVATURE" value={cfg.curvature} min={0} max={1} onChange={(curvature) => update({ curvature })} format={pct} />
+          <Detail title="DEVICE + CRT" note="ON ARM and SCREEN apply on larger displays; phones always show the screen. Curvature uses a live displacement filter, off by default on phones and Safari to save battery.">
             <div className="pip-choices">
-              {FINISHES.map((f) => (
-                <button key={f} className={`pip-btn${device.finish === f ? ' is-active' : ''}`} onClick={() => setDevice({ ...device, finish: f })}>
-                  {f}
+              {(['arm', 'screen'] as const).map((v) => (
+                <button key={v} className={`pip-btn${view === v ? ' is-active' : ''}`} onClick={() => setView(v)}>
+                  {v === 'arm' ? 'ON ARM' : 'SCREEN'}
                 </button>
               ))}
             </div>
+            <PipToggle label="CRT WARP" on={warp} onChange={(w) => setDevice({ ...device, warp: w })} />
+            <PipToggle label="PIP CURSOR" on={device.cursor !== false} onChange={(cursor) => setDevice({ ...device, cursor })} />
+            <PipSlider label="CURVATURE" value={cfg.curvature} min={0} max={1} onChange={(curvature) => update({ curvature })} format={pct} />
           </Detail>
         )
       case 'IDENTITY':

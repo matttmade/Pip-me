@@ -1,7 +1,7 @@
 # Pip-Me Personal Terminal (Fan Project)
 
 A browser recreation of a Fallout 4-style Pip-Boy screen as a personal dashboard, shown on a
-curved CRT inside a "Pip-Me 3000" casing with working knobs (zoom out with the top notch or `Z`).
+curved CRT, either full screen or worn on an arm (switch with the dock or `V`).
 A Vault Dweller walks on the STAT screen (drop in a headshot to become them), a real map
 centers on your location, and the whole UI runs on scanlines, glitches and background
 noise that you can tune in **DATA > SYSTEM**.
@@ -25,7 +25,9 @@ noise that you can tune in **DATA > SYSTEM**.
 - Vault Dweller: built procedurally from three.js primitives. If `public/models/dweller.glb` is
   present it's used instead. Note its source and license here when you add one.
 - Fonts: Share Tech Mono, VT323 and Alfa Slab One (SIL Open Font License) via Fontsource.
-- The Pip-Me wordmark and casing are original CSS/SVG work, not Fallout logo or model art.
+- The Pip-Me wordmark is original CSS/SVG work, not Fallout logo art.
+- The ON ARM scene (public/scene/: background, arm, Pip-Boy replica photo) was supplied by the
+  project owner for this non-commercial case study.
 - Map data © OpenStreetMap contributors; tiles by OpenFreeMap; weather by Open-Meteo.
 - Sounds are synthesized live with Web Audio.
 - APPALACHIA RADIO streams "Fallout 76 - Appalachia Radio" (uploaded by user-94305073) from SoundCloud
