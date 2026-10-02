@@ -20,7 +20,7 @@ noise that you can tune in **DATA > SYSTEM**.
 
 ## Assets and licenses
 
-- No files extracted from Fallout games: no models, Vault Boy art, logos, textures, fonts, music or SFX.
+- No files extracted from Fallout games: no models, Vault Boy artwork, logos, textures, fonts, music or SFX.
   All copy is original.
 - Vault Dweller: built procedurally from three.js primitives. If `public/models/dweller.glb` is
   present it's used instead. Note its source and license here when you add one.
