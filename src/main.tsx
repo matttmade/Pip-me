@@ -4,9 +4,11 @@ import '@fontsource/share-tech-mono'
 import '@fontsource/vt323'
 import './index.css'
 import App from './App.tsx'
+import { startPerkTracking } from './features/perks/perks'
 import { startSfx } from './features/sound/sfx'
 
 startSfx()
+startPerkTracking()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

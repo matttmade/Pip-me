@@ -3,7 +3,7 @@
  * Feature branches import from here and MUST NOT change these signatures.
  * See BUILD-PLAN.md §3.1.
  */
-export { useStored, resetAll, persistence } from './store'
+export { useStored, resetAll, persistence, readStored, writeStored, subscribeStored } from './store'
 export { emit, on, type AppEvent } from './events'
 export { openOverlay, closeOverlay, useOverlay, type OverlayId } from './overlay'
 export { usePageVisible, usePrefersReducedMotion, useCoarsePointer, useMediaQuery } from './hooks'
