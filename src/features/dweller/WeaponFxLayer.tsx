@@ -1,12 +1,12 @@
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react'
 import type { Rng } from '../../lib/contracts'
-import { dropAt, shotLength, spawnSquirt, type Drop, type Pt } from './weaponFx'
+import { dropAt, shotLength, spawnSquirt, type Aim, type Drop, type Pt } from './weaponFx'
 
 export type WeaponFxHandle = {
   /** A fist hitting the glass at a viewport point. */
   punch: (at: Pt) => void
   /** A water-pistol burst from a viewport point, toward one side. `still`: splats only, no flight or run (reduced motion). */
-  squirt: (from: Pt, dir: 1 | -1, rng: Rng, still?: boolean) => void
+  squirt: (from: Pt, dir: 1 | -1, rng: Rng, still?: boolean, facing?: Aim) => void
 }
 
 type Shot = { kind: 'punch'; at: Pt; t0: number; end: number; rays: number[] } | { kind: 'squirt'; drops: Drop[]; t0: number; end: number }
@@ -71,10 +71,10 @@ export function WeaponFxLayer({ ref }: { ref?: Ref<WeaponFxHandle> }) {
       shots.current.push({ kind: 'punch', at: local(at), t0: performance.now(), end: PUNCH_MS, rays })
       start()
     },
-    squirt(from, dir, rng, still) {
+    squirt(from, dir, rng, still, facing) {
       const c = canvas.current
       if (!c) return
-      const spawned = spawnSquirt(rng, local(from), { w: c.offsetWidth, h: c.offsetHeight }, dir, 7)
+      const spawned = spawnSquirt(rng, local(from), { w: c.offsetWidth, h: c.offsetHeight }, dir, 7, facing)
       const drops = still ? spawned.map((d) => ({ ...d, delay: 0, flight: 1, run: 0 })) : spawned
       shots.current.push({ kind: 'squirt', drops, t0: performance.now(), end: shotLength(drops) })
       start()

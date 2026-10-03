@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { mulberry32, useOverlay, usePrefersReducedMotion, useStored, type Rng } from '../../lib/contracts'
 import { requestEmote } from './emotes'
-import { onFigureTap } from './figureTap'
+import { figureFacing, onFigureTap } from './figureTap'
+import { squirtAim } from './vaultboy/spin'
 import { DropGlyph, WeaponGlyph } from './glyphs'
 import NukeBlast from './NukeBlast'
 import { WeaponFxLayer, type WeaponFxHandle } from './WeaponFxLayer'
@@ -151,7 +152,9 @@ export function WeaponSlot({ open, onOpenChange }: { open: boolean; onOpenChange
       requestEmote('flex')
       weaponSfx.punch()
       const c = figure()
-      const p = at ?? c?.from
+      // a keyboard punch lands on the side he's turned to
+      const f = figureFacing()
+      const p = at ?? (c && { x: c.from.x + (f == null ? 0 : Math.sin(f) * c.w * 0.25), y: c.from.y })
       if (p) fx.current?.punch(p)
       if (!reduced) shake(crt?.querySelector('.crt__tube') ?? crt, 5, 280)
       return true
@@ -169,8 +172,16 @@ export function WeaponSlot({ open, onOpenChange }: { open: boolean; onOpenChange
       const c = figure()
       if (c) {
         rng.current ??= mulberry32(t | 0)
-        const dir: 1 | -1 = c.pointsLeft ? -1 : at ? (at.x < c.mid ? -1 : 1) : (side.current = side.current === 1 ? -1 : 1)
-        fx.current?.squirt({ x: c.from.x + dir * c.w * (c.pointsLeft ? 0.22 : 0.08), y: c.from.y }, dir, rng.current, reduced)
+        // turned by a drag: the shot follows his facing (sideways, or away into the screen)
+        const f = figureFacing()
+        const aim = f == null ? null : squirtAim(f)
+        if (aim && (Math.abs(aim.x) > 0.35 || aim.z < 0)) {
+          const dir: 1 | -1 = Math.abs(aim.x) > 0.05 ? (aim.x < 0 ? -1 : 1) : (side.current = side.current === 1 ? -1 : 1)
+          fx.current?.squirt({ x: c.from.x + aim.x * c.w * 0.22, y: c.from.y }, dir, rng.current, reduced, aim)
+        } else {
+          const dir: 1 | -1 = c.pointsLeft ? -1 : at ? (at.x < c.mid ? -1 : 1) : (side.current = side.current === 1 ? -1 : 1)
+          fx.current?.squirt({ x: c.from.x + dir * c.w * (c.pointsLeft ? 0.22 : 0.08), y: c.from.y }, dir, rng.current, reduced)
+        }
       }
       if (r.state.ammo === 0) flash('RELOAD', 1500)
       return true

@@ -44,3 +44,30 @@ describe('dropAt', () => {
     expect(drops.every((x) => dropAt(x, end).phase === 'gone')).toBe(true)
   })
 })
+
+describe('squirt facing', () => {
+  it('without a facing it is the classic at-the-glass burst', () => {
+    const a = spawnSquirt(mulberry32(5), from, size, 1, 3)
+    const b = spawnSquirt(mulberry32(5), from, size, 1, 3, { x: 1, z: 1 })
+    expect(b.map((d) => d.to)).toEqual(a.map((d) => d.to))
+    expect(a.every((d) => d.depth === 1)).toBe(true)
+  })
+  it('shot away from the viewer: lands short, shrinks in flight, never splats', () => {
+    const near = spawnSquirt(mulberry32(9), from, size, -1, 4, { x: -0.3, z: 1 })
+    const far = spawnSquirt(mulberry32(9), from, size, -1, 4, { x: -0.3, z: -1 })
+    far.forEach((d, i) => {
+      expect(Math.sign(d.to.x - from.x)).toBe(-1)
+      expect(Math.abs(d.to.x - from.x)).toBeLessThan(Math.abs(near[i].to.x - from.x))
+    })
+    const [d] = far
+    const a = dropAt(d, d.delay + d.flight * 0.1)
+    const b = dropAt(d, d.delay + d.flight * 0.9)
+    if (a.phase !== 'fly' || b.phase !== 'fly') throw new Error('expected flight')
+    expect(b.r).toBeLessThan(a.r)
+    expect(dropAt(d, d.delay + d.flight + 1).phase).toBe('gone')
+    expect(shotLength([d])).toBe(d.delay + d.flight)
+  })
+  it('side-on shots still reach out sideways', () => {
+    for (const d of spawnSquirt(mulberry32(2), from, size, 1, 4, { x: 1, z: 0 })) expect(d.to.x - from.x).toBeGreaterThan(size.w * 0.2)
+  })
+})

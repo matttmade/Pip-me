@@ -234,6 +234,7 @@
   display: flex;
   flex-direction: column-reverse;
   gap: 2px;
+  width: max-content;
   min-width: 186px;
   max-width: calc(100cqw - 8px);
   padding: 4px;
@@ -712,6 +713,8 @@
     min-width: 0;
   }
   .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: 15px; }
+  /* reversed, so WAVE sits bottom-right beside the trigger like the stacked list */
+  .flyout--emotes .flyout__item { order: calc(20 - var(--i, 0)); }
   .flyout--emotes .flyout__meta { display: none; }
 }
 
@@ -752,8 +755,8 @@
   }
 }
 
-/* wide: stage | EFFECTS, with readouts + name under the stage */
-@container status (min-width: 820px) {
+/* wide + tall (desktop screen): stage | EFFECTS, with readouts + name under the stage */
+@container status (min-width: 820px) and (min-height: 481px) {
   .status-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 620px) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto auto;
