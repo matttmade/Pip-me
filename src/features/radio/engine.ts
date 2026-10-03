@@ -10,10 +10,11 @@ import { useSyncExternalStore } from 'react'
 import { emit } from '../../lib/events'
 import { DEFAULT_SETTINGS, type Settings } from '../../lib/profile'
 import { readStored, subscribeStored, writeStored } from '../../lib/store'
-import { APPALACHIA_ID, type SoundMeta } from './soundcloud'
+import { APPALACHIA_ID, soundMeta } from './soundcloud'
 import { fileStation, STATIONS, YOUR_STATION, type StationGraph } from './stations'
 import { initialRadioState, radioReducer, shouldSave, stationName, tuneIntent, type RadioAction, type RadioState, type ScStatus } from './radioState'
 import { liveOffset, msOfDay, skipBy } from './transport'
+import { extrapolatePlayhead, normalizeEnvelope, waveformJsonUrl } from './waveform'
 
 /** Imperative transport of the hidden widget (registered by RadioHost). Calls before READY are ignored. */
 export type ScControls = {
@@ -111,6 +112,37 @@ function startSynth(id: string): boolean {
 let sc: ScControls | null = null
 let saved = state.sc.position || -Infinity
 
+/** Last reported playhead and when it arrived (performance.now), for smooth interpolation. */
+const clock = { position: 0, at: 0 }
+
+/** The stream's playhead right now (ms), interpolated between PLAY_PROGRESS events. */
+export function scPlayhead(now = performance.now()): number {
+  const { sc: s } = state
+  return extrapolatePlayhead(clock.position, clock.at, now, s.status === 'playing', s.duration)
+}
+
+/** Waveform JSON fetched for this url (one attempt per url per session). */
+let envelopeUrl: string | null = null
+
+/** Track object from the widget → attribution, and the loudness envelope for the scope. */
+function onSound(sound: unknown) {
+  dispatch({ type: 'sc-meta', meta: soundMeta(sound) })
+  const url = waveformJsonUrl((sound as { waveform_url?: unknown } | null)?.waveform_url)
+  if (!url || url === envelopeUrl) return
+  envelopeUrl = url
+  // wave.sndcdn.com answers with Access-Control-Allow-Origin: *, so a plain CORS fetch works.
+  fetch(url, { mode: 'cors', credentials: 'omit' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((json) => {
+      const envelope = normalizeEnvelope(json)
+      if (envelope && envelopeUrl === url) dispatch({ type: 'sc-envelope', envelope })
+    })
+    .catch(() => {
+      // Unreachable: the scope keeps its simulated trace.
+      if (envelopeUrl === url) envelopeUrl = null
+    })
+}
+
 function saveSc(position: number, duration: number) {
   if (!(duration > 0)) return
   saved = position
@@ -175,6 +207,8 @@ export const radio = {
   seek(ms: number) {
     if (state.station === APPALACHIA_ID) sc?.seek(ms)
     dispatch({ type: 'sc-seek', position: ms })
+    clock.position = ms
+    clock.at = performance.now()
     saveSc(ms, state.sc.duration)
   },
   skip: (deltaMs: number) => radio.seek(skipBy(state.sc.position, deltaMs, state.sc.duration)),
@@ -193,15 +227,20 @@ export const radio = {
     return p == null ? liveOffset(msOfDay(new Date()), duration) : p
   },
   onScStatus(s: ScStatus) {
+    // Re-anchor the clock so a pause freezes (and a resume restarts) at the right spot.
+    clock.position = scPlayhead()
+    clock.at = performance.now()
     dispatch({ type: 'sc-status', status: s })
     // Paused: remember exactly where.
     if (s === 'ready') saveSc(state.sc.position, state.sc.duration)
   },
   onScProgress(position: number, duration: number) {
+    clock.position = position
+    clock.at = performance.now()
     dispatch({ type: 'sc-progress', position, duration })
     if (shouldSave(position, saved)) saveSc(position, state.sc.duration)
   },
-  onScMeta: (meta: SoundMeta) => dispatch({ type: 'sc-meta', meta }),
+  onScSound: onSound,
 
   /** Start following SYSTEM settings and page visibility. Returns detach (stops and releases everything). */
   attach(): () => void {
