@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import {
   emit,
   mulberry32,
@@ -13,11 +13,26 @@ import {
 } from '../../lib/contracts'
 import { NO_PERKS, PERKS_KEY } from '../perks/perks'
 import { onEmote } from './emotes'
-import { figureTap } from './figureTap'
+import { figureTap, onFigureFacing } from './figureTap'
 import { eventGesture, PERK_GESTURE, tapGesture } from './vaultboy/behavior'
+import { dragToAngle, KEY_TURN, releaseVelocity, type Sample } from './vaultboy/spin'
 import { createVaultBoyEngine, type VaultBoyEngine } from './vaultboy/vaultBoyEngine'
 
 const TAP_SLOP = 10
+
+/** Drag-to-spin controls. Optional: used when the engine build offers them. */
+type SpinControls = {
+  grab(): void
+  spinBy(rad: number): void
+  release(velocity: number): void
+  getFacing(): number
+}
+const spinner = (e: VaultBoyEngine | null): SpinControls | null => {
+  const s = e as (VaultBoyEngine & Partial<SpinControls>) | null
+  return s && s.grab && s.spinBy && s.release && s.getFacing ? (s as unknown as SpinControls) : null
+}
+
+type Press = { id: number; x0: number; y0: number; x: number; samples: Sample[]; dragging: boolean }
 
 /**
  * The rigged Vault Boy hologram (user-supplied kit). Lazy-loaded by StatusPanel, so three and
@@ -36,7 +51,9 @@ export default function VaultBoyScene({ onFail, onReady }: { onFail: (err: unkno
     latest.current = { hue: cfg.hue, glow: cfg.glow, visible, onFail, onReady }
   })
   const rng = useRef<Rng | null>(null)
-  const down = useRef<{ x: number; y: number } | null>(null)
+  const down = useRef<Press | null>(null)
+  // set once the engine can turn, so ←/→ on the focused figure spin him instead of changing section
+  const [canSpin, setCanSpin] = useState(false)
 
   useEffect(() => {
     const el = host.current
@@ -75,6 +92,7 @@ export default function VaultBoyScene({ onFail, onReady }: { onFail: (err: unkno
         e.setHue(latest.current.hue)
         e.setGlow(latest.current.glow)
         e.setRunning(latest.current.visible)
+        setCanSpin(!!spinner(e))
         latest.current.onReady?.()
       })
       .catch((err) => !cancelled && latest.current.onFail(err))
@@ -85,6 +103,7 @@ export default function VaultBoyScene({ onFail, onReady }: { onFail: (err: unkno
       canvas.removeEventListener('webglcontextlost', onLost)
       live?.dispose()
       engine.current = null
+      setCanSpin(false)
       delete el.dataset.ready
       canvas.remove()
     }
@@ -121,15 +140,57 @@ export default function VaultBoyScene({ onFail, onReady }: { onFail: (err: unkno
     if (!figureTap(at)) engine.current?.react(tapGesture(rng.current))
     emit({ type: 'figure-tapped' })
   }
+  // the equipped weapon asks which way he faces (water pistol aim, punch side)
+  useEffect(() => (canSpin ? onFigureFacing(() => spinner(engine.current)?.getFacing() ?? 0) : undefined), [canSpin])
+
+  // A short tap fires the weapon / plays a gesture; a sideways drag spins him (and never fires).
+  const width = () => host.current?.getBoundingClientRect().width ?? 0
   const onPointerDown = (e: PointerEvent) => {
-    down.current = { x: e.clientX, y: e.clientY }
+    if (e.button !== 0 && e.pointerType === 'mouse') return
+    down.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, samples: [{ x: e.clientX, t: e.timeStamp }], dragging: false }
+  }
+  const onPointerMove = (e: PointerEvent) => {
+    const d = down.current
+    const s = spinner(engine.current)
+    if (!d || d.id !== e.pointerId || !s) return
+    if (!d.dragging) {
+      const dx = e.clientX - d.x0
+      if (Math.abs(dx) <= TAP_SLOP || Math.abs(dx) < Math.abs(e.clientY - d.y0)) return
+      d.dragging = true
+      s.grab()
+      try {
+        host.current?.setPointerCapture(e.pointerId)
+      } catch {
+        /* capture is a nicety */
+      }
+    }
+    s.spinBy(dragToAngle(e.clientX - d.x, width()))
+    d.x = e.clientX
+    d.samples.push({ x: e.clientX, t: e.timeStamp })
+    if (d.samples.length > 12) d.samples.shift()
   }
   const onPointerUp = (e: PointerEvent) => {
     const d = down.current
     down.current = null
-    if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) <= TAP_SLOP) tap({ x: e.clientX, y: e.clientY })
+    if (!d || d.id !== e.pointerId) return
+    if (d.dragging) {
+      d.samples.push({ x: e.clientX, t: e.timeStamp })
+      spinner(engine.current)?.release(reduced ? 0 : releaseVelocity(d.samples, width()))
+      return
+    }
+    if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) <= TAP_SLOP) tap({ x: e.clientX, y: e.clientY })
+  }
+  const onPointerCancel = () => {
+    if (down.current?.dragging) spinner(engine.current)?.release(0)
+    down.current = null
   }
   const onKeyDown = (e: KeyboardEvent) => {
+    const s = spinner(engine.current)
+    if (s && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault()
+      s.spinBy(e.key === 'ArrowRight' ? KEY_TURN : -KEY_TURN)
+      return
+    }
     if (e.key !== 'Enter' && e.key !== ' ') return
     e.preventDefault()
     tap(null)
@@ -142,10 +203,12 @@ export default function VaultBoyScene({ onFail, onReady }: { onFail: (err: unkno
       data-no-swipe
       role="button"
       tabIndex={0}
-      aria-label="Vault Boy, walking in place. Tap for a gesture."
+      data-own-arrows={canSpin || undefined}
+      aria-label={canSpin ? 'Vault Boy, walking in place. Tap for a gesture, drag or use the arrow keys to turn him.' : 'Vault Boy, walking in place. Tap for a gesture.'}
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={() => (down.current = null)}
+      onPointerCancel={onPointerCancel}
       onKeyDown={onKeyDown}
     />
   )

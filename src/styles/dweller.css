@@ -1,8 +1,9 @@
 /* ---------- STAT > STATUS ----------
    .status-panel is a size container; .status-grid picks one of three layouts from it:
-   compact (phones, narrow): stage / emotes row / readouts / name plate, EFFECTS as a popover;
-   short (ON ARM view, landscape phones): emotes column | stage + name | readouts 2x2;
-   wide (desktop screen): emotes | stage | EFFECTS, readouts + name under the stage. */
+   compact (phones, narrow): stage / readouts / name plate, EFFECTS as a popover;
+   short (ON ARM view, landscape phones): stage | EFFECTS toggle + readouts 2x2, name below;
+   wide (desktop screen): stage | EFFECTS, readouts + name under the stage.
+   The WEAPON and EMOTES fly-out triggers always sit in the stage's bottom corners. */
 .status-panel {
   position: relative;
   height: 100%;
@@ -12,8 +13,8 @@
   height: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto auto auto;
-  grid-template-areas: "stage" "emotes" "strip" "id";
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-areas: "stage" "strip" "id";
   justify-items: center;
   row-gap: 8px;
   padding-bottom: 4px;
@@ -149,52 +150,225 @@
   .limb--r-leg { right: 12%; }
 }
 
-/* ---------- emote buttons: small phosphor rings that float beside the figure ---------- */
-.emote-bar {
-  grid-area: emotes;
+/* ---------- fly-out triggers + menus (EMOTES, WEAPON) ----------
+   A round phosphor trigger in a bottom corner of the stage; its menu stacks up out of it,
+   item 0 nearest the thumb. Short stages lay long menus out in two columns. */
+.flyout {
+  --fly-ring: 46px;
+  --fly-row: var(--touch);
+  position: absolute;
+  bottom: 0;
+  z-index: 4;
   display: flex;
-  justify-content: center;
-  gap: 2px;
-  z-index: 2;
+  flex-direction: column;
 }
-.emote-btn {
-  /* a 44px hit area around a small visible ring */
+.flyout--left { left: 0; align-items: flex-start; }
+.flyout--right { right: 0; align-items: flex-end; }
+@media (pointer: coarse) {
+  .flyout { --fly-row: 48px; }
+}
+.flyout__trigger {
   position: relative;
-  width: var(--touch);
-  height: var(--touch);
+  min-width: 52px;
+  min-height: 52px;
   display: grid;
-  place-items: center;
+  justify-items: center;
+  align-content: end;
+  gap: 1px;
   padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
-  opacity: .5;
-  transition: opacity .15s ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.emote-btn::before {
-  content: '';
-  position: absolute;
-  inset: 7px;
+.flyout__ring {
+  position: relative;
+  width: var(--fly-ring);
+  height: var(--fly-ring);
+  display: grid;
+  place-items: center;
   border: 1px solid var(--pip-60);
   border-radius: 50%;
-  background: var(--screen-bg);
-  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+  /* frosted: it floats over the figure */
+  background: radial-gradient(circle, var(--pip-15), transparent 70%), var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(6px * var(--glow-amt)) var(--pip-30), inset 0 0 calc(6px * var(--glow-amt)) var(--pip-15);
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
 }
-.emote-btn .st-glyph { position: relative; width: 18px; height: 18px; }
-.emote-btn:hover,
-.emote-btn:focus-visible,
-.emote-btn.is-lit,
-.emote-bar:focus-within .emote-btn { opacity: 1; }
-.emote-btn:hover::before,
-.emote-btn:focus-visible::before { border-color: var(--pip); box-shadow: 0 0 calc(6px * var(--glow-amt)) var(--pip-60); }
-.emote-btn:focus-visible { outline: none; }
-.emote-btn.is-lit::before,
-.emote-btn:active::before { background: var(--pip); border-color: var(--pip-hi); box-shadow: 0 0 calc(8px * var(--glow-amt)) var(--pip-60); }
-.emote-btn.is-lit .st-glyph,
-.emote-btn:active .st-glyph { stroke: var(--screen-bg); filter: none; }
-@media (hover: none) {
-  .emote-btn { opacity: .8; }
+/* a second, fainter ring so it reads as a dial rather than a bubble */
+.flyout__ring::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px dashed var(--pip-30);
+  border-radius: 50%;
+  pointer-events: none;
 }
+.flyout__ring .st-glyph,
+.flyout__ring .weapon__glyph { position: relative; width: 24px; height: 24px; }
+.flyout__caption {
+  font-size: 10px;
+  line-height: 12px;
+  letter-spacing: .14em;
+  white-space: nowrap;
+  opacity: .8;
+}
+.flyout__trigger:hover .flyout__ring,
+.flyout__trigger:focus-visible .flyout__ring,
+.flyout.is-open .flyout__ring { border-color: var(--pip); box-shadow: 0 0 calc(10px * var(--glow-amt)) var(--pip-60), inset 0 0 calc(6px * var(--glow-amt)) var(--pip-30); }
+.flyout__trigger:focus-visible { outline: none; }
+.flyout__trigger:focus-visible .flyout__ring { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+.flyout__trigger:active .flyout__ring { transform: scale(.94); }
+.flyout.is-open .flyout__caption { opacity: 1; }
+.flyout.is-open .flyout__ring,
+.flyout.is-lit .flyout__ring { background: var(--pip); border-color: var(--pip-hi); }
+.flyout.is-open .flyout__ring > *,
+.flyout.is-lit .flyout__ring > * { color: var(--screen-bg); }
+.flyout.is-open .flyout__ring svg,
+.flyout.is-lit .flyout__ring svg { filter: none; }
+.flyout.is-open .flyout__ring::before,
+.flyout.is-lit .flyout__ring::before { border-color: var(--screen-bg); opacity: .4; }
+
+.flyout__menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  width: max-content;
+  min-width: 186px;
+  max-width: calc(100cqw - 8px);
+  padding: 4px;
+  border: 1px solid var(--pip-60);
+  border-top: 2px solid var(--pip);
+  /* the strong frost: rows of text over a moving figure must stay readable */
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(10px * var(--glow-amt)) var(--pip-30);
+  animation: flyout-in .16s cubic-bezier(.2, .9, .3, 1.15) both;
+}
+.flyout--left .flyout__menu { left: 0; transform-origin: 26px 100%; }
+.flyout--right .flyout__menu { right: 0; transform-origin: calc(100% - 26px) 100%; }
+.flyout__item {
+  position: relative;
+  min-height: var(--fly-row);
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  background: none;
+  font-size: 16px;
+  letter-spacing: .08em;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: flyout-item .18s ease-out both;
+  animation-delay: calc(var(--i, 0) * 22ms);
+  -webkit-tap-highlight-color: transparent;
+}
+.flyout__icon { display: grid; place-items: center; }
+.flyout__icon svg { width: 24px; height: 24px; }
+.flyout__label { overflow: hidden; text-overflow: ellipsis; }
+.flyout__meta { font-size: 12px; letter-spacing: .08em; opacity: .7; }
+/* FO4 rows: the selected row inverts */
+.flyout__item:hover,
+.flyout__item:focus-visible { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; outline: none; }
+.flyout__item:hover svg,
+.flyout__item:focus-visible svg { filter: none; }
+.flyout__item:hover .weapon__drop path,
+.flyout__item:focus-visible .weapon__drop path { fill: var(--screen-bg); }
+.flyout__item:hover .flyout__meta,
+.flyout__item:focus-visible .flyout__meta { opacity: 1; }
+/* the equipped weapon: a filled pip at the left edge, like FO4's inventory */
+.flyout__item.is-checked::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 50%;
+  width: 4px;
+  height: 60%;
+  background: var(--pip-hi);
+  box-shadow: 0 0 calc(4px * var(--glow-amt)) var(--pip-60);
+  transform: translateY(-50%);
+}
+.flyout__item.is-checked .flyout__label { color: var(--pip-hi); }
+.flyout__item.is-checked:hover .flyout__label,
+.flyout__item.is-checked:focus-visible .flyout__label { color: inherit; }
+.flyout__ammo { display: inline-flex; align-items: center; gap: 3px; }
+.flyout__ammo b { font-weight: normal; }
+/* MINI NUKE: hazard-striped row */
+.weapon-item--nuke {
+  margin-bottom: 4px;
+  border: 1px solid var(--pip-60);
+  background: repeating-linear-gradient(-45deg, var(--pip-15) 0 6px, transparent 6px 12px);
+}
+.weapon-item--nuke .flyout__meta { color: var(--pip-hi); opacity: 1; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .flyout__menu, .flyout__ring, .status-effects[data-open] .status-effects__list, .weapon__banner, .weapon__note { background-color: var(--frost-bg-strong); }
+}
+
+@keyframes flyout-in { from { opacity: 0; transform: scale(.7) translateY(8px); } }
+@keyframes flyout-item { from { opacity: 0; transform: translateY(6px); } }
+
+/* WEAPON trigger: water-pistol ammo pip, hazard ring for the nuke, strobe while asking */
+.weapon__icon { display: grid; place-items: center; color: inherit; animation: weapon-pop .32s cubic-bezier(.3, 1.6, .5, 1); }
+.weapon__pip {
+  position: absolute;
+  right: -7px;
+  top: -5px;
+  min-width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 1px 3px;
+  border: 1px solid var(--pip-60);
+  background: var(--frost-bg-strong);
+  color: var(--pip-hi);
+  font-size: 10px;
+  line-height: 11px;
+  letter-spacing: .02em;
+}
+.weapon__pip .weapon__drop { width: 7px; height: 9px; }
+.flyout.is-reloading .weapon__pip { animation: weapon-blink .4s steps(2, jump-none) infinite; }
+.flyout.weapon--nuke .flyout__ring {
+  border-color: var(--pip);
+  background:
+    radial-gradient(circle, var(--frost-bg-strong) 56%, transparent 57%),
+    repeating-conic-gradient(var(--pip-60) 0 15deg, transparent 15deg 30deg);
+}
+.flyout.weapon--nuke .flyout__ring::before { display: none; }
+.flyout.is-armed .flyout__ring { animation: weapon-armed .5s steps(2, jump-none) infinite; }
+.flyout.is-armed .flyout__caption { color: var(--pip-hi); opacity: 1; animation: weapon-blink .5s steps(2, jump-none) infinite; }
+.flyout.is-launched { pointer-events: none; }
+.weapon__notes {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  pointer-events: none;
+}
+.weapon__banner,
+.weapon__note {
+  display: block;
+  padding: 2px 8px;
+  border: 1px solid var(--pip-60);
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge);
+  color: var(--pip-hi);
+  font-size: var(--fs-xs);
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
+.weapon__note { animation: weapon-note .9s ease-out both; }
+.weapon__banner { border-color: var(--pip-hi); animation: weapon-warn .5s steps(2, jump-none) infinite; }
 
 .st-glyph,
 .readout__icon {
@@ -269,59 +443,7 @@
 .readout.is-dim .readout__value,
 .readout.is-dim .readout__icon { opacity: .45; }
 
-/* ---------- WEAPON slot: tap to swap FIST → WATER PISTOL → NUKE ----------
-   Compact: tucked into the stage's bottom-left corner. Short (ON ARM): under the readouts.
-   Wide: left of the readout strip, like FO4's weapon box. */
-.weapon {
-  grid-area: stage;
-  align-self: end;
-  justify-self: start;
-  z-index: 3;
-  position: relative;
-  width: min(130px, 40%);
-  min-height: var(--touch);
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  column-gap: 6px;
-  margin-bottom: 2px;
-  padding: 9px 6px 5px 5px;
-  border: 1px solid var(--pip-30);
-  border-top: 2px solid var(--pip-60);
-  background: linear-gradient(to bottom, var(--pip-15), transparent), var(--screen-bg);
-  cursor: pointer;
-  text-align: left;
-  -webkit-tap-highlight-color: transparent;
-  transition: border-color .15s ease, background-color .15s ease;
-}
-.weapon:hover,
-.weapon:focus-visible { border-color: var(--pip-60); border-top-color: var(--pip); background-color: var(--pip-15); }
-.weapon:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
-.weapon:active { transform: translateY(1px); }
-/* the frame line breaks for its title (FO3 notice) */
-.weapon__legend {
-  position: absolute;
-  top: -8px;
-  left: 6px;
-  padding: 0 4px;
-  background: var(--screen-bg);
-  font-size: 10px;
-  line-height: 14px;
-  letter-spacing: .14em;
-  opacity: .75;
-}
-.weapon__pips {
-  position: absolute;
-  top: -4px;
-  right: 6px;
-  display: flex;
-  gap: 3px;
-  padding: 0 3px;
-  background: var(--screen-bg);
-}
-.weapon__pips i { width: 6px; height: 6px; border: 1px solid var(--pip-60); }
-.weapon__pips i.is-on { background: var(--pip); border-color: var(--pip-hi); box-shadow: 0 0 calc(4px * var(--glow-amt)) var(--pip-60); }
-.weapon__icon { display: grid; place-items: center; animation: weapon-pop .32s cubic-bezier(.3, 1.6, .5, 1); }
+/* weapon pictograms (trigger + menu) */
 .weapon__glyph {
   display: block;
   width: 26px;
@@ -333,79 +455,23 @@
   stroke-linejoin: round;
   filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60));
 }
-.weapon__body { display: grid; gap: 2px; min-width: 0; }
-/* compact boxes use the short name; roomier layouts swap it back below */
-.weapon__long { display: none; }
-.weapon__name {
-  font-family: var(--font-display);
-  font-size: 18px;
-  line-height: .95;
-  letter-spacing: .05em;
-  text-shadow: var(--bloom);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.weapon__stats { display: flex; gap: 10px; font-size: 12px; letter-spacing: .08em; white-space: nowrap; }
-.weapon__stat { display: inline-flex; align-items: center; gap: 4px; opacity: .85; }
-.weapon__stat b { font-weight: normal; color: var(--pip-hi); }
 .weapon__drop { width: 12px; height: 15px; flex: none; filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60)); }
 .weapon__drop path { fill: var(--pip-hi); }
 .weapon__reload { animation: weapon-blink .4s steps(2, jump-none) infinite; }
-.weapon__tank { display: block; height: 3px; margin-top: 1px; background: var(--pip-15); }
-.weapon__tank span { display: block; height: 100%; background: var(--band), var(--pip); transition: width .2s ease; }
-.weapon.is-reloading .weapon__tank span { width: 100% !important; transform-origin: left; animation: weapon-refill 1.5s linear; }
-.weapon__warn {
-  font-size: 11px;
-  letter-spacing: .06em;
-  line-height: 1.15;
-  color: var(--pip-hi);
-  animation: weapon-warn 1.2s ease-in-out infinite;
-}
-.weapon__note {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 6px);
-  padding: 2px 8px;
-  background: var(--pip);
-  color: var(--screen-bg);
-  text-shadow: none;
-  font-size: var(--fs-xs);
-  letter-spacing: .14em;
-  white-space: nowrap;
-  pointer-events: none;
-  transform: translateX(-50%);
-  animation: weapon-note .9s ease-out both;
-}
-
-/* NUKE: a hazard frame; ARMED for confirm inverts and strobes */
-.weapon--nuke { border-color: var(--pip-60); border-top-color: var(--pip); }
-.weapon--nuke::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 -1px;
-  height: 3px;
-  background: repeating-linear-gradient(-45deg, var(--pip) 0 4px, transparent 4px 8px);
-  opacity: .7;
-}
-.weapon.is-armed { animation: weapon-armed .5s steps(2, jump-none) infinite; }
-.weapon.is-armed .weapon__warn { animation: none; color: inherit; }
-.weapon.is-launched { pointer-events: none; }
 
 @keyframes weapon-pop { from { transform: scale(.4) rotate(-20deg); opacity: 0; } }
 @keyframes weapon-blink { 50% { opacity: .25; } }
 @keyframes weapon-warn { 50% { opacity: .55; } }
-@keyframes weapon-refill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes weapon-note {
-  0% { opacity: 0; transform: translate(-50%, 6px); }
-  15%, 75% { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, -4px); }
+  0% { opacity: 0; transform: translateY(6px); }
+  15%, 75% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-4px); }
 }
 @keyframes weapon-armed {
-  0% { background: var(--pip); color: var(--screen-bg); text-shadow: none; box-shadow: 0 0 calc(14px * var(--glow-amt)) var(--pip-60); }
-  100% { background: var(--screen-bg); color: var(--pip); }
+  0% { background: var(--pip); color: var(--screen-bg); box-shadow: 0 0 calc(14px * var(--glow-amt)) var(--pip-60); }
+  100% { background: var(--frost-bg-strong); color: var(--pip); }
 }
-.weapon.is-armed .weapon__glyph { filter: none; }
+.flyout.is-armed .weapon__glyph { filter: none; }
 
 /* weapon hits drawn over the CRT glass (portalled into .crt) */
 .weapon-fx {
@@ -570,9 +636,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .weapon, .weapon__tank span { transition: none; }
-  .weapon__icon, .weapon__reload, .weapon__warn, .weapon__note, .weapon.is-armed { animation: none; }
-  .weapon.is-armed { background: var(--pip); color: var(--screen-bg); text-shadow: none; }
+  .flyout__ring { transition: none; }
+  .flyout__menu, .flyout__item, .weapon__icon, .weapon__reload, .weapon__note, .weapon__banner, .weapon__pip,
+  .flyout.is-armed .flyout__ring, .flyout.is-armed .flyout__caption { animation: none !important; }
+  .flyout.is-armed .flyout__ring { background: var(--pip); color: var(--screen-bg); }
 }
 
 /* ---------- EFFECTS ---------- */
@@ -620,8 +687,10 @@
   gap: 6px;
   width: min(260px, calc(100cqw - 16px));
   border: 1px solid var(--pip-60);
-  background: var(--screen-bg);
-  box-shadow: 0 0 calc(8px * var(--glow-amt)) var(--pip-30);
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(8px * var(--glow-amt)) var(--pip-30);
 }
 .fx {
   display: grid;
@@ -649,49 +718,65 @@
   .readout__value { font-size: 19px; }
 }
 
-/* short + wide: the ON ARM screen (~570x290) and landscape phones */
+/* short stages (small phones, ON ARM, landscape): long menus go two columns so they fit */
+@container status (max-height: 560px) {
+  .flyout--emotes .flyout__menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    width: min(390px, calc(100cqw - 8px));
+    min-width: 0;
+  }
+  .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: 15px; }
+  /* reversed, so WAVE sits bottom-right beside the trigger like the stacked list */
+  .flyout--emotes .flyout__item { order: calc(20 - var(--i, 0)); }
+  .flyout--emotes .flyout__meta { display: none; }
+}
+
+/* short + wide: the ON ARM screen (~570x290) and landscape phones (~800x200-330).
+   Figure fills the stage height with the limb bars listed down both sides of it; EFFECTS
+   toggle + readouts 2x2 in a column on the right; a one-line name plate underneath. */
 @container status (min-width: 500px) and (max-height: 480px) {
   .status-grid {
-    grid-template-columns: auto minmax(0, 1fr) minmax(130px, 28%);
-    grid-template-rows: minmax(0, 1fr) auto auto;
-    grid-template-areas: "emotes stage strip" "emotes stage weapon" "emotes id weapon";
-    column-gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 30%);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "stage fx" "stage strip" "id id";
+    column-gap: 10px;
     row-gap: 4px;
   }
-  .emote-bar { flex-direction: column; justify-content: center; gap: 0; }
-  .status-strip { grid-template-columns: 1fr 1fr; align-content: end; align-self: end; }
-  .weapon { grid-area: weapon; align-self: end; justify-self: stretch; width: auto; margin-top: 10px; }
-  .weapon__name { font-size: 17px; }
-  .weapon__long { display: inline; }
-  .weapon__short { display: none; }
-  .status-id { font-size: 18px; padding: 3px 10px; }
+  .status-stage { max-width: none; }
+  .limb { width: clamp(52px, 16%, 84px); font-size: 10px; justify-items: start; }
+  .limb__label { order: -1; }
+  .limb--head, .limb--l-arm, .limb--l-leg { left: 0; right: auto; transform: none; bottom: auto; }
+  .limb--torso, .limb--r-arm, .limb--r-leg { right: 0; left: auto; transform: none; bottom: auto; justify-items: end; }
+  .limb--head, .limb--torso { top: 0; }
+  .limb--l-arm, .limb--r-arm { top: 19%; }
+  .limb--l-leg, .limb--r-leg { top: 38%; }
+  .status-effects { grid-area: fx; justify-self: start; align-self: end; position: relative; }
+  .status-effects__toggle { min-height: 36px; }
+  .status-effects[data-open] .status-effects__list { position: absolute; top: 100%; left: 0; z-index: 6; width: min(260px, 60cqw); }
+  .status-strip { grid-template-columns: 1fr 1fr; align-content: end; align-self: end; gap: 4px; }
+  .readout { min-height: 40px; padding-block: 3px 2px; }
+  .readout__value { font-size: 18px; }
+  .status-id { font-size: 16px; padding: 2px 10px; gap: 4px 12px; flex-wrap: nowrap; white-space: nowrap; }
   .status-id__level .xp-bar { width: 48px; }
-  .limb { font-size: 10px; width: clamp(48px, 18%, 80px); }
+  .flyout { --fly-ring: 40px; --fly-row: 36px; }
+  .flyout__trigger { min-width: 48px; min-height: 48px; }
+  .flyout__item { font-size: 14px; }
+}
+@media (pointer: coarse) {
+  @container status (min-width: 500px) and (max-height: 480px) {
+    .flyout { --fly-row: 44px; }
+  }
 }
 
-/* very short (landscape phones): six 44px buttons won't stack, so two columns of three */
-@container status (min-width: 500px) and (max-height: 280px) {
-  .emote-bar { display: grid; grid-template-columns: repeat(2, var(--touch)); align-content: center; }
-}
-
-/* wide: emotes | stage | effects, with readouts + name under the stage */
-@container status (min-width: 820px) {
+/* wide + tall (desktop screen): stage | EFFECTS, with readouts + name under the stage */
+@container status (min-width: 820px) and (min-height: 481px) {
   .status-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 620px) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto auto;
-    grid-template-areas: "emotes stage effects" "weapon strip ." "weapon id .";
+    grid-template-areas: ". stage effects" ". strip ." ". id .";
     column-gap: 16px;
-  }
-  /* FO4 keeps its weapon box bottom-left of the figure */
-  .weapon { grid-area: weapon; align-self: start; justify-self: end; width: min(210px, 100%); column-gap: 8px; padding: 9px 8px 5px 6px; }
-  .weapon__glyph { width: 30px; height: 30px; }
-  .weapon__name { font-size: 22px; }
-  .weapon__long { display: inline; }
-  .weapon__short { display: none; }
-  .emote-bar {
-    flex-direction: column;
-    justify-self: end;
-    align-self: center;
   }
   .status-effects {
     grid-area: effects;
@@ -723,10 +808,14 @@
   }
   .readout__sub { display: inline; }
   .readout__value { font-size: 24px; }
+  .flyout { --fly-ring: 50px; }
+  .flyout__ring .st-glyph,
+  .flyout__ring .weapon__glyph { width: 26px; height: 26px; }
+  .flyout__caption { font-size: 11px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .emote-btn, .emote-btn::before, .readout { transition: none; }
+  .readout { transition: none; }
 }
 
 /* ---------- paper doll fallback ---------- */

@@ -57,6 +57,13 @@ const READOUT_GLYPH: Record<ReadoutId, ReactNode> = {
   quests: <path d="M3.5 6l1.6 1.6L8 4.7 M11 6.3h9.5 M3.5 12l1.6 1.6L8 10.7 M11 12.3h9.5 M4 18.3h3.5 M11 18.3h9.5" />,
 }
 
+/** The EMOTES trigger: a grinning face. */
+export const EmoteMenuGlyph = () => (
+  <Glyph>
+    <path d="M12 3a9 9 0 110 18 9 9 0 010-18z M8.2 9.6v1.2 M15.8 9.6v1.2 M7.4 14c1.1 1.9 2.8 2.9 4.6 2.9s3.5-1 4.6-2.9z" />
+  </Glyph>
+)
+
 export const EmoteGlyph = ({ id }: { id: Gesture }) => <Glyph>{EMOTE_GLYPH[id]}</Glyph>
 export const ReadoutGlyph = ({ id }: { id: ReadoutId }) => <Glyph className="readout__icon">{READOUT_GLYPH[id]}</Glyph>
 

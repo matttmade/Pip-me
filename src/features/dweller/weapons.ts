@@ -55,6 +55,13 @@ export function cycleWeapon(s: WeaponState): WeaponState {
   return { ...s, id: WEAPONS[(i + 1) % WEAPONS.length].id, confirmUntil: null }
 }
 
+/** Picking a weapon from the WEAPON fly-out. Equipping never arms the nuke; that takes its own
+ *  two taps. Re-picking the equipped weapon leaves it as it is (a pending confirm included). */
+export function equipWeapon(s: WeaponState, id: WeaponId): WeaponState {
+  if (s.id === id) return s
+  return { ...s, id: isId(id) ? id : 'fist', confirmUntil: null }
+}
+
 /** Finish a refill whose time is up. Returns the same object when nothing changed. */
 export function settle(s: WeaponState, now: number): WeaponState {
   let next = s

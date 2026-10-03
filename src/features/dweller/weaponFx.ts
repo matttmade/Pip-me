@@ -3,7 +3,8 @@ import type { Rng } from '../../lib/contracts'
 /**
  * Water-pistol particles, as pure functions of time so the canvas only has to draw them.
  * A drop flies from the figure toward the glass (growing as it nears the viewer), splats,
- * then runs down the glass and fades.
+ * then runs down the glass and fades. Shot away from the viewer, drops arc into the screen,
+ * shrink with distance and never reach the glass.
  */
 
 export type Pt = { x: number; y: number }
@@ -21,16 +22,32 @@ export type Drop = {
   r: number
   /** how far it runs down the glass, px */
   run: number
+  /** toward the viewer: 1 = at the glass … -1 = away into the screen (no splat) */
+  depth: number
 }
+
+/** Shot direction: `x` sideways on screen (-1 left … 1 right), `z` toward the viewer (-1 … 1). */
+export type Aim = { x: number; z: number }
+
+/** Drops shot this far away from the viewer never hit the glass. */
+const AWAY = -0.2
+const isAway = (d: Drop) => d.depth < AWAY
 
 export const SPLAT_MS = 1400
 
-/** One trigger pull: a tight burst of `n` drops aimed at the glass on one side of the figure. */
-export function spawnSquirt(rng: Rng, from: Pt, size: { w: number; h: number }, dir: 1 | -1, n = 6): Drop[] {
+/**
+ * One trigger pull: a tight burst of `n` drops toward side `dir`. Without `facing` it's aimed
+ * at the glass beside the figure; with it, sideways reach follows |facing.x| and a shot away
+ * from the viewer (z < 0) lands short, into the screen.
+ */
+export function spawnSquirt(rng: Rng, from: Pt, size: { w: number; h: number }, dir: 1 | -1, n = 6, facing?: Aim): Drop[] {
   const unit = Math.min(size.w, size.h)
+  const z = facing ? Math.max(-1, Math.min(1, facing.z)) : 1
+  const away = z < AWAY
+  const side = facing ? Math.max(away ? 0.25 : 0.4, Math.abs(facing.x)) : 1
   const aim: Pt = {
-    x: from.x + dir * size.w * (0.22 + rng() * 0.18),
-    y: from.y - size.h * (0.08 + rng() * 0.22),
+    x: from.x + dir * size.w * (0.22 + rng() * 0.18) * side * (away ? 0.6 : 1),
+    y: away ? from.y - size.h * (0.03 + rng() * 0.06) : from.y - size.h * (0.08 + rng() * 0.22),
   }
   return Array.from({ length: n }, (_, i) => {
     const spread = unit * 0.07
@@ -42,6 +59,7 @@ export function spawnSquirt(rng: Rng, from: Pt, size: { w: number; h: number }, 
       arc: unit * (0.06 + rng() * 0.06),
       r: Math.max(3, unit * (0.012 + rng() * 0.016)) * (i === 0 ? 1.5 : 1),
       run: unit * (0.04 + rng() * 0.12),
+      depth: z,
     }
   })
 }
@@ -64,11 +82,12 @@ export function dropAt(d: Drop, t: number): DropFrame {
       phase: 'fly',
       x: d.from.x + (d.to.x - d.from.x) * p,
       y: d.from.y + (d.to.y - d.from.y) * p - d.arc * Math.sin(Math.PI * p),
-      // starts as a speck and swells as it comes at the glass
-      r: d.r * (0.25 + 0.75 * p * p),
-      alpha: 0.9,
+      // at the glass: starts as a speck and swells as it comes closer; away: shrinks into the distance
+      r: isAway(d) ? d.r * (0.8 - 0.65 * p) : d.r * (0.25 + 0.75 * p * p),
+      alpha: isAway(d) ? 0.9 * (1 - 0.6 * p) : 0.9,
     }
   }
+  if (isAway(d)) return { phase: 'gone' }
   const s = local - d.flight
   if (s >= SPLAT_MS) return { phase: 'gone' }
   const q = s / SPLAT_MS
@@ -85,4 +104,4 @@ export function dropAt(d: Drop, t: number): DropFrame {
 }
 
 /** ms until every drop of a shot is gone. */
-export const shotLength = (drops: Drop[]) => drops.reduce((m, d) => Math.max(m, d.delay + d.flight + SPLAT_MS), 0)
+export const shotLength = (drops: Drop[]) => drops.reduce((m, d) => Math.max(m, d.delay + d.flight + (isAway(d) ? 0 : SPLAT_MS)), 0)
