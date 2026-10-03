@@ -14,7 +14,8 @@
     <!-- installed to the Home Screen: full screen, dark status bar (iOS) -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- solid bar: "black-translucent" hits an iOS 26 bug (WebKit 301108) that leaves Home Screen apps a status bar short at the bottom and blurs the top -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Pip-Me" />
     <meta name="application-name" content="Pip-Me" />
     <meta name="format-detection" content="telephone=no" />

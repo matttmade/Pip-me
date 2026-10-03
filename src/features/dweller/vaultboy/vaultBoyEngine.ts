@@ -14,6 +14,7 @@ import { mulberry32 } from '../../../lib/contracts'
 import { renderSize } from '../fidelity'
 import { GestureDirector, hueToHex, WALK_CLIP, type Command } from './behavior'
 import { applySolidWire, DitherShader, setDitherHue } from './solidWire'
+import { coastStep, facingFromYaw } from './spin'
 import { VaultBoy } from './VaultBoy'
 
 export const VAULTBOY_URL = `${import.meta.env.BASE_URL}models/vaultboy.glb`
@@ -35,6 +36,14 @@ export type VaultBoyEngine = {
   resize(cssW: number, cssH: number, dpr: number): void
   /** Play a gesture now (tap / app event). Returns false when swallowed. */
   react(name: string): boolean
+  /** Drag-to-spin: hold him (stops any coast and the slow camera orbit). */
+  grab(): void
+  /** Turn him by `rad` (positive = toward screen-right). */
+  spinBy(rad: number): void
+  /** Let go; he coasts at `velocity` rad/s and eases to a stop. */
+  release(velocity: number): void
+  /** Facing relative to the camera: 0 = viewer, +π/2 = screen-right, ±π = away. */
+  getFacing(): number
   dispose(): void
 }
 
@@ -102,6 +111,12 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
   }
 
   let time = 0
+  // drag-to-spin: his own yaw on top of the model's base rotation
+  const baseYaw = vb.object.rotation.y
+  let spin = 0
+  let spinVel = 0
+  let held = false
+  let camYaw = BASE_YAW
   let raf = 0
   let last = 0
   let disposed = false
@@ -113,8 +128,14 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
       if (c) apply(c)
       vb.update(dt)
     }
-    const yaw = BASE_YAW + (animate ? ORBIT * Math.sin(time * 0.3) : 0)
-    camera.position.set(Math.sin(yaw) * DIST, CAM_Y, Math.cos(yaw) * DIST)
+    if (!held && spinVel) {
+      const c = coastStep(spinVel, dt)
+      spin += c.turn
+      spinVel = c.vel
+    }
+    vb.object.rotation.y = baseYaw + spin
+    camYaw = BASE_YAW + (animate ? ORBIT * Math.sin(time * 0.3) : 0)
+    camera.position.set(Math.sin(camYaw) * DIST, CAM_Y, Math.cos(camYaw) * DIST)
     camera.lookAt(TARGET)
     scene.updateMatrixWorld()
     composer.render()
@@ -125,7 +146,8 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
     if (now - last < FRAME_MS - 2) return
     const dt = last ? Math.min(0.1, (now - last) / 1000) : 0
     last = now
-    time += dt
+    // the camera orbit waits while he's held or coasting, so the turn feels direct
+    if (!held && !spinVel) time += dt
     draw(dt)
   }
 
@@ -171,6 +193,21 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
       if (c) apply(c)
       return !!c
     },
+    grab() {
+      held = true
+      spinVel = 0
+    },
+    spinBy(rad) {
+      if (disposed || !Number.isFinite(rad)) return
+      spin += rad
+      if (!raf) draw(0)
+    },
+    release(velocity) {
+      held = false
+      // with no animation loop there is nothing to coast on
+      spinVel = raf && Number.isFinite(velocity) ? velocity : 0
+    },
+    getFacing: () => facingFromYaw(spin, camYaw),
     setRunning,
     dispose() {
       if (disposed) return

@@ -20,17 +20,8 @@ import { createVaultBoyEngine, type VaultBoyEngine } from './vaultboy/vaultBoyEn
 
 const TAP_SLOP = 10
 
-/** Drag-to-spin controls. Optional: used when the engine build offers them. */
-type SpinControls = {
-  grab(): void
-  spinBy(rad: number): void
-  release(velocity: number): void
-  getFacing(): number
-}
-const spinner = (e: VaultBoyEngine | null): SpinControls | null => {
-  const s = e as (VaultBoyEngine & Partial<SpinControls>) | null
-  return s && s.grab && s.spinBy && s.release && s.getFacing ? (s as unknown as SpinControls) : null
-}
+/** Drag-to-spin controls, once the engine is up. */
+const spinner = (e: VaultBoyEngine | null) => e
 
 type Press = { id: number; x0: number; y0: number; x: number; samples: Sample[]; dragging: boolean }
 

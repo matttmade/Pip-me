@@ -15,13 +15,27 @@ import {
 } from 'three'
 import { pipRgb } from '../../../lib/contracts'
 
+export type SolidWireLook = {
+  /** the model's triangle wire (0 = off: the mesh is dense and irregular, so it reads as noise) */
+  wireOpacity: number
+  /** hologram scan bands across the body (bands per model unit, 0 = off): a smooth texture instead of the mesh wire */
+  bands?: number
+  /** key / back / ambient light: lower key + more fill = more mid-tones for the dither */
+  key: number
+  back: number
+  fill: number
+}
+
+/** Smooth dithered shading + hologram bands; softer light than before so more of him sits in the dithered mid-tones. */
+export const SOLID_WIRE_LOOK: SolidWireLook = { wireOpacity: 0, bands: 16, key: 1.7, back: 0.8, fill: 0.3 }
+
 /**
- * "Solid wireframe" look (owner pick #2): an opaque, harshly lit grey body hides back faces,
- * a bright wire sits on the visible faces, a fresnel rim and a black ink outline define the
+ * "Solid wireframe" look (owner pick #2): an opaque, lit grey body hides back faces,
+ * hologram bands ride on the body, a fresnel rim and a black ink outline define the
  * silhouette. Everything is greyscale; the Bayer dither pass maps brightness onto the
  * phosphor ramp, so the screen colour drives the final look.
  */
-export function applySolidWire(root: Object3D, scene: Scene): { dispose(): void } {
+export function applySolidWire(root: Object3D, scene: Scene, look: SolidWireLook = SOLID_WIRE_LOOK): { dispose(): void } {
   const meshes: SkinnedMesh[] = []
   root.traverse((o) => (o as SkinnedMesh).isSkinnedMesh && meshes.push(o as SkinnedMesh))
   const [body, kitWire] = meshes
@@ -33,10 +47,10 @@ export function applySolidWire(root: Object3D, scene: Scene): { dispose(): void 
   body.material = bodyMat
   owned.push(bodyMat)
 
-  const wireMat = new MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.32 })
+  const wireMat = new MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: look.wireOpacity })
   if (kitWire) {
     kitWire.material = wireMat
-    kitWire.visible = true
+    kitWire.visible = look.wireOpacity > 0
   }
   owned.push(wireMat)
 
@@ -75,6 +89,38 @@ export function applySolidWire(root: Object3D, scene: Scene): { dispose(): void 
     2,
   )
 
+  // hologram bands: even horizontal lines in bind-pose space, so they ride on the body as it moves
+  if (look.bands) {
+    extra(
+      new ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        uniforms: { uFreq: { value: look.bands } },
+        vertexShader: /* glsl */ `#include <common>
+          #include <skinning_pars_vertex>
+          varying float vY;
+          void main(){
+            vY = position.y;
+            #include <skinbase_vertex>
+            #include <begin_vertex>
+            #include <skinning_vertex>
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+          }`,
+        fragmentShader: /* glsl */ `uniform float uFreq; varying float vY;
+          void main(){
+            float t = vY * uFreq;
+            float d = abs(fract(t) - 0.5) / fwidth(t);
+            float a = 1.0 - smoothstep(0.0, 1.2, d);
+            gl_FragColor = vec4(vec3(0.55 * a), a);
+          }`,
+      }),
+      1,
+    )
+  }
+
   // ink outline: inverted hull pushed out along the skinned normal (world-size thickness)
   body.updateMatrixWorld(true)
   const scale = body.getWorldScale(new Vector3()).x || 1
@@ -88,11 +134,11 @@ export function applySolidWire(root: Object3D, scene: Scene): { dispose(): void 
   extra(outlineMat, -1)
 
   // harsh key from upper-left, a back rim light, almost no fill
-  const key = new DirectionalLight(0xffffff, 3.4)
+  const key = new DirectionalLight(0xffffff, look.key)
   key.position.set(-3, 3.5, 2.5)
-  const back = new DirectionalLight(0xffffff, 1.2)
+  const back = new DirectionalLight(0xffffff, look.back)
   back.position.set(3, 2, -3)
-  const fill = new AmbientLight(0xffffff, 0.08)
+  const fill = new AmbientLight(0xffffff, look.fill)
   scene.add(key, back, fill)
   owned.push({ dispose: () => scene.remove(key, back, fill) })
 
@@ -107,7 +153,7 @@ export const DitherShader = {
     c1: { value: new Color() },
     c2: { value: new Color() },
     c3: { value: new Color() },
-    uPx: { value: 2.0 },
+    uPx: { value: 3.0 },
   },
   vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */ `
