@@ -4,7 +4,9 @@ import { hashString } from '../../lib/seed'
 import { ListDetail, type ListItem } from '../../shell/ListDetail'
 import { domainOf } from './parseBookmarks'
 import { AID_KEY, NO_AID, type AidItem } from './types'
-import { Facts, InvDetail } from './ui'
+import { colHead } from './colHead'
+import { Cols, Counted, Facts, InvDetail } from './ui'
+import { aidWgVal } from './weight'
 import { fmtDate, openLink } from './util'
 
 /** Original flavor lines, picked per link so each one keeps its own. */
@@ -25,7 +27,9 @@ export default function AidPanel() {
   const [stored, setSelected] = useStored<string>('aid:selected', '')
 
   const sorted = useMemo(() => [...aid].sort((a, b) => b.uses - a.uses || a.pinnedAt - b.pinnedAt), [aid])
-  const items: ListItem[] = sorted.map((a) => ({ id: a.id, label: a.title, right: `(${a.uses})` }))
+  const items: ListItem[] = sorted.length
+    ? [colHead('AID'), ...sorted.map((a) => ({ id: a.id, label: <Counted label={a.title} count={a.uses} />, right: <Cols wgVal={aidWgVal(a)} /> }))]
+    : []
   // keep the cursor on the same item while uses reorder the list
   const [fallback, setFallback] = useState(0)
   const selected = sorted.some((a) => a.id === stored) ? stored : sorted[Math.min(fallback, sorted.length - 1)]?.id
@@ -41,11 +45,10 @@ export default function AidPanel() {
   }
 
   const detail = current ? (
-    <InvDetail title={current.title} sub={flavorFor(current.url)}>
+    <InvDetail title={current.title} sub={flavorFor(current.url)} icon="aid" wgVal={aidWgVal(current)} stats={[['DOSES', current.uses]]}>
       <Facts
         rows={[
           ['SOURCE', domainOf(current.url)],
-          ['DOSES TAKEN', current.uses],
           ['PINNED', fmtDate(current.pinnedAt)],
         ]}
       />
@@ -59,7 +62,7 @@ export default function AidPanel() {
       </div>
     </InvDetail>
   ) : (
-    <InvDetail title="AID">
+    <InvDetail title="AID" icon="aid">
       <p className="inv-empty">NO AID PINNED. SELECT A HOLOTAPE IN INV &gt; HOLOTAPES AND PIN IT FOR QUICK USE.</p>
     </InvDetail>
   )

@@ -21,7 +21,7 @@ import { StatTab } from './tabs/StatTab'
 
 const TABS = [
   { id: 'STAT', subs: ['STATUS', 'SPECIAL', 'PERKS'] },
-  { id: 'INV', subs: ['HOLOTAPES', 'AID'] },
+  { id: 'INV', subs: ['HOLOTAPES', 'AID', 'TOOLS', 'NOTES'] },
   { id: 'DATA', subs: ['QUESTS', 'STATS', 'SYSTEM'] },
   { id: 'MAP', subs: ['LOCAL'] },
   { id: 'RADIO', subs: ['STATIONS'] },
