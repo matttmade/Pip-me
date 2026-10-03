@@ -9,7 +9,8 @@ import { useNowPlaying } from '../radio/nowPlaying'
 import { useCaps } from '../terminal/useCaps'
 import { useWeather } from '../weather/useWeather'
 import { EMOTES, emoteForKey, requestEmote } from './emotes'
-import { EmoteGlyph, ReadoutGlyph } from './glyphs'
+import { Flyout } from './Flyout'
+import { EmoteGlyph, EmoteMenuGlyph, ReadoutGlyph } from './glyphs'
 import { NAV_KEY, NAV_TARGET, navTo, readouts, type Nav, type Readout } from './statusReadouts'
 import { questsDoneToday, statusEffects } from './statusEffects'
 import type { Gesture } from './vaultboy/behavior'
@@ -17,10 +18,11 @@ import type { Gesture } from './vaultboy/behavior'
 const isTyping = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
 
 /**
- * Floating emote cluster beside the figure. Number keys 1-6 work while STATUS is open
- * (not while typing, not under an overlay).
+ * EMOTES fly-out: a round trigger in the stage's bottom-right corner that fans the six
+ * gestures up out of it. Number keys 1-6 still fire them directly while STATUS is open
+ * (not while typing, not under an overlay); the trigger blinks to show it.
  */
-export function EmoteBar() {
+export function EmoteFlyout({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const overlay = useOverlay()
   const [lit, setLit] = useState<Gesture | null>(null)
   const timer = useRef(0)
@@ -52,21 +54,27 @@ export function EmoteBar() {
   }, [overlay])
 
   return (
-    <div className="emote-bar" role="toolbar" aria-label="Emotes" data-no-swipe>
-      {EMOTES.map((e) => (
-        <button
-          key={e.id}
-          type="button"
-          className={`emote-btn${lit === e.id ? ' is-lit' : ''}`}
-          data-emote={e.id}
-          onClick={() => fire(e.id)}
-          aria-label={`${e.label} (key ${e.key})`}
-          title={`${e.label}  [${e.key}]`}
-        >
-          <EmoteGlyph id={e.id} />
-        </button>
-      ))}
-    </div>
+    <Flyout
+      id="emotes"
+      side="right"
+      className={lit ? 'is-lit' : ''}
+      open={open}
+      onOpenChange={onOpenChange}
+      triggerLabel="Emotes (keys 1 to 6)"
+      triggerTitle="Emotes  [1-6]"
+      trigger={lit ? <EmoteGlyph id={lit} /> : <EmoteMenuGlyph />}
+      caption="EMOTE"
+      menuLabel="Emotes"
+      items={EMOTES.map((e) => ({
+        key: e.id,
+        icon: <EmoteGlyph id={e.id} />,
+        label: e.label,
+        meta: e.key,
+        ariaLabel: `${e.label} (key ${e.key})`,
+        title: `${e.label}  [${e.key}]`,
+        onSelect: () => fire(e.id),
+      }))}
+    />
   )
 }
 

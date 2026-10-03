@@ -4,7 +4,8 @@ import { useXp } from '../quests/useXp'
 import { startPerkTracking } from '../perks/perks'
 import { DEFAULT_DETAIL, DETAIL_KEY, normalizeDetail, type DetailLevel } from './fidelity'
 import { LIMBS, limbCondition, type Limb } from './limbs'
-import { EffectsList, EmoteBar, ReadoutStrip } from './StatusExtras'
+import { EffectsList, EmoteFlyout, ReadoutStrip } from './StatusExtras'
+import type { FlyoutId } from './flyout'
 import { DEFAULT_FIGURE, FIGURE_KEY, normalizeFigure, type Figure } from './vaultboy/behavior'
 import { hasWebGL } from './webgl'
 import { WeaponSlot } from './WeaponSlot'
@@ -30,10 +31,11 @@ class SceneBoundary extends Component<{ onError: (e: unknown) => void; children:
 const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
 
 /**
- * STAT > STATUS: the figure with limb condition bars around it, floating emote buttons,
- * active EFFECTS, four readout boxes (TEMP, RADS, CAPS, QUESTS), the WEAPON slot and the
- * name plate with LEVEL + XP. Figure and detail options live in DATA > SYSTEM > FIGURE.
- * The panel is a size container; dweller.css picks wide / short / compact layouts from it.
+ * STAT > STATUS: the figure with limb condition bars around it, the WEAPON and EMOTES
+ * fly-out triggers in the stage's bottom corners, active EFFECTS, four readout boxes
+ * (TEMP, RADS, CAPS, QUESTS) and the name plate with LEVEL + XP. Figure and detail options live in DATA > SYSTEM > FIGURE.
+ * The panel is a size container; dweller.css picks wide / short / landscape / compact
+ * layouts from it.
  */
 export default function StatusPanel() {
   useEffect(startPerkTracking, [])
@@ -54,6 +56,12 @@ export default function StatusPanel() {
   const offline = lastError !== null && (fails >= 3 || lastError === 'WEBGL UNAVAILABLE')
   const limbs = useMemo(() => limbCondition(profile.name), [profile.name])
   const xp = useXp()
+  // only one fly-out open at a time
+  const [menu, setMenu] = useState<FlyoutId | null>(null)
+  const menuProps = (id: FlyoutId) => ({
+    open: menu === id,
+    onOpenChange: (o: boolean) => setMenu((m) => (o ? id : m === id ? null : m)),
+  })
 
   const onFail = useCallback((err: unknown) => {
     console.warn('[dweller] 3D figure failed, retrying', err)
@@ -83,7 +91,7 @@ export default function StatusPanel() {
 
   return (
     <div className="status-panel">
-      <div className={`status-grid${failed ? '' : ' has-emotes'}`}>
+      <div className="status-grid">
         <div className="status-stage">
           <div className="status-figure">
             {offline ? (
@@ -129,12 +137,12 @@ export default function StatusPanel() {
               <span className="limb__label">{l}</span>
             </div>
           ))}
+          <WeaponSlot {...menuProps('weapon')} />
+          {!failed && <EmoteFlyout {...menuProps('emotes')} />}
         </div>
 
-        {!failed && <EmoteBar />}
         <EffectsList />
         <ReadoutStrip />
-        <WeaponSlot />
 
         <div className="status-id">
           <span className="status-id__name">{profile.name || 'VAULT DWELLER'}</span>

@@ -1,7 +1,7 @@
 import type { Gesture } from './vaultboy/behavior'
 
 /**
- * STATUS emote controls: the buttons beside the figure, their number keys, and a tiny
+ * STATUS emote controls: the EMOTES fly-out, their number keys, and a tiny
  * module-level bus so StatusPanel can ask whichever figure scene is mounted to gesture.
  * Pure apart from the listener set; no three.js.
  */

@@ -10,6 +10,7 @@ import {
   confirmLeft,
   cycleWeapon,
   DEFAULT_WEAPON,
+  equipWeapon,
   isReloading,
   normalizeWeapon,
   pressNuke,
@@ -18,8 +19,10 @@ import {
   WEAPON_KEY,
   weaponById,
   WEAPONS,
+  type WeaponId,
   type WeaponState,
 } from './weapons'
+import { Flyout, type FlyoutItem } from './Flyout'
 import type { Pt } from './weaponFx'
 import { weaponSfx } from './weaponSfx'
 
@@ -36,12 +39,13 @@ function shake(el: Element | null | undefined, px: number, ms: number) {
 }
 
 /**
- * STATUS weapon slot (FO4's weapon box, made ours). Tap / Enter / Space / W swaps
- * FIST → WATER PISTOL → NUKE. With the NUKE equipped, a tap arms it and a second tap within
- * three seconds launches (the app blows up and reboots). The equipped weapon also decides
- * what a tap on the figure does: FIST punches the glass, WATER PISTOL squirts it.
+ * STATUS WEAPON fly-out: a round trigger in the stage's bottom-left corner showing what's
+ * equipped; tap it to pick FIST / WATER PISTOL / MINI NUKE. W still swaps through all three.
+ * The equipped weapon decides what a tap on the figure does: FIST punches the glass, WATER
+ * PISTOL squirts it, and the NUKE needs two taps (figure, or the trigger once it's asking)
+ * within three seconds to launch (the app blows up and reboots).
  */
-export function WeaponSlot() {
+export function WeaponSlot({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [stored, setStored] = useStored<WeaponState>(WEAPON_KEY, DEFAULT_WEAPON)
   const state = normalizeWeapon(stored)
   // the confirm window is never persisted (normalizeWeapon drops it), so it lives here
@@ -52,7 +56,7 @@ export function WeaponSlot() {
   const [kick, setKick] = useState(0)
   const reduced = usePrefersReducedMotion()
   const overlay = useOverlay()
-  const box = useRef<HTMLButtonElement>(null)
+  const box = useRef<HTMLSpanElement>(null)
   const [crt, setCrt] = useState<HTMLElement | null>(null)
   const fx = useRef<WeaponFxHandle>(null)
   const rng = useRef<Rng | null>(null)
@@ -109,14 +113,13 @@ export function WeaponSlot() {
     setKick((k) => k + 1)
   }
 
-  /** The weapon box: swap, or work the nuke's two-tap launch. */
-  const press = () => {
-    if (launched) return
-    if (full.id === 'nuke') return nuke(full)
-    commit(cycleWeapon(full))
+  /** A pick from the fly-out. */
+  const equip = (id: WeaponId) => {
+    if (launched || id === full.id) return
+    commit(equipWeapon(full, id))
     weaponSfx.swap()
     setKick((k) => k + 1)
-    if (full.id === 'water') weaponSfx.arm()
+    if (id !== 'fist') weaponSfx.arm()
   }
 
   /** W key: plain swap through all three, never launches. */
@@ -198,72 +201,74 @@ export function WeaponSlot() {
 
   const mag = WEAPONS[1].mag ?? 0
   const armed = full.id === 'nuke' && left > 0
-  const status = full.id === 'nuke' ? (launched ? 'LAUNCHED' : armed ? `TAP AGAIN TO LAUNCH · ${left}` : 'ARMED · TAP TO LAUNCH') : null
-  const label =
-    full.id === 'water'
-      ? `Weapon: water pistol, ${reloading ? 'reloading' : `${full.ammo} of ${mag} water`}. Tap to swap.`
-      : full.id === 'nuke'
-        ? `Weapon: mini nuke. ${armed ? 'Tap again to launch.' : 'Tap to arm, then tap again within 3 seconds to launch.'} Press W to swap instead.`
-        : 'Weapon: fist, damage 2. Tap to swap.'
+  const ammo = reloading ? 'R' : String(full.ammo)
+  const label = launched
+    ? 'Weapon: mini nuke, launched.'
+    : armed
+      ? `Mini nuke armed. Tap again to launch, ${left} seconds left.`
+      : `Weapon: ${weapon.name.toLowerCase()}${full.id === 'water' ? `, ${reloading ? 'reloading' : `${full.ammo} of ${mag} water`}` : ''}. Open the weapon menu.`
+
+  const items: FlyoutItem[] = WEAPONS.map((w) => ({
+    key: w.id,
+    icon: <WeaponGlyph id={w.id} />,
+    label: w.name,
+    meta:
+      w.id === 'water' ? (
+        <span className="flyout__ammo">
+          <DropGlyph />
+          {reloading ? <b className="weapon__reload">RELOAD</b> : <b>{full.ammo}</b>}
+        </span>
+      ) : w.id === 'nuke' ? (
+        '2-TAP'
+      ) : (
+        `DMG ${w.dmg}`
+      ),
+    ariaLabel:
+      w.id === 'water'
+        ? `Water pistol, ${reloading ? 'reloading' : `${full.ammo} of ${mag} water`}`
+        : w.id === 'nuke'
+          ? 'Mini nuke. Once equipped, tap the figure twice within 3 seconds to launch.'
+          : `Fist, damage ${w.dmg}`,
+    checked: w.id === full.id,
+    className: `weapon-item--${w.id}`,
+    onSelect: () => equip(w.id),
+  }))
 
   return (
     <>
-      <button
-        ref={box}
-        type="button"
-        className={`weapon weapon--${full.id}${armed ? ' is-armed' : ''}${reloading ? ' is-reloading' : ''}${launched ? ' is-launched' : ''}`}
-        data-no-swipe
-        onClick={press}
-        aria-label={label}
-        title={full.id === 'nuke' ? 'Tap twice to launch  [W: swap]' : 'Tap to swap weapon  [W]'}
-      >
-        <span className="weapon__legend" aria-hidden>
-          WEAPON
-        </span>
-        <span key={`${full.id}-${kick}`} className="weapon__icon" aria-hidden>
-          <WeaponGlyph id={full.id} />
-        </span>
-        <span className="weapon__body" aria-hidden>
-          <span className="weapon__name">
-            <span className="weapon__long">{weapon.name}</span>
-            <span className="weapon__short">{weapon.short}</span>
-          </span>
-          {status ? (
-            <span className="weapon__warn">{status}</span>
-          ) : (
-            <span className="weapon__stats">
-              <span className="weapon__stat">
-                DMG <b>{weapon.dmg}</b>
+      <Flyout
+        id="weapon"
+        side="left"
+        className={`weapon--${full.id}${armed ? ' is-armed' : ''}${reloading ? ' is-reloading' : ''}${launched ? ' is-launched' : ''}`}
+        open={open && !armed && !launched}
+        onOpenChange={(o) => (armed ? nuke(full) : onOpenChange(o))}
+        triggerLabel={label}
+        triggerTitle={armed ? 'Tap again to launch' : 'Weapon  [W: swap]'}
+        trigger={
+          <>
+            <span key={`${full.id}-${kick}`} className="weapon__icon">
+              <WeaponGlyph id={full.id} />
+            </span>
+            {full.id === 'water' && (
+              <span className="weapon__pip">
+                <DropGlyph />
+                {ammo}
               </span>
-              {full.id === 'water' ? (
-                <span className="weapon__stat weapon__ammo">
-                  <DropGlyph />
-                  {reloading ? <b className="weapon__reload">RELOAD</b> : <b>{full.ammo}</b>}
-                </span>
-              ) : (
-                <span className="weapon__stat">
-                  AMMO <b>—</b>
-                </span>
-              )}
-            </span>
-          )}
-          {full.id === 'water' && (
-            <span className="weapon__tank">
-              <span style={{ width: `${reloading ? 0 : (full.ammo / mag) * 100}%` }} />
-            </span>
-          )}
+            )}
+          </>
+        }
+        caption={armed ? `LAUNCH ${left}` : weapon.id === 'water' ? 'WATER' : weapon.id === 'nuke' ? 'NUKE' : 'FIST'}
+        menuLabel="Weapon"
+        items={items}
+      >
+        <span ref={box} className="weapon__notes" aria-live="polite">
+          {armed ? (
+            <span className="weapon__banner">TAP AGAIN TO LAUNCH · {left}</span>
+          ) : note ? (
+            <span className="weapon__note">{note}</span>
+          ) : null}
         </span>
-        <span className="weapon__pips" aria-hidden>
-          {WEAPONS.map((w) => (
-            <i key={w.id} className={w.id === full.id ? 'is-on' : ''} />
-          ))}
-        </span>
-        {note && (
-          <span className="weapon__note" aria-live="polite">
-            {note}
-          </span>
-        )}
-      </button>
+      </Flyout>
       {crt && createPortal(<WeaponFxLayer ref={fx} />, crt)}
       {launched && <NukeBlast reduced={reduced} crt={crt} onReboot={() => setStored(DEFAULT_WEAPON)} />}
     </>

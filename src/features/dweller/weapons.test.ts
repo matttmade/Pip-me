@@ -5,6 +5,7 @@ import {
   confirmLeft,
   CONFIRM_MS,
   cycleWeapon,
+  equipWeapon,
   DEFAULT_WEAPON,
   normalizeWeapon,
   pressNuke,
@@ -110,5 +111,23 @@ describe('blast timeline', () => {
     expect(blastPhaseAt(tl, 300)).toBe('cloud')
     expect(blastPhaseAt(tl, 2600)).toBe('lost')
     expect(blastPhaseAt(tl, 99999)).toBe('reboot')
+  })
+})
+
+describe('equipWeapon (fly-out pick)', () => {
+  it('equips the picked weapon and keeps the water tank', () => {
+    const s = equipWeapon({ ...DEFAULT_WEAPON, ammo: 7 }, 'water')
+    expect(s.id).toBe('water')
+    expect(s.ammo).toBe(7)
+  })
+  it('picking the nuke equips it but never arms it', () => {
+    expect(equipWeapon(DEFAULT_WEAPON, 'nuke')).toMatchObject({ id: 'nuke', confirmUntil: null })
+  })
+  it('swapping away drops a pending launch confirm', () => {
+    expect(equipWeapon({ ...DEFAULT_WEAPON, id: 'nuke', confirmUntil: 9 }, 'fist').confirmUntil).toBeNull()
+  })
+  it('re-picking the equipped weapon changes nothing', () => {
+    const s: WeaponState = { ...DEFAULT_WEAPON, id: 'nuke', confirmUntil: 9 }
+    expect(equipWeapon(s, 'nuke')).toBe(s)
   })
 })
