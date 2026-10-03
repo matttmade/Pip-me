@@ -6,5 +6,8 @@ export function hslToRgb(h: number, s: number, l: number): [number, number, numb
   return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)]
 }
 
+/** Phosphor saturation, the same as --pip-sat in tokens.css: a soft mint, not neon. */
+export const PIP_SAT = 0.6
+
 /** The same colors as tokens.css, for canvas/WebGL code that can't read CSS vars. */
-export const pipRgb = (hue: number, lightness = 0.55) => hslToRgb(hue, 1, lightness)
+export const pipRgb = (hue: number, lightness = 0.6) => hslToRgb(hue, PIP_SAT, lightness)

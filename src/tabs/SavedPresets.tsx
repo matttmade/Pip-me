@@ -86,7 +86,7 @@ export function SavedPresets() {
             const active = sameSnapshot(p.snapshot, current)
             return (
               <li key={p.id} className={`saved-preset${active ? ' is-active' : ''}`}>
-                <span className="saved-preset__swatch" style={{ background: `hsl(${p.snapshot.effects.hue} 100% 55%)` }} aria-hidden />
+                <span className="saved-preset__swatch" style={{ background: `hsl(${p.snapshot.effects.hue} 60% 60%)` }} aria-hidden />
                 <span className="saved-preset__name">
                   {p.name}
                   <small>

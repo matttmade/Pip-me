@@ -4,7 +4,7 @@ import { mulberry32, useOverlay, usePrefersReducedMotion, useStored, type Rng } 
 import { requestEmote } from './emotes'
 import { figureFacing, onFigureTap } from './figureTap'
 import { squirtAim } from './vaultboy/spin'
-import { DropGlyph, WeaponGlyph } from './glyphs'
+import { CrosshairGlyph, DropGlyph, WeaponGlyph } from './glyphs'
 import NukeBlast from './NukeBlast'
 import { WeaponFxLayer, type WeaponFxHandle } from './WeaponFxLayer'
 import {
@@ -260,12 +260,6 @@ export function WeaponSlot({ open, onOpenChange }: { open: boolean; onOpenChange
             <span key={`${full.id}-${kick}`} className="weapon__icon">
               <WeaponGlyph id={full.id} />
             </span>
-            {full.id === 'water' && (
-              <span className="weapon__pip">
-                <DropGlyph />
-                {ammo}
-              </span>
-            )}
           </>
         }
         caption={armed ? `LAUNCH ${left}` : weapon.id === 'water' ? 'WATER' : weapon.id === 'nuke' ? 'NUKE' : 'FIST'}
@@ -280,6 +274,15 @@ export function WeaponSlot({ open, onOpenChange }: { open: boolean; onOpenChange
           ) : null}
         </span>
       </Flyout>
+      {/* DMG tile beside the weapon: damage, or what's left in the water pistol */}
+      <div
+        className={`loadout-dmg${reloading ? ' is-reloading' : ''}`}
+        role="img"
+        aria-label={full.id === 'water' ? (reloading ? 'Reloading' : `${full.ammo} of ${mag} water`) : `Damage ${weapon.dmg}`}
+      >
+        {full.id === 'water' ? <DropGlyph /> : <CrosshairGlyph />}
+        <b>{full.id === 'water' ? ammo : weapon.dmg}</b>
+      </div>
       {crt && createPortal(<WeaponFxLayer ref={fx} />, crt)}
       {launched && <NukeBlast reduced={reduced} crt={crt} onReboot={() => setStored(DEFAULT_WEAPON)} />}
     </>

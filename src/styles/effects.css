@@ -46,7 +46,7 @@
   right: 0;
   height: 18%;
   top: -20%;
-  background: linear-gradient(to bottom, transparent, hsl(var(--pip-hue) 100% 70% / .06) 50%, transparent);
+  background: linear-gradient(to bottom, transparent, hsl(var(--pip-hue) var(--pip-sat) 70% / .06) 50%, transparent);
   animation: roll var(--roll-interval) linear infinite;
 }
 [data-fx-roll='true'] .fx-roll { display: block; }

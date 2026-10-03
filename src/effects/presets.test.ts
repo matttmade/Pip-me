@@ -13,7 +13,7 @@ test('every preset produces a complete config', () => {
 
 test('default is the PIP-ME house preset', () => {
   expect(DEFAULT_EFFECTS.preset).toBe('PIP-ME')
-  expect(DEFAULT_EFFECTS.hue).toBe(137)
+  expect(DEFAULT_EFFECTS.hue).toBe(150)
   expect(DEFAULT_EFFECTS.rollBar.interval).toBe(17)
 })
 

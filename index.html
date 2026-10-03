@@ -53,14 +53,15 @@
       }
       html, body { margin: 0; background: #000; }
       #pip-loader {
-        --h: 137;
-        --pl: hsl(var(--h) 100% 55%);
-        --pl-hi: hsl(var(--h) 100% 78%);
-        --pl-hot: hsl(var(--h) 100% 92%);
-        --pl-70: hsl(var(--h) 100% 55% / .7);
-        --pl-45: hsl(var(--h) 100% 55% / .45);
-        --pl-25: hsl(var(--h) 100% 55% / .25);
-        --pl-12: hsl(var(--h) 100% 55% / .12);
+        --h: 150;
+        --s: 60%;
+        --pl: hsl(var(--h) var(--s) 55%);
+        --pl-hi: hsl(var(--h) var(--s) 78%);
+        --pl-hot: hsl(var(--h) var(--s) 92%);
+        --pl-70: hsl(var(--h) var(--s) 55% / .7);
+        --pl-45: hsl(var(--h) var(--s) 55% / .45);
+        --pl-25: hsl(var(--h) var(--s) 55% / .25);
+        --pl-12: hsl(var(--h) var(--s) 55% / .12);
         --pl-dim: hsl(var(--h) 70% 38%);
         --k: 1; /* time scale: 1 = first boot, smaller = returning visit */
         --pad-t: max(18px, env(safe-area-inset-top));
@@ -92,7 +93,7 @@
       .pl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
       .pl-scan { background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / .34) 2px 3px); }
       .pl-roll {
-        background: linear-gradient(to bottom, transparent 0%, hsl(var(--h) 100% 60% / .045) 46%, hsl(var(--h) 100% 70% / .07) 50%, transparent 54%);
+        background: linear-gradient(to bottom, transparent 0%, hsl(var(--h) var(--s) 60% / .045) 46%, hsl(var(--h) var(--s) 70% / .07) 50%, transparent 54%);
         background-size: 100% 320%;
         animation: pl-roll 2.6s linear infinite;
       }
@@ -210,7 +211,7 @@
       .pl-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; font-size: clamp(9.5px, calc(var(--logo) * .1), 14px); letter-spacing: .14em; color: var(--pl); text-shadow: 0 0 6px var(--pl-45); }
       .pl-pct { font-variant-numeric: tabular-nums; color: var(--pl-hi); }
       .pl-segs { display: grid; grid-template-columns: repeat(24, 1fr); gap: clamp(2px, calc(var(--logo) * .03), 4px); padding: 0 4px; height: clamp(7px, calc(var(--logo) * .085), 12px); }
-      .pl-segs i { display: block; transform: skewX(-12deg); background: var(--pl-12); box-shadow: inset 0 0 0 1px hsl(var(--h) 100% 55% / .18); transition: background-color 90ms linear, box-shadow 90ms linear; }
+      .pl-segs i { display: block; transform: skewX(-12deg); background: var(--pl-12); box-shadow: inset 0 0 0 1px hsl(var(--h) var(--s) 55% / .18); transition: background-color 90ms linear, box-shadow 90ms linear; }
       .pl-segs i.on { background: var(--pl); box-shadow: 0 0 8px var(--pl-70), 0 0 1px var(--pl-hi); }
       .pl-segs i.lead { background: var(--pl-hi); box-shadow: 0 0 10px var(--pl), 0 0 2px var(--pl-hot); }
 
@@ -334,7 +335,7 @@
       ;(function () {
         var el = document.getElementById('pip-loader')
         if (!el) return
-        var hue = 137, returning = false
+        var hue = 150, returning = false
         // Read-only storage lookups (the documented exceptions to "storage only in
         // src/lib/store.ts"): the hue, so returning users see their colour before the bundle
         // loads, and the session's booted flag (written by store.ts) for the short re-boot.
@@ -385,7 +386,7 @@
         setTimeout(function () { mark('font') }, 2500) // never wait on the face for long
 
         // ---- boot log: original copy ----
-        var hueName = hue === 137 || hue === 135 ? 'GREEN' : hue === 38 ? 'AMBER' : hue === 200 ? 'BLUE' : hue === 85 ? 'LCD' : 'H' + Math.round(hue)
+        var hueName = hue === 150 || hue === 137 || hue === 135 ? 'GREEN' : hue === 38 ? 'AMBER' : hue === 200 ? 'BLUE' : hue === 85 ? 'LCD' : 'H' + Math.round(hue)
         var d = new Date(), p2 = function (n) { return (n < 10 ? '0' : '') + n }
         var clock = p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds())
         var seed = 0x2f6e

@@ -10,7 +10,7 @@ import { useCaps } from '../terminal/useCaps'
 import { useWeather } from '../weather/useWeather'
 import { EMOTES, emoteForKey, requestEmote } from './emotes'
 import { Flyout } from './Flyout'
-import { EmoteGlyph, EmoteMenuGlyph, ReadoutGlyph } from './glyphs'
+import { EffectGlyph, EmoteGlyph, EmoteMenuGlyph, ReadoutGlyph } from './glyphs'
 import { NAV_KEY, NAV_TARGET, navTo, readouts, type Nav, type Readout } from './statusReadouts'
 import { questsDoneToday, statusEffects } from './statusEffects'
 import type { Gesture } from './vaultboy/behavior'
@@ -84,7 +84,7 @@ function useLocalWeather() {
   return useWeather(coords.lat, coords.lon)
 }
 
-/** The four readout boxes under the figure. Each taps through to where its data lives. */
+/** The four readout tiles in the loadout row (icon over value). Each taps through to where its data lives. */
 export function ReadoutStrip() {
   const { weather, status } = useLocalWeather()
   const caps = useCaps()
@@ -125,7 +125,13 @@ export function ReadoutStrip() {
   )
 }
 
-/** EFFECTS: always listed beside the figure on wide panels, a toggle + popover on compact ones. */
+/** Tiles shown in the EFFECTS column before it collapses the rest into "+N". */
+const MAX_TILES = 5
+
+/**
+ * EFFECTS: a column of icon tiles down the left of the figure (one per active effect).
+ * Tapping the column opens the frosted list with names, modifiers and notes.
+ */
 export function EffectsList() {
   const now = useClock(60_000)
   const { weather } = useLocalWeather()
@@ -137,19 +143,35 @@ export function EffectsList() {
   const [open, setOpen] = useState(false)
   const today = questsDoneToday(quests, now)
   const list = statusEffects({ hour: now.getHours(), weather, battery, radio, questsToday: today, streak: caps, daylight: day })
+  const shown = list.slice(0, list.length > MAX_TILES ? MAX_TILES - 1 : MAX_TILES)
+  const more = list.length - shown.length
 
   return (
-    <section className="status-effects" data-open={open || undefined} aria-label="Active effects">
-      <h3 className="status-effects__title">EFFECTS</h3>
-      <button type="button" className="status-effects__toggle" aria-expanded={open} aria-controls="status-effects-list" onClick={() => setOpen((o) => !o)}>
-        <span aria-hidden>{open ? '▾' : '▸'}</span> EFFECTS <b>{list.length}</b>
+    <section className="status-effects" data-open={open || undefined} data-no-swipe>
+      <button
+        type="button"
+        className="status-effects__tiles"
+        aria-expanded={open}
+        aria-controls="status-effects-list"
+        aria-label={`Effects: ${list.length} active. ${open ? 'Hide' : 'Show'} details.`}
+        title="Effects"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {shown.map((e) => (
+          <span key={e.id} className={`fx-tile fx-tile--${e.tone}`}>
+            <EffectGlyph id={e.id} tone={e.tone} />
+          </span>
+        ))}
+        {more > 0 && <span className="fx-tile fx-tile--more">+{more}</span>}
+        {list.length === 0 && <span className="fx-tile fx-tile--none">0</span>}
       </button>
-      <ul id="status-effects-list" className="status-effects__list">
+      <ul id="status-effects-list" className="status-effects__list" aria-label="Active effects">
         {list.length === 0 ? (
           <li className="fx fx--none">NO ACTIVE EFFECTS</li>
         ) : (
           list.map((e) => (
             <li key={e.id} className={`fx fx--${e.tone}`}>
+              <EffectGlyph id={e.id} tone={e.tone} />
               <span className="fx__name">{e.name}</span>
               <span className="fx__mod">{e.mod}</span>
               <span className="fx__note">{e.note}</span>

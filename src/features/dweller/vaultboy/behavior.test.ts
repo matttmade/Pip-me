@@ -30,11 +30,12 @@ describe('hueToHex', () => {
     for (const h of [0, 38, 135, 200, 359]) expect(hueToHex(h)).toMatch(/^#[0-9a-f]{6}$/)
   })
   it('follows the hue: green is green-dominant, amber is red-dominant', () => {
-    const g = hueToHex(135)
-    expect(parseInt(g.slice(3, 5), 16)).toBe(255)
-    const a = hueToHex(38)
-    expect(parseInt(a.slice(1, 3), 16)).toBe(255)
-    expect(parseInt(a.slice(5, 7), 16)).toBeLessThan(80)
+    const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+    const [gr, gg, gb] = rgb(hueToHex(150))
+    expect(gg).toBeGreaterThan(Math.max(gr, gb))
+    const [ar, ag, ab] = rgb(hueToHex(38))
+    expect(ar).toBeGreaterThan(ag)
+    expect(ag).toBeGreaterThan(ab)
   })
   it('wraps out-of-range hues', () => {
     expect(hueToHex(-225)).toBe(hueToHex(135))

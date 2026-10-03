@@ -1,21 +1,24 @@
 /* ---------- STAT > STATUS ----------
-   .status-panel is a size container; .status-grid picks one of three layouts from it:
-   compact (phones, narrow): stage / readouts / name plate, EFFECTS as a popover;
-   short (ON ARM view, landscape phones): stage | EFFECTS toggle + readouts 2x2, name below;
-   wide (desktop screen): stage | EFFECTS, readouts + name under the stage.
-   The WEAPON and EMOTES fly-out triggers always sit in the stage's bottom corners. */
+   Laid out like the in-game STATUS screen: an EFFECTS tile column down the left, the figure
+   centred with short limb bars around it, one loadout row underneath (WEAPON + DMG, EMOTE,
+   then TEMP / RADS / CAPS / QUESTS tiles) and a one-line name plate. LEVEL / HP / AP are in
+   the bottom status bar. .status-panel is a size container; short stages (landscape phones,
+   ON ARM) move the loadout into a column on the right. */
 .status-panel {
   position: relative;
   height: 100%;
   container: status / size;
 }
 .status-grid {
+  --tile: 44px;
+  --load-h: 54px;
   height: 100%;
+  max-width: 760px;
+  margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto auto;
-  grid-template-areas: "stage" "strip" "id";
-  justify-items: center;
+  grid-template-areas: "stage" "load" "id";
   row-gap: 8px;
   padding-bottom: 4px;
 }
@@ -23,10 +26,10 @@
 .status-stage {
   grid-area: stage;
   position: relative;
-  width: 100%;
-  max-width: 620px;
+  min-width: 0;
   min-height: 0;
-  height: 100%;
+  /* limb bars are placed against the figure's 3:4 box, so they hug him at any stage shape */
+  container-type: size;
 }
 
 .status-figure {
@@ -91,64 +94,56 @@
 .dweller-detail__opt + .dweller-detail__opt { border-left: 0; }
 .dweller-detail__opt:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
 
-/* limb condition bars arranged around the figure */
+/* short limb condition bars around the figure (labels are for screen readers) */
 .limb {
+  /* the figure box (see .dweller-scene): 3:4, centred, fitting the stage on both axes */
+  --fw: min(100cqw, 75cqh);
+  --fh: min(100cqh, 133.333cqw);
+  --top0: calc(50cqh - var(--fh) / 2);
   position: absolute;
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  width: clamp(56px, 18%, 96px);
-  font-size: 11px;
-  line-height: 1;
+  width: clamp(34px, calc(var(--fw) * .14), 64px);
   pointer-events: none;
 }
 /* shape + fill come from the shared angled-bar rule in global.css */
 .limb__bar {
-  --notch: 5px;
+  --notch: 4px;
+  display: block;
   width: 100%;
-  height: 7px;
+  height: 6px;
 }
-.limb__label { opacity: .7; letter-spacing: .1em; }
-.limb--head  { top: 2%;  left: 50%; transform: translateX(-50%); }
-.limb--l-arm { top: 30%; left: 2%; }
-.limb--r-arm { top: 30%; right: 2%; }
-.limb--l-leg { top: 66%; left: 6%; }
-.limb--r-leg { top: 66%; right: 6%; }
-.limb--torso { bottom: 0; left: 50%; transform: translateX(-50%); }
+.limb__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.limb--head  { top: calc(var(--top0) + var(--fh) * .05); left: 50%; transform: translateX(-50%); }
+.limb--l-arm { top: calc(var(--top0) + var(--fh) * .33); left: calc(50cqw - var(--fw) * .4); }
+.limb--r-arm { top: calc(var(--top0) + var(--fh) * .37); right: calc(50cqw - var(--fw) * .4); }
+.limb--l-leg { top: calc(var(--top0) + var(--fh) * .6); left: calc(50cqw - var(--fw) * .36); }
+.limb--r-leg { top: calc(var(--top0) + var(--fh) * .64); right: calc(50cqw - var(--fw) * .36); }
+.limb--torso { top: calc(var(--top0) + var(--fh) * .93); left: 50%; transform: translateX(-50%); }
 
+/* NAME | VAULT */
 .status-id {
   grid-area: id;
+  justify-self: center;
   display: flex;
-  gap: 6px 16px;
-  align-items: baseline;
-  justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
   max-width: 100%;
   font-family: var(--font-display);
-  font-size: clamp(18px, 4.4vw, 26px);
+  font-size: clamp(18px, 4.6vw, 26px);
   line-height: 1;
   letter-spacing: var(--track-display);
   text-shadow: var(--bloom);
-  border-top: 1px solid var(--pip-60);
-  border-bottom: 1px solid var(--pip-60);
-  padding: 4px 18px;
+  white-space: nowrap;
 }
-.status-id__vault { opacity: .85; }
-.status-id__level {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: .8em;
-}
-.status-id__level .xp-bar { width: 72px; flex: none; height: 8px; --notch: 4px; }
-
-@container status (min-width: 600px) {
-  .limb { font-size: 12px; }
-  .limb--l-arm { left: 8%; }
-  .limb--r-arm { right: 8%; }
-  .limb--l-leg { left: 12%; }
-  .limb--r-leg { right: 12%; }
-}
+.status-id__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.status-id__sep { flex: none; width: var(--rule); height: .9em; background: currentColor; opacity: .75; }
+.status-id__vault { flex: none; opacity: .85; }
 
 /* ---------- fly-out triggers + menus (EMOTES, WEAPON) ----------
    A round phosphor trigger in a bottom corner of the stage; its menu stacks up out of it,
@@ -316,27 +311,8 @@
 @keyframes flyout-in { from { opacity: 0; transform: scale(.7) translateY(8px); } }
 @keyframes flyout-item { from { opacity: 0; transform: translateY(6px); } }
 
-/* WEAPON trigger: water-pistol ammo pip, hazard ring for the nuke, strobe while asking */
+/* WEAPON trigger: hazard ring for the nuke, strobe while asking */
 .weapon__icon { display: grid; place-items: center; color: inherit; animation: weapon-pop .32s cubic-bezier(.3, 1.6, .5, 1); }
-.weapon__pip {
-  position: absolute;
-  right: -7px;
-  top: -5px;
-  min-width: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  padding: 1px 3px;
-  border: 1px solid var(--pip-60);
-  background: var(--frost-bg-strong);
-  color: var(--pip-hi);
-  font-size: 10px;
-  line-height: 11px;
-  letter-spacing: .02em;
-}
-.weapon__pip .weapon__drop { width: 7px; height: 9px; }
-.flyout.is-reloading .weapon__pip { animation: weapon-blink .4s steps(2, jump-none) infinite; }
 .flyout.weapon--nuke .flyout__ring {
   border-color: var(--pip);
   background:
@@ -382,66 +358,6 @@
   filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60));
 }
 .st-glyph__fill { fill: currentColor; stroke: none; }
-
-/* ---------- readout boxes (TEMP RADS CAPS QUESTS) ---------- */
-.status-strip {
-  grid-area: strip;
-  width: 100%;
-  max-width: 620px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-}
-.readout {
-  position: relative;
-  min-width: 0;
-  min-height: var(--touch);
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-template-areas: "icon value" "meta meta";
-  justify-content: center;
-  align-items: center;
-  column-gap: 7px;
-  row-gap: 1px;
-  padding: 4px 6px 3px;
-  border: 1px solid var(--pip-30);
-  border-top: 2px solid var(--pip-60);
-  background: linear-gradient(to bottom, var(--pip-15), transparent);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color .15s ease, background-color .15s ease;
-}
-.readout:hover,
-.readout:focus-visible { border-color: var(--pip-60); border-top-color: var(--pip); background-color: var(--pip-15); }
-.readout:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
-.readout__icon { grid-area: icon; width: 18px; height: 18px; }
-.readout__value {
-  grid-area: value;
-  min-width: 0;
-  overflow: hidden;
-  font-family: var(--font-display);
-  font-size: 22px;
-  line-height: 1;
-  letter-spacing: .04em;
-  text-shadow: var(--bloom);
-  white-space: nowrap;
-}
-.readout__meta {
-  grid-area: meta;
-  min-width: 0;
-  font-size: var(--fs-xs);
-  letter-spacing: .1em;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.readout__label { opacity: .8; }
-.readout__sub { display: none; opacity: .55; }
-.readout__sub::before { content: ' \00B7 '; }
-.readout.is-dim .readout__value,
-.readout.is-dim .readout__icon { opacity: .45; }
 
 /* weapon pictograms (trigger + menu) */
 .weapon__glyph {
@@ -637,71 +553,197 @@
 
 @media (prefers-reduced-motion: reduce) {
   .flyout__ring { transition: none; }
-  .flyout__menu, .flyout__item, .weapon__icon, .weapon__reload, .weapon__note, .weapon__banner, .weapon__pip,
+  .flyout__menu, .flyout__item, .weapon__icon, .weapon__reload, .weapon__note, .weapon__banner,
   .flyout.is-armed .flyout__ring, .flyout.is-armed .flyout__caption { animation: none !important; }
   .flyout.is-armed .flyout__ring { background: var(--pip); color: var(--screen-bg); }
 }
 
-/* ---------- EFFECTS ---------- */
+/* ---------- loadout row: WEAPON + DMG, EMOTE, then TEMP / RADS / CAPS / QUESTS ---------- */
+.status-loadout {
+  grid-area: load;
+  /* the fly-out menus and weapon notes open from the row */
+  position: relative;
+  height: var(--load-h);
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 4.3fr);
+  grid-template-areas: "weapon dmg emote strip";
+  gap: 4px;
+}
+.status-loadout > .flyout--weapon { grid-area: weapon; }
+.status-loadout > .loadout-dmg { grid-area: dmg; }
+.status-loadout > .flyout--emotes { grid-area: emote; }
+.status-strip {
+  grid-area: strip;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+/* one tile shape for everything in the row */
+.status-loadout .flyout__trigger,
+.loadout-dmg,
+.readout {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  min-height: var(--touch);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  padding: 3px 2px;
+  border: 0;
+  background: var(--band), var(--pip-15);
+  box-shadow: inset 0 0 0 1px var(--pip-30);
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+/* WEAPON + EMOTE are the solid (inverted) tiles */
+.status-loadout .flyout__trigger { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; }
+.status-loadout .flyout__trigger svg { filter: none; }
+.status-loadout .flyout__trigger:hover { background: var(--band), var(--pip-hi); }
+.status-loadout .flyout__trigger:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+.status-loadout .flyout__trigger:active { transform: scale(.96); }
+
+.status-loadout .flyout { position: static; display: block; min-width: 0; }
+.status-loadout .flyout__ring,
+.status-loadout .flyout.is-open .flyout__ring,
+.status-loadout .flyout.is-lit .flyout__ring,
+.status-loadout .flyout.weapon--nuke .flyout__ring {
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  animation: none;
+  transform: none;
+}
+.status-loadout .flyout__ring::before { display: none; }
+.status-loadout .flyout .flyout__ring > * { color: inherit; }
+.status-loadout .flyout__ring .st-glyph,
+.status-loadout .flyout__ring .weapon__glyph { width: 24px; height: 24px; }
+.status-loadout .flyout--weapon .flyout__ring .weapon__glyph { width: 28px; height: 28px; }
+.status-loadout .flyout__caption { font-size: 9px; line-height: 10px; letter-spacing: .12em; opacity: 1; }
+/* open / just fired: the tile flips to an outline */
+.status-loadout .flyout.is-open .flyout__trigger,
+.status-loadout .flyout.is-lit .flyout__trigger { background: var(--frost-bg-strong); color: var(--pip-hi); box-shadow: inset 0 0 0 2px var(--pip); }
+/* MINI NUKE: hazard stripes; strobes while it waits for the second tap */
+.status-loadout .flyout.weapon--nuke .flyout__trigger {
+  background: repeating-linear-gradient(-45deg, var(--pip) 0 6px, var(--pip-60) 6px 12px);
+}
+.status-loadout .flyout.is-armed .flyout__trigger { animation: weapon-armed .5s steps(2, jump-none) infinite; }
+.status-loadout .flyout.is-armed .flyout__caption { color: inherit; }
+/* menus open up from the row's left edge */
+.status-loadout .flyout__menu { left: 0; right: auto; bottom: calc(100% + 6px); transform-origin: 30px 100%; }
+
+.loadout-dmg b,
+.readout__value {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-weight: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: .02em;
+  text-shadow: var(--bloom);
+  white-space: nowrap;
+}
+.loadout-dmg .st-glyph { width: 18px; height: 18px; }
+.loadout-dmg.is-reloading b { animation: weapon-blink .4s steps(2, jump-none) infinite; }
+
+.readout { cursor: pointer; color: inherit; }
+.readout:hover,
+.readout:focus-visible { background: var(--band), var(--pip-30); box-shadow: inset 0 0 0 1px var(--pip-60); }
+.readout:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
+.readout__icon { width: 18px; height: 18px; }
+/* labels are in aria-label/title; wide stages show them */
+.readout__meta { display: none; font-size: 10px; letter-spacing: .1em; line-height: 1.1; opacity: .75; }
+.readout__sub { display: none; }
+.readout.is-dim .readout__value,
+.readout.is-dim .readout__icon { opacity: .45; }
+
+/* ---------- EFFECTS: tile column over the stage's left edge, details in a frosted list ---------- */
 .status-effects {
   grid-area: stage;
   justify-self: start;
   align-self: start;
+  position: relative;
   z-index: 3;
-  max-width: 100%;
   font-size: var(--fs-sm);
 }
-.status-effects__title { display: none; }
-.status-effects__toggle {
-  min-height: var(--touch);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 8px 0 2px;
+.status-effects__tiles {
+  display: grid;
+  gap: 4px;
+  padding: 0;
   border: 0;
   background: none;
-  font-size: var(--fs-xs);
-  letter-spacing: .12em;
   cursor: pointer;
-  opacity: .8;
+  -webkit-tap-highlight-color: transparent;
 }
-.status-effects__toggle b {
-  min-width: 18px;
-  padding: 1px 4px;
-  background: var(--pip);
+.status-effects__tiles:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+.fx-tile {
+  width: var(--tile);
+  height: var(--tile);
+  display: grid;
+  place-items: center;
+  /* buffs: solid tiles, like the loadout's WEAPON */
+  background: var(--band), var(--pip);
   color: var(--screen-bg);
   text-shadow: none;
-  font-weight: normal;
-  text-align: center;
 }
-.status-effects__toggle:hover,
-.status-effects[data-open] .status-effects__toggle { opacity: 1; }
-.status-effects__list {
-  display: none;
-  margin: 0;
-  padding: 8px 10px;
-  list-style: none;
+.fx-tile .st-glyph { width: 60%; height: 60%; filter: none; }
+.fx-tile .st-glyph__fill { fill: currentColor; }
+/* debuffs: outlined with hazard hatching, so they read differently at a glance */
+.fx-tile--debuff {
+  background: repeating-linear-gradient(-45deg, var(--pip-15) 0 4px, transparent 4px 8px);
+  color: var(--pip-hi);
+  box-shadow: inset 0 0 0 1px var(--pip-60);
 }
+.fx-tile--debuff .st-glyph { filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60)); }
+.fx-tile--more,
+.fx-tile--none {
+  font-family: var(--font-display);
+  font-size: 20px;
+  background: var(--pip-15);
+  color: var(--pip-hi);
+  box-shadow: inset 0 0 0 1px var(--pip-30);
+}
+.fx-tile--none { opacity: .55; }
+.status-effects__tiles:hover .fx-tile,
+.status-effects[data-open] .fx-tile { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
+
+.status-effects__list { display: none; margin: 0; padding: 8px 10px; list-style: none; }
 .status-effects[data-open] .status-effects__list {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 0;
+  z-index: 6;
   display: grid;
-  gap: 6px;
-  width: min(260px, calc(100cqw - 16px));
+  gap: 8px;
+  width: min(260px, calc(100cqw - var(--tile) - 16px));
   border: 1px solid var(--pip-60);
-  background: var(--frost-bg);
+  border-top: 2px solid var(--pip);
+  background: var(--frost-bg-strong);
   -webkit-backdrop-filter: var(--frost-blur);
   backdrop-filter: var(--frost-blur);
   box-shadow: var(--frost-edge), 0 0 calc(8px * var(--glow-amt)) var(--pip-30);
 }
 .fx {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 10px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
   line-height: 1.25;
 }
+.fx .st-glyph { width: 18px; height: 18px; }
 .fx__name { letter-spacing: .06em; }
 .fx__mod { text-align: right; white-space: nowrap; }
 .fx__note {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
   font-size: var(--fs-xs);
   letter-spacing: .04em;
   text-transform: none;
@@ -709,17 +751,20 @@
 }
 .fx--buff .fx__mod { color: var(--pip-hi); }
 .fx--debuff { opacity: .8; }
-.fx--none { opacity: .6; letter-spacing: .1em; }
+.fx--none { display: block; opacity: .6; letter-spacing: .1em; }
 
-/* narrow phones: tighter readout boxes */
+/* narrow phones: tighter tiles */
 @container status (max-width: 380px) {
-  .readout { padding-inline: 4px; column-gap: 4px; }
-  .readout__icon { width: 15px; height: 15px; }
-  .readout__value { font-size: 19px; }
+  .status-grid { --tile: 40px; --load-h: 50px; }
+  .status-loadout, .status-strip { gap: 3px; }
+  .loadout-dmg b, .readout__value { font-size: 17px; }
+  .readout__icon, .loadout-dmg .st-glyph { width: 15px; height: 15px; }
+  .status-loadout .flyout__caption { font-size: 8px; letter-spacing: .08em; }
 }
 
 /* short stages (small phones, ON ARM, landscape): long menus go two columns so they fit */
 @container status (max-height: 560px) {
+  .status-grid { --tile: 36px; }
   .flyout--emotes .flyout__menu {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -728,40 +773,34 @@
     min-width: 0;
   }
   .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: 15px; }
-  /* reversed, so WAVE sits bottom-right beside the trigger like the stacked list */
+  /* reversed, so WAVE sits bottom-left nearest the row like the stacked list */
   .flyout--emotes .flyout__item { order: calc(20 - var(--i, 0)); }
   .flyout--emotes .flyout__meta { display: none; }
 }
 
 /* short + wide: the ON ARM screen (~570x290) and landscape phones (~800x200-330).
-   Figure fills the stage height with the limb bars listed down both sides of it; EFFECTS
-   toggle + readouts 2x2 in a column on the right; a one-line name plate underneath. */
+   Figure | loadout column (WEAPON DMG EMOTE over the four readouts); name plate under both. */
 @container status (min-width: 500px) and (max-height: 480px) {
   .status-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(150px, 30%);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: "stage fx" "stage strip" "id id";
+    --tile: 32px;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 36%);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "stage load" "id id";
     column-gap: 10px;
     row-gap: 4px;
   }
-  .status-stage { max-width: none; }
-  .limb { width: clamp(52px, 16%, 84px); font-size: 10px; justify-items: start; }
-  .limb__label { order: -1; }
-  .limb--head, .limb--l-arm, .limb--l-leg { left: 0; right: auto; transform: none; bottom: auto; }
-  .limb--torso, .limb--r-arm, .limb--r-leg { right: 0; left: auto; transform: none; bottom: auto; justify-items: end; }
-  .limb--head, .limb--torso { top: 0; }
-  .limb--l-arm, .limb--r-arm { top: 19%; }
-  .limb--l-leg, .limb--r-leg { top: 38%; }
-  .status-effects { grid-area: fx; justify-self: start; align-self: end; position: relative; }
-  .status-effects__toggle { min-height: 36px; }
-  .status-effects[data-open] .status-effects__list { position: absolute; top: 100%; left: 0; z-index: 6; width: min(260px, 60cqw); }
-  .status-strip { grid-template-columns: 1fr 1fr; align-content: end; align-self: end; gap: 4px; }
-  .readout { min-height: 40px; padding-block: 3px 2px; }
-  .readout__value { font-size: 18px; }
-  .status-id { font-size: 16px; padding: 2px 10px; gap: 4px 12px; flex-wrap: nowrap; white-space: nowrap; }
-  .status-id__level .xp-bar { width: 48px; }
-  .flyout { --fly-ring: 40px; --fly-row: 36px; }
-  .flyout__trigger { min-width: 48px; min-height: 48px; }
+  .status-loadout {
+    height: auto;
+    align-self: end;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-areas: "weapon weapon dmg emote" "strip strip strip strip";
+    grid-auto-rows: 48px;
+  }
+  .status-effects__tiles { gap: 3px; }
+  .status-effects[data-open] .status-effects__list { width: min(250px, 55cqw); }
+  .status-id { font-size: 16px; gap: 8px; }
+  .flyout { --fly-row: 36px; }
   .flyout__item { font-size: 14px; }
 }
 @media (pointer: coarse) {
@@ -770,80 +809,20 @@
   }
 }
 
-/* wide + tall (desktop screen): stage | EFFECTS, with readouts + name under the stage */
+/* wide + tall (desktop screen): bigger tiles, readout labels shown */
 @container status (min-width: 820px) and (min-height: 481px) {
-  .status-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 620px) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto auto;
-    grid-template-areas: ". stage effects" ". strip ." ". id .";
-    column-gap: 16px;
-  }
-  .status-effects {
-    grid-area: effects;
-    align-self: center;
-    justify-self: start;
-    width: min(270px, 100%);
-  }
-  .status-effects__toggle { display: none; }
-  .status-effects__title {
-    display: block;
-    margin: 0 0 8px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid var(--pip-60);
-    font-family: var(--font-display);
-    font-weight: normal;
-    font-size: 20px;
-    letter-spacing: var(--track-display);
-    text-shadow: var(--bloom);
-  }
-  .status-effects .status-effects__list,
-  .status-effects[data-open] .status-effects__list {
-    display: grid;
-    gap: 8px;
-    width: auto;
-    padding: 0;
-    border: 0;
-    background: none;
-    box-shadow: none;
-  }
-  .readout__sub { display: inline; }
-  .readout__value { font-size: 24px; }
-  .flyout { --fly-ring: 50px; }
-  .flyout__ring .st-glyph,
-  .flyout__ring .weapon__glyph { width: 26px; height: 26px; }
-  .flyout__caption { font-size: 11px; }
+  .status-grid { --tile: 52px; --load-h: 66px; }
+  .readout__meta { display: block; }
+  .loadout-dmg b, .readout__value { font-size: 24px; }
+  .status-loadout .flyout__ring .st-glyph { width: 28px; height: 28px; }
+  .status-loadout .flyout--weapon .flyout__ring .weapon__glyph { width: 34px; height: 34px; }
+  .status-loadout .flyout__caption { font-size: 11px; line-height: 12px; }
+  .status-effects[data-open] .status-effects__list { width: 300px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .readout { transition: none; }
+  .readout, .status-loadout .flyout__trigger { transition: none; }
 }
-
-/* ---------- paper doll fallback ---------- */
-.paper-doll { position: absolute; inset: 6% 0 8%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.paper-doll svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 calc(4px * var(--glow-amt)) var(--pip-60)); }
-.paper-doll path,
-.paper-doll circle {
-  fill: var(--pip-15);
-  stroke: var(--pip);
-  stroke-width: 2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-.paper-doll .pd-limb path:not(.pd-boot) { fill: none; stroke-width: 9; }
-.paper-doll .pd-arm--back path, .paper-doll .pd-leg--back path:not(.pd-boot) { stroke: var(--pip-60); }
-.paper-doll .pd-trim { fill: none; stroke: var(--pip-hi); stroke-width: 2.5; }
-.paper-doll .pd-hair { fill: var(--pip-60); }
-.paper-doll .pd-face { fill: var(--screen-bg); }
-.paper-doll .pd-features { fill: none; stroke-width: 1.6; }
-.paper-doll .pd-head-ring { fill: none; stroke-width: 1.5; }
-.paper-doll .pd-number { fill: var(--pip-hi); font: 8px var(--font-display); stroke: none; }
-.pd-limb { transform-box: view-box; animation: pd-swing 1.18s ease-in-out infinite alternate; }
-.pd-arm { transform-origin: 60px 58px; }
-.pd-leg { transform-origin: 60px 118px; }
-.pd-arm--front, .pd-leg--back { animation-direction: alternate-reverse; }
-.pd-body { animation: pd-bob .59s ease-in-out infinite alternate; }
-@keyframes pd-swing { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
-@keyframes pd-bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
 
 /* ---------- SPECIAL + PERKS ---------- */
 .special-detail, .perk-detail { display: grid; gap: 10px; align-content: start; }

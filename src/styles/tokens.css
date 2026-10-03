@@ -3,14 +3,16 @@
   --frost-bg: hsl(var(--pip-hue) 55% 5% / .58);
   --frost-bg-strong: hsl(var(--pip-hue) 55% 4% / .78);
   --frost-blur: blur(10px) saturate(150%) brightness(.85);
-  --frost-edge: inset 0 1px 0 hsl(var(--pip-hue) 100% 75% / .16), inset 0 0 0 1px hsl(var(--pip-hue) 100% 60% / .08);
-  --pip-hue: 135;
-  --pip:      hsl(var(--pip-hue) 100% 55%);
-  --pip-hi:   hsl(var(--pip-hue) 100% 75%);
-  --pip-60:   hsl(var(--pip-hue) 100% 55% / .6);
-  --pip-30:   hsl(var(--pip-hue) 100% 55% / .3);
-  --pip-15:   hsl(var(--pip-hue) 100% 55% / .15);
-  --pip-deep: hsl(var(--pip-hue) 100% 18%);
+  --frost-edge: inset 0 1px 0 hsl(var(--pip-hue) var(--pip-sat) 75% / .16), inset 0 0 0 1px hsl(var(--pip-hue) var(--pip-sat) 60% / .08);
+  --pip-hue: 150;
+  /* soft minty phosphor (not neon): every pip colour shares this saturation */
+  --pip-sat: 60%;
+  --pip:      hsl(var(--pip-hue) var(--pip-sat) 60%);
+  --pip-hi:   hsl(var(--pip-hue) var(--pip-sat) 78%);
+  --pip-60:   hsl(var(--pip-hue) var(--pip-sat) 60% / .6);
+  --pip-30:   hsl(var(--pip-hue) var(--pip-sat) 60% / .3);
+  --pip-15:   hsl(var(--pip-hue) var(--pip-sat) 60% / .15);
+  --pip-deep: hsl(var(--pip-hue) var(--pip-sat) 18%);
   --screen-bg: hsl(var(--pip-hue) 60% 4%);
   --glow-amt: 1;
   --glow: 0 0 2px var(--pip), 0 0 calc(10px * var(--glow-amt)) var(--pip-60);
@@ -20,7 +22,7 @@
     0 0 calc(5px * var(--glow-amt)) var(--pip-60),
     0 0 calc(16px * var(--glow-amt)) var(--pip-30);
   /* horizontal scan banding laid over large filled shapes (FO3 notice) */
-  --band: repeating-linear-gradient(to bottom, transparent 0 2px, hsl(var(--pip-hue) 100% 18% / .22) 2px 3px);
+  --band: repeating-linear-gradient(to bottom, transparent 0 2px, hsl(var(--pip-hue) var(--pip-sat) 18% / .22) 2px 3px);
   --font-ui: 'Share Tech Mono', monospace;
   --font-display: 'VT323', monospace;
   /* type scale */

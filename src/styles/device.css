@@ -10,7 +10,7 @@ body { overflow: hidden; }
   --px: 0;
   --py: 0;
   background:
-    radial-gradient(ellipse 70% 60% at 50% 45%, hsl(var(--pip-hue) 100% 45% / .10), transparent 70%),
+    radial-gradient(ellipse 70% 60% at 50% 45%, hsl(var(--pip-hue) var(--pip-sat) 45% / .10), transparent 70%),
     radial-gradient(ellipse at 50% 40%, #0d120e 0%, #050706 60%, #000 100%);
 }
 .stage.is-switching .front,
@@ -37,17 +37,17 @@ body { overflow: hidden; }
   /* dark gap between glass and rim, plus soft light spilling onto the surround */
   box-shadow:
     0 0 0 calc(var(--rim-offset) - 1px) #020302,
-    0 0 70px 20px hsl(var(--pip-hue) 100% 50% / .14),
-    0 0 180px 40px hsl(var(--pip-hue) 100% 45% / .07);
+    0 0 70px 20px hsl(var(--pip-hue) var(--pip-sat) 50% / .14),
+    0 0 180px 40px hsl(var(--pip-hue) var(--pip-sat) 45% / .07);
 }
-.screen-rim--compact { box-shadow: 0 0 0 calc(var(--rim-offset) - 1px) #020302, 0 0 30px 8px hsl(var(--pip-hue) 100% 50% / .12); }
+.screen-rim--compact { box-shadow: 0 0 0 calc(var(--rim-offset) - 1px) #020302, 0 0 30px 8px hsl(var(--pip-hue) var(--pip-sat) 50% / .12); }
 .screen-rim__svg { position: absolute; overflow: visible; }
 .screen-rim__svg path {
   fill: none;
-  stroke: hsl(var(--pip-hue) 100% 58% / .9);
+  stroke: hsl(var(--pip-hue) var(--pip-sat) 58% / .9);
   stroke-width: 2;
   stroke-linecap: square;
-  filter: drop-shadow(0 0 3px hsl(var(--pip-hue) 100% 55% / .9)) drop-shadow(0 0 10px hsl(var(--pip-hue) 100% 50% / .45));
+  filter: drop-shadow(0 0 3px hsl(var(--pip-hue) var(--pip-sat) 55% / .9)) drop-shadow(0 0 10px hsl(var(--pip-hue) var(--pip-sat) 50% / .45));
 }
 .screen-rim--compact .screen-rim__svg path { stroke-width: 1.5; }
 .screen-rim__label {
@@ -294,8 +294,8 @@ body { overflow: hidden; }
 }
 .crt__rim {
   box-shadow:
-    inset 0 0 0 1px hsl(var(--pip-hue) 100% 60% / .16),
-    inset 0 0 26px hsl(var(--pip-hue) 100% 50% / .07);
+    inset 0 0 0 1px hsl(var(--pip-hue) var(--pip-sat) 60% / .16),
+    inset 0 0 26px hsl(var(--pip-hue) var(--pip-sat) 50% / .07);
 }
 
 .screen-host.is-degaussing .crt { animation: degauss-color .9s ease-out; }

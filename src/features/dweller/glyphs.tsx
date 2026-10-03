@@ -67,6 +67,42 @@ export const EmoteMenuGlyph = () => (
 export const EmoteGlyph = ({ id }: { id: Gesture }) => <Glyph>{EMOTE_GLYPH[id]}</Glyph>
 export const ReadoutGlyph = ({ id }: { id: ReadoutId }) => <Glyph className="readout__icon">{READOUT_GLYPH[id]}</Glyph>
 
+/** DMG tile: a crosshair. */
+export const CrosshairGlyph = () => (
+  <Glyph>
+    <path d="M12 5a7 7 0 110 14 7 7 0 010-14z M12 2v5 M12 17v5 M2 12h5 M17 12h5" />
+    <path className="st-glyph__fill" d="M12 10.6a1.4 1.4 0 110 2.8 1.4 1.4 0 010-2.8z" />
+  </Glyph>
+)
+
+/* ---------- EFFECTS tile pictograms ---------- */
+const cloud = 'M7 16.5a4 4 0 01-.4-8 5.5 5.5 0 0110.6 1.2A3.4 3.4 0 0117 16.5z'
+const sun = 'M12 8a4 4 0 110 8 4 4 0 010-8z M12 2.5v2 M12 19.5v2 M2.5 12h2 M19.5 12h2 M5.3 5.3l1.4 1.4 M17.3 17.3l1.4 1.4 M5.3 18.7l1.4-1.4 M17.3 6.7l1.4-1.4'
+const EFFECT_GLYPH: Record<string, ReactNode> = {
+  storm: <path d={`${cloud} M12.5 16.5l-2 3.5h3l-2 3`} />,
+  snow: <path d="M12 3v18 M4.2 7.5l15.6 9 M4.2 16.5l15.6-9 M10 4.5l2 1.5 2-1.5 M10 19.5l2-1.5 2 1.5" />,
+  rain: <path d={`${cloud} M8.5 19l-1 2.5 M12.5 19l-1 2.5 M16.5 19l-1 2.5`} />,
+  fog: <path d="M3 8h18 M5 12h14 M3 16h18 M7 20h10" />,
+  overcast: <path d={cloud} />,
+  clear: <path d={sun} />,
+  heat: <path d="M10 14.2V5a2 2 0 014 0v9.2a4 4 0 11-4 0z M12 8.5v8 M17 4.5c1 1 1 2 0 3s-1 2 0 3" />,
+  freeze: <path d="M10 14.2V5a2 2 0 014 0v9.2a4 4 0 11-4 0z M12 13v3.5 M17 5h4 M17 8h4" />,
+  charging: <path d="M3 8h15v8H3z M18 10.5h2.5v3H18 M11.5 9l-2.5 3.2h3L9.5 15" />,
+  'low-power': <path d="M3 8h15v8H3z M18 10.5h2.5v3H18 M5.5 10.5v3" />,
+  rads: READOUT_GLYPH.rads,
+  radio: <path d="M4 9h16v11H4z M8 9l8-5 M15.5 14.5a2 2 0 110-.01z M6.5 12h5 M6.5 15h5 M6.5 18h5" />,
+  quests: READOUT_GLYPH.quests,
+  streak: READOUT_GLYPH.caps,
+  golden: <path d="M2.5 18h19 M6.5 18a5.5 5.5 0 0111 0 M12 6.5v2.5 M4.8 10.3l1.6 1.4 M19.2 10.3l-1.6 1.4 M7 21.5h10" />,
+  'night-owl': <path d="M15.5 3.5a8.5 8.5 0 104.9 14.7A7 7 0 0115.5 3.5z" />,
+  early: <path d="M2.5 17h19 M7 17a5 5 0 0110 0 M12 4v5 M9.5 6.5L12 4l2.5 2.5 M5 21h14" />,
+  slump: <path d="M5 9h11v6a4.5 4.5 0 01-4.5 4.5h-2A4.5 4.5 0 015 15z M16 10.5h1.5a2.5 2.5 0 010 5H16 M8.5 3.5c-.8 1 .8 1.8 0 3 M12 3.5c-.8 1 .8 1.8 0 3" />,
+}
+/** EFFECTS tile icon; unknown effects get a + (buff) or − (debuff). */
+export const EffectGlyph = ({ id, tone }: { id: string; tone: 'buff' | 'debuff' }) => (
+  <Glyph>{EFFECT_GLYPH[id] ?? <path d={tone === 'buff' ? 'M12 5v14 M5 12h14' : 'M5 12h14'} />}</Glyph>
+)
+
 /* ---------- weapon slot pictograms (original line art) ---------- */
 
 const WEAPON_GLYPH: Record<WeaponId, ReactNode> = {

@@ -1,6 +1,5 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { usePageVisible, useProfile, useStored } from '../../lib/contracts'
-import { useXp } from '../quests/useXp'
 import { startPerkTracking } from '../perks/perks'
 import { DEFAULT_DETAIL, DETAIL_KEY, normalizeDetail, type DetailLevel } from './fidelity'
 import { LIMBS, limbCondition, type Limb } from './limbs'
@@ -31,11 +30,11 @@ class SceneBoundary extends Component<{ onError: (e: unknown) => void; children:
 const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
 
 /**
- * STAT > STATUS: the figure with limb condition bars around it, the WEAPON and EMOTES
- * fly-out triggers in the stage's bottom corners, active EFFECTS, four readout boxes
- * (TEMP, RADS, CAPS, QUESTS) and the name plate with LEVEL + XP. Figure and detail options live in DATA > SYSTEM > FIGURE.
- * The panel is a size container; dweller.css picks wide / short / landscape / compact
- * layouts from it.
+ * STAT > STATUS: an EFFECTS tile column on the left, the figure with short limb condition
+ * bars around it, a loadout row under it (WEAPON + DMG, EMOTE, then TEMP / RADS / CAPS /
+ * QUESTS tiles) and a one-line name plate. LEVEL, HP and AP live in the bottom status bar.
+ * Figure and detail options live in DATA > SYSTEM > FIGURE. The panel is a size container;
+ * dweller.css picks the portrait / short / wide layout from it.
  */
 export default function StatusPanel() {
   useEffect(startPerkTracking, [])
@@ -55,7 +54,6 @@ export default function StatusPanel() {
   const [lastError, setLastError] = useState<string | null>(() => (hasWebGL() ? null : 'WEBGL UNAVAILABLE'))
   const offline = lastError !== null && (fails >= 3 || lastError === 'WEBGL UNAVAILABLE')
   const limbs = useMemo(() => limbCondition(profile.name), [profile.name])
-  const xp = useXp()
   // only one fly-out open at a time
   const [menu, setMenu] = useState<FlyoutId | null>(null)
   const menuProps = (id: FlyoutId) => ({
@@ -92,6 +90,7 @@ export default function StatusPanel() {
   return (
     <div className="status-panel">
       <div className="status-grid">
+        <EffectsList />
         <div className="status-stage">
           <div className="status-figure">
             {offline ? (
@@ -137,29 +136,18 @@ export default function StatusPanel() {
               <span className="limb__label">{l}</span>
             </div>
           ))}
-          <WeaponSlot {...menuProps('weapon')} />
-          {!failed && <EmoteFlyout {...menuProps('emotes')} />}
         </div>
 
-        <EffectsList />
-        <ReadoutStrip />
+        <div className="status-loadout">
+          <WeaponSlot {...menuProps('weapon')} />
+          {!failed && <EmoteFlyout {...menuProps('emotes')} />}
+          <ReadoutStrip />
+        </div>
 
         <div className="status-id">
           <span className="status-id__name">{profile.name || 'VAULT DWELLER'}</span>
+          <span className="status-id__sep" aria-hidden />
           <span className="status-id__vault">VAULT {profile.vault || '111'}</span>
-          <span className="status-id__level" title={`${xp.xp} XP`}>
-            <span>LVL {xp.level}</span>
-            <span
-              className="xp-bar"
-              role="progressbar"
-              aria-label="XP to next level"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(xp.progress * 100)}
-            >
-              <span style={{ width: `${xp.progress * 100}%` }} />
-            </span>
-          </span>
         </div>
       </div>
     </div>
