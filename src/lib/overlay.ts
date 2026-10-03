@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-export type OverlayId = 'terminal' | 'headshot-crop'
+export type OverlayId = 'terminal'
 export type OverlayState = { id: OverlayId; payload?: unknown } | null
 
 let state: OverlayState = null
@@ -10,7 +10,7 @@ const set = (s: OverlayState) => {
   subs.forEach((fn) => fn())
 }
 
-/** Full-screen views launched from anywhere (holotape → terminal, upload → cropper). */
+/** Full-screen views launched from anywhere (holotape → terminal). */
 export const openOverlay = (id: OverlayId, payload?: unknown) => set({ id, payload })
 export const closeOverlay = () => set(null)
 

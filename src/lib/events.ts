@@ -1,7 +1,7 @@
 export type AppEvent =
   | { type: 'quest-complete'; xp: number }
   | { type: 'level-up'; level: number }
-  | { type: 'headshot-set' }
+  | { type: 'figure-tapped' }
   | { type: 'hack-result'; success: boolean; daily: boolean }
   | { type: 'holotape-import'; count: number }
   | { type: 'tab-change'; tab: string }

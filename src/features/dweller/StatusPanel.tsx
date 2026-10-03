@@ -1,11 +1,10 @@
-import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react'
-import { openOverlay, useProfile, useStored } from '../../lib/contracts'
+import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useProfile, useStored } from '../../lib/contracts'
 import { startPerkTracking } from '../perks/perks'
-import { DEFAULT_DETAIL, DETAIL_KEY, DETAIL_LEVELS, normalizeDetail, type DetailLevel } from './fidelity'
-import { isImageFile, PRIVACY_NOTE, useHeadshot } from './headshot'
+import { DEFAULT_DETAIL, DETAIL_KEY, normalizeDetail, type DetailLevel } from './fidelity'
 import { LIMBS, limbCondition, type Limb } from './limbs'
 import PaperDollFallback from './PaperDollFallback'
-import { DEFAULT_FIGURE, FIGURE_KEY, FIGURE_LABEL, FIGURES, normalizeFigure, type Figure } from './vaultboy/behavior'
+import { DEFAULT_FIGURE, FIGURE_KEY, normalizeFigure, type Figure } from './vaultboy/behavior'
 import { hasWebGL } from './webgl'
 
 // three.js only loads with the scene, in its own chunk.
@@ -27,21 +26,21 @@ class SceneBoundary extends Component<{ onError: (e: unknown) => void; children:
 
 const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
 
+/**
+ * STAT > STATUS: the figure, limb condition bars around it, and the dweller name plate.
+ * Figure and detail options live in DATA > SYSTEM > FIGURE.
+ */
 export default function StatusPanel() {
   useEffect(startPerkTracking, [])
   const [profile] = useProfile()
-  const [headshot, setHeadshot] = useHeadshot()
-  const [storedDetail, setDetail] = useStored<DetailLevel>(DETAIL_KEY, DEFAULT_DETAIL)
+  const [storedDetail] = useStored<DetailLevel>(DETAIL_KEY, DEFAULT_DETAIL)
   const detail = normalizeDetail(storedDetail)
-  const [storedFigure, setFigure] = useStored<Figure>(FIGURE_KEY, DEFAULT_FIGURE)
+  const [storedFigure] = useStored<Figure>(FIGURE_KEY, DEFAULT_FIGURE)
   const figure = normalizeFigure(storedFigure)
   const [failed, setFailed] = useState(() => !hasWebGL())
   // Vault Boy failed (GLB or WebGL trouble): show the procedural Dweller instead.
   const [vbFailed, setVbFailed] = useState(false)
   const showVaultBoy = figure === 'VAULTBOY' && !vbFailed
-  const [dragging, setDragging] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const fileInput = useRef<HTMLInputElement>(null)
   const limbs = useMemo(() => limbCondition(profile.name), [profile.name])
 
   const onFail = (err: unknown) => {
@@ -53,32 +52,8 @@ export default function StatusPanel() {
     setVbFailed(true)
   }
 
-  const pick = (file: File | null | undefined) => {
-    if (!file) return
-    if (!isImageFile(file)) return setMessage('THAT FILE IS NOT AN IMAGE. TRY A PHOTO.')
-    setMessage(null)
-    openOverlay('headshot-crop', file)
-  }
-
-  const onDragOver = (e: DragEvent) => {
-    if (!Array.from(e.dataTransfer.types).includes('Files')) return
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'copy'
-    setDragging(true)
-  }
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault()
-    setDragging(false)
-    pick(e.dataTransfer.files[0])
-  }
-
   return (
-    <div
-      className={`status-panel${dragging ? ' is-dragging' : ''}`}
-      onDragOver={onDragOver}
-      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setDragging(false)}
-      onDrop={onDrop}
-    >
+    <div className="status-panel">
       <div className="status-stage">
         <div className="status-figure">
           {failed ? (
@@ -105,73 +80,6 @@ export default function StatusPanel() {
         <span className="status-id__name">{profile.name || 'VAULT DWELLER'}</span>
         <span className="status-id__vault">VAULT {profile.vault || '111'}</span>
       </div>
-
-      <ul className="status-actions" aria-label="Status actions">
-        <li>
-          <button type="button" className="status-action" onClick={() => fileInput.current?.click()}>
-            UPLOAD HEADSHOT
-          </button>
-        </li>
-        {headshot && (
-          <li>
-            <button type="button" className="status-action" onClick={() => setHeadshot(null)}>
-              REMOVE HEADSHOT
-            </button>
-          </li>
-        )}
-        {!failed && (
-          <li className="dweller-detail dweller-figure" role="group" aria-label="Figure">
-            <span className="dweller-detail__label" aria-hidden>
-              FIGURE
-            </span>
-            {FIGURES.map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={`pip-btn dweller-detail__opt${f === figure ? ' is-active' : ''}`}
-                aria-pressed={f === figure}
-                onClick={() => {
-                  setVbFailed(false)
-                  setFigure(f)
-                }}
-              >
-                {FIGURE_LABEL[f]}
-              </button>
-            ))}
-          </li>
-        )}
-        {!failed && !showVaultBoy && (
-          <li className="dweller-detail" role="group" aria-label="Figure detail">
-            <span className="dweller-detail__label" aria-hidden>
-              DETAIL
-            </span>
-            {DETAIL_LEVELS.map((l) => (
-              <button
-                key={l}
-                type="button"
-                className={`pip-btn dweller-detail__opt${l === detail ? ' is-active' : ''}`}
-                aria-pressed={l === detail}
-                onClick={() => setDetail(l)}
-              >
-                {l}
-              </button>
-            ))}
-          </li>
-        )}
-      </ul>
-      <p className="pip-note status-note">{message ?? `${PRIVACY_NOTE} Drop a photo here or tap upload.`}</p>
-      <input
-        ref={fileInput}
-        type="file"
-        accept="image/*"
-        hidden
-        data-testid="headshot-input"
-        onChange={(e) => {
-          pick(e.target.files?.[0])
-          e.target.value = ''
-        }}
-      />
-      {dragging && <div className="status-drop" aria-hidden>DROP PHOTO TO SCAN</div>}
     </div>
   )
 }

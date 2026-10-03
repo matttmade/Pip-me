@@ -45,7 +45,7 @@ describe('hueToHex', () => {
 describe('gesture choice', () => {
   it('maps app events', () => {
     expect(eventGesture({ type: 'level-up', level: 2 })).toBe('cheer')
-    expect(eventGesture({ type: 'headshot-set' })).toBe('thumbsUp')
+    expect(eventGesture({ type: 'figure-tapped' })).toBeNull()
     expect(eventGesture({ type: 'hack-result', success: true, daily: false })).toBe('flex')
     expect(eventGesture({ type: 'hack-result', success: false, daily: false })).toBeNull()
     expect(eventGesture({ type: 'list-move' })).toBeNull()

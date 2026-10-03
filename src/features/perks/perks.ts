@@ -14,7 +14,7 @@ const ALL_TABS = ['STAT', 'INV', 'DATA', 'MAP', 'RADIO']
 
 // Original achievement names and copy written for this project.
 export const PERKS: PerkDef[] = [
-  { id: 'face-time', name: 'FACE TIME', desc: 'Gave the jumpsuit a face. Vault-Tec security thanks you for your cooperation.', hint: 'Upload a headshot on STATUS.' },
+  { id: 'say-hello', name: 'SAY HELLO', desc: 'Poked your Pip-Boy companion and got a reaction. Friendliness is a survival skill.', hint: 'Tap the figure on STATUS.' },
   { id: 'good-neighbor', name: 'GOOD NEIGHBOR', desc: 'Finished your first quest. The wasteland is one chore tidier.', hint: 'Complete any quest.' },
   { id: 'moving-up', name: 'MOVING UP', desc: 'Reached level 2. The first rung is the hardest one.', hint: 'Earn enough XP to level up.' },
   { id: 'skeleton-key', name: 'SKELETON KEY', desc: 'Talked your way past a terminal password. It never stood a chance.', hint: 'Win a terminal hack.' },
@@ -41,8 +41,8 @@ export function applyPerkEvent(
   let next = progress
 
   switch (e.type) {
-    case 'headshot-set':
-      grant('face-time')
+    case 'figure-tapped':
+      grant('say-hello')
       break
     case 'quest-complete':
       grant('good-neighbor')

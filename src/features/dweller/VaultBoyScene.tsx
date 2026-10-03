@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 import {
+  emit,
   mulberry32,
   on,
   readStored,
@@ -11,7 +12,6 @@ import {
   type Rng,
 } from '../../lib/contracts'
 import { NO_PERKS, PERKS_KEY } from '../perks/perks'
-import { useHeadshot } from './headshot'
 import { eventGesture, PERK_GESTURE, tapGesture } from './vaultboy/behavior'
 import { createVaultBoyEngine, type VaultBoyEngine } from './vaultboy/vaultBoyEngine'
 
@@ -26,13 +26,12 @@ export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => vo
   const host = useRef<HTMLDivElement>(null)
   const engine = useRef<VaultBoyEngine | null>(null)
   const [cfg] = useEffectsConfig()
-  const [headshot] = useHeadshot()
   const visible = usePageVisible()
   const reduced = usePrefersReducedMotion()
   const coarse = useCoarsePointer()
-  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, headshot, visible, onFail })
+  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, visible, onFail })
   useLayoutEffect(() => {
-    latest.current = { hue: cfg.hue, glow: cfg.glow, headshot, visible, onFail }
+    latest.current = { hue: cfg.hue, glow: cfg.glow, visible, onFail }
   })
   const rng = useRef<Rng | null>(null)
   const down = useRef<{ x: number; y: number } | null>(null)
@@ -74,7 +73,6 @@ export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => vo
         e.setHue(latest.current.hue)
         e.setGlow(latest.current.glow)
         e.setRunning(latest.current.visible)
-        return e.setHeadshot(latest.current.headshot)
       })
       .catch((err) => !cancelled && latest.current.onFail(err))
 
@@ -109,12 +107,12 @@ export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => vo
 
   useEffect(() => engine.current?.setHue(cfg.hue), [cfg.hue])
   useEffect(() => engine.current?.setGlow(cfg.glow), [cfg.glow])
-  useEffect(() => void engine.current?.setHeadshot(headshot), [headshot])
   useEffect(() => engine.current?.setRunning(visible), [visible])
 
   const tap = () => {
     rng.current ??= mulberry32(Date.now() | 0)
     engine.current?.react(tapGesture(rng.current))
+    emit({ type: 'figure-tapped' })
   }
   const onPointerDown = (e: PointerEvent) => {
     down.current = { x: e.clientX, y: e.clientY }

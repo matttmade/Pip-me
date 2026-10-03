@@ -11,10 +11,9 @@ contracts, ownership).
 ## Core experiences
 - Animated UI: scanlines, subtle glitches, background noise, all driven by one
   EffectsConfig and controlled in DATA > SYSTEM.
-- STAT: a three.js figure in a looping walk; an uploaded headshot replaces the head
-  via a billboard on the Head bone. FIGURE = VAULT BOY (owner-supplied rig in
+- STAT: a three.js figure in a looping walk with limb bars and a name plate. FIGURE = VAULT BOY (owner-supplied rig in
   public/models/vaultboy.glb, src/features/dweller/vaultboy/) or DWELLER (original
-  procedural figure, the all-original option).
+  procedural figure, the all-original option), chosen in DATA > SYSTEM > STATUS FIGURE.
 - MAP: real MapLibre map centered on the user's geolocation, Pip-Boy styled.
 - Works with zero setup; customizations persist via src/lib/store.ts
   (sessionStorage today).
@@ -35,7 +34,6 @@ layout and spacing. Never import or ship files from /reference.
   rig (vaultboy.glb), used by the owner's explicit decision for this non-commercial
   fan project; never ship the kit's reference images.
 - Add a backend, API keys, ads or payments.
-- Upload headshots anywhere; process them in canvas only.
 - Read/write sessionStorage or localStorage outside src/lib/store.ts.
 - Change signatures in src/lib/contracts.ts from a feature branch. Feature
   branches consume the shared contracts and only touch their own folders.

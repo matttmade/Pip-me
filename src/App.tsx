@@ -28,7 +28,6 @@ const TABS = [
 
 const OVERLAYS: Record<OverlayId, ComponentType<OverlayProps>> = {
   terminal: lazy(() => import('./features/terminal/Terminal')),
-  'headshot-crop': lazy(() => import('./features/dweller/HeadshotCropper')),
 }
 
 type Nav = { tab: number; subs: number[] }

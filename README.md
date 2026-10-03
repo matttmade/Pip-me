@@ -2,7 +2,7 @@
 
 A browser recreation of a Fallout 4-style Pip-Boy screen as a personal dashboard, shown on a
 curved CRT, either full screen or worn on an arm (switch with the dock or `V`).
-A Vault Dweller walks on the STAT screen (drop in a headshot to become them), a real map
+A figure walks on the STAT screen, a real map
 centers on your location, and the whole UI runs on scanlines, glitches and background
 noise that you can tune in **DATA > SYSTEM**.
 
@@ -12,7 +12,6 @@ noise that you can tune in **DATA > SYSTEM**.
 
 ## Privacy
 
-- **Headshots** are cropped and processed in a `<canvas>` in your browser, and are never uploaded.
 - **Location** goes only to the map tile provider (as tile requests), Open-Meteo (weather
   and city search) and Nominatim (place names), as coordinates.
 - **Customizations** live in `sessionStorage` (see `src/lib/store.ts`) and disappear when

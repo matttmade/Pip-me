@@ -47,8 +47,6 @@ export function eventGesture(e: AppEvent): Gesture | null {
   switch (e.type) {
     case 'level-up':
       return 'cheer'
-    case 'headshot-set':
-      return 'thumbsUp'
     case 'hack-result':
       return e.success ? 'flex' : null
     default:

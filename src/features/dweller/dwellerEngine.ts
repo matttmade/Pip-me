@@ -8,7 +8,6 @@ import {
   MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
-  Quaternion,
   Scene,
   SRGBColorSpace,
   Texture,
@@ -50,7 +49,6 @@ export type EngineOptions = {
 export type DwellerEngine = {
   setHue(hue: number): void
   setVault(vault: string): void
-  setHeadshot(dataUrl: string | null): Promise<void>
   setRunning(running: boolean): void
   setGlow(glow: number): void
   /** Match the backing store to a CSS box (smooth levels only; RETRO stays 240×320). */
@@ -58,14 +56,6 @@ export type DwellerEngine = {
   readonly source: 'procedural' | 'glb'
   dispose(): void
 }
-
-const loadImage = (src: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('headshot image failed to load'))
-    img.src = src
-  })
 
 /** Build the scene into `canvas`. Tries the optional GLB, falls back to the procedural rig. */
 export async function createDwellerEngine(canvas: HTMLCanvasElement, opts: EngineOptions): Promise<DwellerEngine> {
@@ -162,15 +152,6 @@ function buildEngine(
   }
   if (profile.floor) scene.add(makeFloor())
 
-  // Headshot billboard: a camera-facing plane parented to the head slot.
-  // Smooth levels keep the feathered circular edge; RETRO cuts it hard like the rest.
-  const billboardMat = new MeshBasicMaterial({ transparent: true, alphaTest: smooth ? 0.02 : 0.5, depthWrite: true })
-  if (smooth) billboardMat.color.setScalar(0.82) // keep photo highlights under the bloom threshold
-  const billboard = new Mesh(new PlaneGeometry(1, 1), billboardMat)
-  billboard.name = 'HeadshotBillboard'
-  billboard.visible = false
-  rig.headSlot.add(billboard)
-
   const msaaTarget = smooth ? new WebGLRenderTarget(width, height, { type: HalfFloatType, samples: profile.msaa }) : undefined
   const composer = new EffectComposer(renderer, msaaTarget)
   composer.setPixelRatio(1)
@@ -215,8 +196,6 @@ function buildEngine(
   applySize(1)
   rig.setVault(opts.vault)
 
-  const q = new Quaternion()
-  const ws = new Vector3()
   let time = 0.35
   let raf = 0
   let last = 0
@@ -230,14 +209,6 @@ function buildEngine(
     camera.position.set(Math.sin(yaw) * DIST, 1.2, Math.cos(yaw) * DIST)
     camera.lookAt(target)
     scene.updateMatrixWorld()
-    if (billboard.visible) {
-      // Undo the parent's world rotation/scale so the plane faces the camera at a fixed size.
-      rig.headSlot.getWorldQuaternion(q)
-      billboard.quaternion.copy(q.invert()).multiply(camera.quaternion)
-      rig.headSlot.getWorldScale(ws)
-      billboard.scale.set(rig.headSize / ws.x, rig.headSize / ws.y, 1)
-      billboard.updateMatrixWorld()
-    }
     composer.render()
   }
 
@@ -258,8 +229,6 @@ function buildEngine(
     else draw()
   }
 
-  let headshotTex: Texture | null = null
-  let headshotToken = 0
 
   draw()
 
@@ -290,29 +259,11 @@ function buildEngine(
       rig.setVault(vault)
       if (!raf) draw()
     },
-    async setHeadshot(dataUrl) {
-      const token = ++headshotToken
-      const img = dataUrl ? await loadImage(dataUrl).catch(() => null) : null
-      if (disposed || token !== headshotToken) return
-      headshotTex?.dispose()
-      headshotTex = null
-      if (img) {
-        headshotTex = new Texture(img)
-        headshotTex.colorSpace = SRGBColorSpace
-        headshotTex.needsUpdate = true
-      }
-      billboardMat.map = headshotTex
-      billboardMat.needsUpdate = true
-      billboard.visible = !!headshotTex
-      rig.setHeadVisible(!headshotTex)
-      if (!raf) draw()
-    },
     setRunning,
     dispose() {
       if (disposed) return
       disposed = true
       cancelAnimationFrame(raf)
-      headshotTex?.dispose()
       scene.traverse((o) => {
         const mesh = o as Mesh
         if (mesh.isMesh) {

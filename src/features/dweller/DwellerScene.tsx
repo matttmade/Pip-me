@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useCoarsePointer, useEffectsConfig, usePageVisible, usePrefersReducedMotion, useProfile } from '../../lib/contracts'
 import { createDwellerEngine, RENDER_H, RENDER_W, type DwellerEngine } from './dwellerEngine'
 import { detailProfile, type DetailLevel } from './fidelity'
-import { useHeadshot } from './headshot'
 
 /**
  * three.js Vault Dweller. Lazy-loaded by StatusPanel, so three lives in its own chunk.
@@ -14,13 +13,12 @@ export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown
   const engine = useRef<DwellerEngine | null>(null)
   const [cfg] = useEffectsConfig()
   const [profile] = useProfile()
-  const [headshot] = useHeadshot()
   const visible = usePageVisible()
   const reduced = usePrefersReducedMotion()
   const coarse = useCoarsePointer()
-  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, vault: profile.vault, headshot, visible, onFail })
+  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, vault: profile.vault, visible, onFail })
   useLayoutEffect(() => {
-    latest.current = { hue: cfg.hue, glow: cfg.glow, vault: profile.vault, headshot, visible, onFail }
+    latest.current = { hue: cfg.hue, glow: cfg.glow, vault: profile.vault, visible, onFail }
   })
 
   useEffect(() => {
@@ -65,7 +63,6 @@ export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown
         e.setGlow(latest.current.glow)
         e.setVault(latest.current.vault)
         e.setRunning(latest.current.visible)
-        return e.setHeadshot(latest.current.headshot)
       })
       .catch((err) => !cancelled && latest.current.onFail(err))
 
@@ -82,7 +79,6 @@ export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown
   useEffect(() => engine.current?.setHue(cfg.hue), [cfg.hue])
   useEffect(() => engine.current?.setGlow(cfg.glow), [cfg.glow])
   useEffect(() => engine.current?.setVault(profile.vault), [profile.vault])
-  useEffect(() => void engine.current?.setHeadshot(headshot), [headshot])
   useEffect(() => engine.current?.setRunning(visible), [visible])
 
   return <div ref={host} className="dweller-scene" data-no-swipe />

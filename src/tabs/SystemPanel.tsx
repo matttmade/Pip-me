@@ -9,6 +9,8 @@ import { resetAll, useStored } from '../lib/store'
 import { PRESETS_KEY, type SavedPreset } from '../lib/systemPresets'
 import { ListDetail, type ListItem } from '../shell/ListDetail'
 import { SavedPresets } from './SavedPresets'
+import { DEFAULT_DETAIL, DETAIL_KEY, DETAIL_LEVELS, normalizeDetail, type DetailLevel } from '../features/dweller/fidelity'
+import { DEFAULT_FIGURE, FIGURE_KEY, FIGURE_LABEL, FIGURES, normalizeFigure, type Figure } from '../features/dweller/vaultboy/behavior'
 import { PipSlider } from '../shell/PipSlider'
 import { PipToggle } from '../shell/PipToggle'
 
@@ -31,6 +33,10 @@ export function SystemPanel() {
   const [device, setDevice] = useDeviceSettings()
   const [view, setView] = useView()
   const [saved] = useStored<SavedPreset[]>(PRESETS_KEY, [])
+  const [storedFigure, setFigure] = useStored<Figure>(FIGURE_KEY, DEFAULT_FIGURE)
+  const figure = normalizeFigure(storedFigure)
+  const [storedDetail, setDetail] = useStored<DetailLevel>(DETAIL_KEY, DEFAULT_DETAIL)
+  const dwellerDetail = normalizeDetail(storedDetail)
   const warp = device.warp ?? warpAutoDefault()
 
   const onOff = (on: boolean) => (on ? 'ON' : 'OFF')
@@ -45,6 +51,7 @@ export function SystemPanel() {
     { id: 'SCREEN', label: 'GLOW + SCREEN' },
     { id: 'COLOR', label: 'PHOSPHOR COLOR', right: cfg.hue },
     { id: 'DEVICE', label: 'DEVICE + CRT', right: view === 'arm' ? 'ON ARM' : 'SCREEN' },
+    { id: 'FIGURE', label: 'STATUS FIGURE', right: FIGURE_LABEL[figure] },
     { id: 'IDENTITY', label: 'DWELLER ID' },
     { id: 'PREFS', label: 'PREFERENCES' },
     { id: 'ABOUT', label: 'ABOUT / LEGAL' },
@@ -55,7 +62,7 @@ export function SystemPanel() {
     switch (selected) {
       case 'SAVED':
         return (
-          <Detail title="SAVED PRESETS" note="A preset stores display effects, color, device and preferences (not your name, photo or quests). Saved presets stay in this browser after it closes and survive RESET TERMINAL.">
+          <Detail title="SAVED PRESETS" note="A preset stores display effects, color, device and preferences (not your name or quests). Saved presets stay in this browser after it closes and survive RESET TERMINAL.">
             <SavedPresets />
           </Detail>
         )
@@ -150,6 +157,27 @@ export function SystemPanel() {
             <PipSlider label="CURVATURE" value={cfg.curvature} min={0} max={1} onChange={(curvature) => update({ curvature })} format={pct} />
           </Detail>
         )
+      case 'FIGURE':
+        return (
+          <Detail title="STATUS FIGURE" note="VAULT BOY is the fan rig supplied by the project owner. DWELLER is the original procedural figure; DETAIL sets how it is drawn.">
+            <div className="pip-choices">
+              {FIGURES.map((f) => (
+                <button key={f} className={`pip-btn${figure === f ? ' is-active' : ''}`} onClick={() => setFigure(f)}>
+                  {FIGURE_LABEL[f]}
+                </button>
+              ))}
+            </div>
+            {figure === 'DWELLER' && (
+              <div className="pip-choices" role="group" aria-label="Dweller detail">
+                {DETAIL_LEVELS.map((l) => (
+                  <button key={l} className={`pip-btn${dwellerDetail === l ? ' is-active' : ''}`} onClick={() => setDetail(l)}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Detail>
+        )
       case 'ABOUT':
         return (
           <Detail title="ABOUT / LEGAL">
@@ -157,7 +185,7 @@ export function SystemPanel() {
               Pip-Me is an unofficial fan-made case study. Not affiliated with or endorsed by Bethesda Softworks, ZeniMax or Microsoft.
               Fallout, Pip-Boy and Vault-Tec are trademarks of their respective owners. Non-commercial: no ads, no accounts, no tracking.
             </p>
-            <p className="pip-note">Your photo, settings and quests stay in this browser session. Map tiles, weather and place names come from OpenFreeMap, Open-Meteo and Nominatim; Appalachia Radio streams from SoundCloud.</p>
+            <p className="pip-note">Your settings and quests stay in this browser session. Map tiles, weather and place names come from OpenFreeMap, Open-Meteo and Nominatim; Appalachia Radio streams from SoundCloud.</p>
           </Detail>
         )
       case 'IDENTITY':
@@ -195,7 +223,7 @@ export function SystemPanel() {
         )
       default:
         return (
-          <Detail title="RESET TERMINAL" note="Clears every customization, quest, holotape and headshot stored in this browser session.">
+          <Detail title="RESET TERMINAL" note="Clears every customization, quest and holotape stored in this browser session. Saved presets are kept.">
             <button
               className={`pip-btn pip-btn--danger${confirmReset ? ' is-active' : ''}`}
               onClick={() => {

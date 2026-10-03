@@ -7,7 +7,7 @@ import { readStored, writeStored } from './store'
 /**
  * Saved SYSTEM presets: a snapshot of every display/device/preference setting that can be
  * saved under a name, re-applied in one click, and shared as a short code.
- * Identity (name, vault), quests, holotapes and the headshot are deliberately NOT included.
+ * Identity (name, vault), quests and holotapes are deliberately NOT included.
  */
 export type SystemSnapshot = {
   effects: EffectsConfig

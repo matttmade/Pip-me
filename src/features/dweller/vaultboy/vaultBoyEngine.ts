@@ -1,19 +1,12 @@
 import {
-  Color,
   HalfFloatType,
-  Mesh,
   PerspectiveCamera,
-  PlaneGeometry,
-  Quaternion,
   Scene,
-  ShaderMaterial,
-  SRGBColorSpace,
   Texture,
   Vector2,
   Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
-  type Object3D,
 } from 'three'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
@@ -41,7 +34,6 @@ export type VaultBoyEngineOptions = { hue: number; glow: number; animate: boolea
 export type VaultBoyEngine = {
   setHue(hue: number): void
   setGlow(glow: number): void
-  setHeadshot(dataUrl: string | null): Promise<void>
   setRunning(running: boolean): void
   resize(cssW: number, cssH: number, dpr: number): void
   /** Play a gesture now (tap / app event). Returns false when swallowed. */
@@ -71,34 +63,6 @@ const ScreenAlphaShader = {
       gl_FragColor = vec4(c, clamp(max(c.r, max(c.g, c.b)), 0.0, 1.0));
     }`,
 }
-
-/** Headshot face: the photo's luminance in the phosphor colour, with faint scanlines. */
-function headshotMaterial() {
-  return new ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    depthTest: false,
-    uniforms: { map: { value: null as Texture | null }, uColor: { value: new Color() } },
-    vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: /* glsl */ `
-      uniform sampler2D map; uniform vec3 uColor; varying vec2 vUv;
-      void main(){
-        vec4 t = texture2D(map, vUv);
-        float l = dot(t.rgb, vec3(0.299, 0.587, 0.114));
-        float scan = 0.85 + 0.15 * sin(gl_FragCoord.y * 1.6);
-        vec3 col = uColor * (0.06 + 0.62 * l) * scan;
-        gl_FragColor = vec4(col, t.a);
-      }`,
-  })
-}
-
-const loadImage = (src: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('headshot image failed to load'))
-    img.src = src
-  })
 
 export async function createVaultBoyEngine(canvas: HTMLCanvasElement, opts: VaultBoyEngineOptions): Promise<VaultBoyEngine> {
   const vb = await VaultBoy.load(VAULTBOY_URL, { style: { color: hueToHex(opts.hue) } })
@@ -140,39 +104,7 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
   const screenAlpha = new ShaderPass(ScreenAlphaShader)
   composer.addPass(screenAlpha)
 
-  // ---- headshot billboard, tracking the Head bone ----
-  const head = vb.bones.get('head')
-  const headTop = head?.children.find((c) => /HeadTop/i.test(c.name)) as Object3D | undefined
-  const headScale = head ? head.scale.clone() : new Vector3(1, 1, 1)
-  const faceOffset = new Vector3() // head-rotation frame, world units
-  let faceSize = 0.5
-  const hq = new Quaternion()
-  const hp = new Vector3()
-  if (head) {
-    vb.object.updateMatrixWorld(true)
-    head.getWorldPosition(hp)
-    head.getWorldQuaternion(hq)
-    const top = headTop ? headTop.getWorldPosition(new Vector3()) : hp.clone().add(new Vector3(0, 0.55, 0))
-    const len = top.distanceTo(hp)
-    faceSize = len * 1.05
-    // centre of the face: a bit under half-way up the skull, pushed forward toward the camera
-    const centre = hp.clone().lerp(top, 0.47).add(new Vector3(0, 0, len * 0.42))
-    faceOffset.copy(centre.sub(hp)).applyQuaternion(hq.clone().invert())
-  }
-  const billboardMat = headshotMaterial()
-  const billboard = new Mesh(new PlaneGeometry(1, 1), billboardMat)
-  billboard.name = 'HeadshotBillboard'
-  billboard.renderOrder = 10
-  billboard.visible = false
-  scene.add(billboard)
-  let headHidden = false
-
-  const color = new Color()
-  const applyHue = (hue: number) => {
-    const hex = hueToHex(hue)
-    vb.setColor(hex)
-    billboardMat.uniforms.uColor.value.copy(color.set(hex))
-  }
+  const applyHue = (hue: number) => vb.setColor(hueToHex(hue))
   const applyGlow = (glow: number) => {
     const g = Math.min(1, Math.max(0, glow))
     bloom.strength = BLOOM.strength * (0.3 + 0.9 * g)
@@ -204,22 +136,10 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
       if (c) apply(c)
       vb.update(dt)
     }
-    if (head) {
-      if (headHidden) head.scale.setScalar(1e-3)
-      else head.scale.copy(headScale)
-    }
     const yaw = BASE_YAW + (animate ? ORBIT * Math.sin(time * 0.3) : 0)
     camera.position.set(Math.sin(yaw) * DIST, CAM_Y, Math.cos(yaw) * DIST)
     camera.lookAt(TARGET)
     scene.updateMatrixWorld()
-    if (billboard.visible && head) {
-      head.getWorldPosition(hp)
-      head.getWorldQuaternion(hq)
-      billboard.position.copy(faceOffset).applyQuaternion(hq).add(hp)
-      billboard.quaternion.copy(camera.quaternion)
-      billboard.scale.set(faceSize, faceSize, 1)
-      billboard.updateMatrixWorld()
-    }
     composer.render()
   }
 
@@ -239,9 +159,6 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
     if (run && animate && !disposed) raf = requestAnimationFrame(tick)
     else draw(0)
   }
-
-  let headshotTex: Texture | null = null
-  let headshotToken = 0
 
   draw(0)
 
@@ -266,22 +183,6 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
       camera.updateProjectionMatrix()
       if (!raf) draw(0)
     },
-    async setHeadshot(dataUrl) {
-      const token = ++headshotToken
-      const img = dataUrl ? await loadImage(dataUrl).catch(() => null) : null
-      if (disposed || token !== headshotToken) return
-      headshotTex?.dispose()
-      headshotTex = null
-      if (img) {
-        headshotTex = new Texture(img)
-        headshotTex.colorSpace = SRGBColorSpace
-        headshotTex.needsUpdate = true
-      }
-      billboardMat.uniforms.map.value = headshotTex
-      billboard.visible = !!headshotTex && !!head
-      headHidden = billboard.visible
-      if (!raf) draw(0)
-    },
     react(name) {
       if (disposed) return false
       if (!animate) {
@@ -298,9 +199,6 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
       if (disposed) return
       disposed = true
       cancelAnimationFrame(raf)
-      headshotTex?.dispose()
-      billboard.geometry.dispose()
-      billboardMat.dispose()
       vb.dispose()
       bloom.dispose()
       hueSafe.dispose()

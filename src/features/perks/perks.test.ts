@@ -5,9 +5,9 @@ import { applyPerkEvent, GLITCH_GOAL, NO_PERKS, NO_PROGRESS, PERKS, PERKS_KEY, s
 
 describe('applyPerkEvent', () => {
   it('grants one-shot perks once', () => {
-    const a = applyPerkEvent(NO_PERKS, NO_PROGRESS, { type: 'headshot-set' })
-    expect(a.newly).toEqual(['face-time'])
-    const b = applyPerkEvent(a.earned, a.progress, { type: 'headshot-set' })
+    const a = applyPerkEvent(NO_PERKS, NO_PROGRESS, { type: 'figure-tapped' })
+    expect(a.newly).toEqual(['say-hello'])
+    const b = applyPerkEvent(a.earned, a.progress, { type: 'figure-tapped' })
     expect(b.newly).toEqual([])
     expect(b.earned).toBe(a.earned)
   })
