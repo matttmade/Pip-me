@@ -35,3 +35,19 @@ export const UNKNOWN_WEATHER = 'ATMOSPHERIC ANOMALY'
 export function wmoToLabel(code: number | null | undefined): string {
   return code != null ? (WMO[code] ?? UNKNOWN_WEATHER) : UNKNOWN_WEATHER
 }
+
+/** The handful of original icon shapes a WMO code is drawn with. */
+export type WmoGlyph = 'clear' | 'partly' | 'cloud' | 'fog' | 'drizzle' | 'rain' | 'snow' | 'storm' | 'unknown'
+
+export function wmoGlyph(code: number | null | undefined): WmoGlyph {
+  if (code == null || code < 0) return 'unknown'
+  if (code <= 1) return 'clear'
+  if (code === 2) return 'partly'
+  if (code === 3) return 'cloud'
+  if (code === 45 || code === 48) return 'fog'
+  if (code >= 51 && code <= 57) return 'drizzle'
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return 'rain'
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow'
+  if (code >= 95 && code <= 99) return 'storm'
+  return 'unknown'
+}

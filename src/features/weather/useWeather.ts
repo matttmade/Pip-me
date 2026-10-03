@@ -5,7 +5,7 @@ import { readStored, writeStored } from '../../lib/store'
 import { getWeather, type Units, type Weather } from './openMeteo'
 
 export const REFRESH_MS = 15 * 60_000
-const CACHE_KEY = 'weather:last'
+const CACHE_KEY = 'weather:v2'
 
 type Cached = { key: string; data: Weather } | null
 type State = { key: string; data: Weather | null; status: 'idle' | 'loading' | 'ok' | 'error' }

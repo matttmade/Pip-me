@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { UNKNOWN_WEATHER, wmoToLabel } from './wmo'
+import { UNKNOWN_WEATHER, wmoGlyph, wmoToLabel } from './wmo'
+
+describe('wmoGlyph', () => {
+  it('groups codes into icon shapes', () => {
+    expect(wmoGlyph(0)).toBe('clear')
+    expect(wmoGlyph(1)).toBe('clear')
+    expect(wmoGlyph(2)).toBe('partly')
+    expect(wmoGlyph(3)).toBe('cloud')
+    expect(wmoGlyph(48)).toBe('fog')
+    expect(wmoGlyph(53)).toBe('drizzle')
+    expect(wmoGlyph(65)).toBe('rain')
+    expect(wmoGlyph(81)).toBe('rain')
+    expect(wmoGlyph(73)).toBe('snow')
+    expect(wmoGlyph(86)).toBe('snow')
+    expect(wmoGlyph(96)).toBe('storm')
+    expect(wmoGlyph(4)).toBe('unknown')
+    expect(wmoGlyph(null)).toBe('unknown')
+  })
+})
 
 describe('wmoToLabel', () => {
   it('maps known codes to uppercase labels', () => {
