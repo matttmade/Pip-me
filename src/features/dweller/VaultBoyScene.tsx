@@ -12,6 +12,7 @@ import {
   type Rng,
 } from '../../lib/contracts'
 import { NO_PERKS, PERKS_KEY } from '../perks/perks'
+import { onEmote } from './emotes'
 import { eventGesture, PERK_GESTURE, tapGesture } from './vaultboy/behavior'
 import { createVaultBoyEngine, type VaultBoyEngine } from './vaultboy/vaultBoyEngine'
 
@@ -99,9 +100,12 @@ export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => vo
       if (n > earned) engine.current?.react(PERK_GESTURE)
       earned = n
     })
+    // Emote buttons / number keys on the STATUS panel.
+    const offEmotes = onEmote((g) => engine.current?.react(g))
     return () => {
       offEvents()
       offPerks()
+      offEmotes()
     }
   }, [])
 

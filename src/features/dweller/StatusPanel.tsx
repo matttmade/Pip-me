@@ -1,9 +1,11 @@
 import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useProfile, useStored } from '../../lib/contracts'
+import { useXp } from '../quests/useXp'
 import { startPerkTracking } from '../perks/perks'
 import { DEFAULT_DETAIL, DETAIL_KEY, normalizeDetail, type DetailLevel } from './fidelity'
 import { LIMBS, limbCondition, type Limb } from './limbs'
 import PaperDollFallback from './PaperDollFallback'
+import { EffectsList, EmoteBar, ReadoutStrip } from './StatusExtras'
 import { DEFAULT_FIGURE, FIGURE_KEY, normalizeFigure, type Figure } from './vaultboy/behavior'
 import { hasWebGL } from './webgl'
 
@@ -27,8 +29,10 @@ class SceneBoundary extends Component<{ onError: (e: unknown) => void; children:
 const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
 
 /**
- * STAT > STATUS: the figure, limb condition bars around it, and the dweller name plate.
- * Figure and detail options live in DATA > SYSTEM > FIGURE.
+ * STAT > STATUS: the figure with limb condition bars around it, floating emote buttons,
+ * active EFFECTS, four readout boxes (TEMP, RADS, CAPS, QUESTS) and the name plate with
+ * LEVEL + XP. Figure and detail options live in DATA > SYSTEM > FIGURE.
+ * The panel is a size container; dweller.css picks wide / short / compact layouts from it.
  */
 export default function StatusPanel() {
   useEffect(startPerkTracking, [])
@@ -42,6 +46,7 @@ export default function StatusPanel() {
   const [vbFailed, setVbFailed] = useState(false)
   const showVaultBoy = figure === 'VAULTBOY' && !vbFailed
   const limbs = useMemo(() => limbCondition(profile.name), [profile.name])
+  const xp = useXp()
 
   const onFail = (err: unknown) => {
     console.warn('[dweller] 3D unavailable, using paper doll', err)
@@ -54,31 +59,64 @@ export default function StatusPanel() {
 
   return (
     <div className="status-panel">
-      <div className="status-stage">
-        <div className="status-figure">
-          {failed ? (
-            <PaperDollFallback />
-          ) : (
-            <SceneBoundary key={showVaultBoy ? 'vb' : 'dweller'} onError={showVaultBoy ? onVbFail : onFail}>
-              <Suspense fallback={<p className="loading status-loading">LOADING<span className="cursor">▌</span></p>}>
-                {showVaultBoy ? <VaultBoyScene onFail={onVbFail} /> : <DwellerScene onFail={onFail} detail={detail} />}
-              </Suspense>
-            </SceneBoundary>
-          )}
-        </div>
-        {LIMBS.map((l) => (
-          <div key={l} className={`limb limb--${slug(l)}`}>
-            <span className="limb__bar" role="meter" aria-label={`${l} condition`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(limbs[l] * 100)}>
-              <span style={{ width: `${limbs[l] * 100}%` }} />
-            </span>
-            <span className="limb__label">{l}</span>
+      <div className={`status-grid${failed ? '' : ' has-emotes'}`}>
+        <div className="status-stage">
+          <div className="status-figure">
+            {failed ? (
+              <PaperDollFallback />
+            ) : (
+              <SceneBoundary key={showVaultBoy ? 'vb' : 'dweller'} onError={showVaultBoy ? onVbFail : onFail}>
+                <Suspense
+                  fallback={
+                    <p className="loading status-loading">
+                      LOADING<span className="cursor">▌</span>
+                    </p>
+                  }
+                >
+                  {showVaultBoy ? <VaultBoyScene onFail={onVbFail} /> : <DwellerScene onFail={onFail} detail={detail} />}
+                </Suspense>
+              </SceneBoundary>
+            )}
           </div>
-        ))}
-      </div>
+          {LIMBS.map((l) => (
+            <div key={l} className={`limb limb--${slug(l)}`}>
+              <span
+                className="limb__bar"
+                role="meter"
+                aria-label={`${l} condition`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(limbs[l] * 100)}
+              >
+                <span style={{ width: `${limbs[l] * 100}%` }} />
+              </span>
+              <span className="limb__label">{l}</span>
+            </div>
+          ))}
+        </div>
 
-      <div className="status-id">
-        <span className="status-id__name">{profile.name || 'VAULT DWELLER'}</span>
-        <span className="status-id__vault">VAULT {profile.vault || '111'}</span>
+        {/* the paper doll can't gesture, so no emote buttons with it */}
+        {!failed && <EmoteBar />}
+        <EffectsList />
+        <ReadoutStrip />
+
+        <div className="status-id">
+          <span className="status-id__name">{profile.name || 'VAULT DWELLER'}</span>
+          <span className="status-id__vault">VAULT {profile.vault || '111'}</span>
+          <span className="status-id__level" title={`${xp.xp} XP`}>
+            <span>LVL {xp.level}</span>
+            <span
+              className="xp-bar"
+              role="progressbar"
+              aria-label="XP to next level"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(xp.progress * 100)}
+            >
+              <span style={{ width: `${xp.progress * 100}%` }} />
+            </span>
+          </span>
+        </div>
       </div>
     </div>
   )
