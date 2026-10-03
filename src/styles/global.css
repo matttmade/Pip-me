@@ -616,3 +616,19 @@ button, input, select, textarea {
   .status-bar { font-size: 12px; }
   .status-box { min-height: 26px; padding: 1px 6px; }
 }
+
+/* ---------- app, not a document: no accidental text selection / callouts ---------- */
+html, body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none; /* iOS long-press copy/share sheet */
+  -webkit-tap-highlight-color: transparent;
+}
+img, svg, canvas { -webkit-user-drag: none; }
+/* real text entry still selects normally */
+input, textarea, [contenteditable='true'], .selectable {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+::selection { background: var(--pip); color: var(--screen-bg); text-shadow: none; }

@@ -7,11 +7,18 @@ import './index.css'
 import App from './App.tsx'
 import { startPerkTracking } from './features/perks/perks'
 import { startSfx } from './features/sound/sfx'
+import { captureInstallEvents } from './features/install/installStore'
 import { bootApp } from './loader/handoff'
 import { Mounted } from './loader/Mounted'
 
 startSfx()
 startPerkTracking()
+captureInstallEvents()
+
+// It's an app, not a document: no ghost-dragging images/text out of the UI.
+document.addEventListener('dragstart', (e) => {
+  if (!(e.target instanceof HTMLElement && e.target.closest('input, textarea, [draggable="true"]'))) e.preventDefault()
+})
 
 // Warm the STAT figure (three.js + Vault Boy scene chunk) while the boot screen plays;
 // the model file itself is preloaded from index.html. StatusPanel's lazy import reuses this.
