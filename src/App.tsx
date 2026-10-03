@@ -8,6 +8,7 @@ import { closeOverlay, useOverlay, type OverlayId } from './lib/overlay'
 import type { OverlayProps } from './lib/contracts'
 import { useStored } from './lib/store'
 import { BootSequence } from './shell/BootSequence'
+import { stepSection, stepTab } from './shell/nav'
 import { PipBoyScreen } from './shell/PipBoyScreen'
 import { StatusBar } from './shell/StatusBar'
 import { SubTabs } from './shell/SubTabs'
@@ -32,6 +33,10 @@ const OVERLAYS: Record<OverlayId, ComponentType<OverlayProps>> = {
 
 type Nav = { tab: number; subs: number[] }
 const INITIAL_NAV: Nav = { tab: 0, subs: TABS.map(() => 0) }
+
+/** Focused controls that use ←/→ themselves. */
+const ownsArrows = (t: EventTarget | null) =>
+  t instanceof HTMLElement && !!t.closest('[role="slider"], input[type="range"], .maplibregl-map, .leaflet-container, [data-own-arrows]')
 
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
@@ -67,11 +72,24 @@ function PipBoy() {
     [setNav],
   )
 
-  // Keyboard: Q/E top tabs, A/D sub-tabs, Esc closes overlays.
+  // Keyboard: ←/→ sections (Shift: whole tabs), Q/E top tabs, A/D sub-tabs, Esc closes overlays.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && overlay) return closeOverlay()
       if (overlay || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return
+      // arrows: unless a focused control (slider, knob, map, seek bar) already used them
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.defaultPrevented && !ownsArrows(e.target)) {
+        e.preventDefault()
+        const dir = e.key === 'ArrowRight' ? 1 : -1
+        const counts = TABS.map((t) => t.subs.length)
+        const next = e.shiftKey ? stepTab(nav, TABS.length, dir) : stepSection(nav, counts, dir)
+        if (next.tab !== nav.tab) {
+          emit({ type: 'tab-change', tab: TABS[next.tab].id })
+          if (cfg.glitch.on && Math.random() < 0.2) triggerGlitch(cfg.glitch.strength * 0.5)
+        } else emit({ type: 'subtab-change', sub: TABS[next.tab].subs[next.subs[next.tab]] })
+        setNav(next)
+        return
+      }
       const k = e.key.toLowerCase()
       if (k === 'q') goTab(nav.tab - 1)
       else if (k === 'e') goTab(nav.tab + 1)
@@ -80,7 +98,7 @@ function PipBoy() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [overlay, nav.tab, subIndex, goTab, goSub])
+  }, [overlay, nav, subIndex, goTab, goSub, setNav, cfg.glitch.on, cfg.glitch.strength])
 
   // Touch: horizontal swipe on the panel changes sub-tab (maps/canvases opt out with data-no-swipe).
   const touch = useRef<{ x: number; y: number } | null>(null)
