@@ -7,7 +7,6 @@ import { emit } from './lib/events'
 import { closeOverlay, useOverlay, type OverlayId } from './lib/overlay'
 import type { OverlayProps } from './lib/contracts'
 import { useStored } from './lib/store'
-import { BootSequence } from './shell/BootSequence'
 import { stepSection, stepTab } from './shell/nav'
 import { PipBoyScreen } from './shell/PipBoyScreen'
 import { StatusBar } from './shell/StatusBar'
@@ -43,7 +42,6 @@ const isTyping = (t: EventTarget | null) =>
 
 function PipBoy() {
   const [nav, setNav] = useStored<Nav>('nav', INITIAL_NAV)
-  const [booted, setBooted] = useStored('booted', false)
   const [cfg] = useEffectsConfig()
   const overlay = useOverlay()
   const tab = TABS[nav.tab] ?? TABS[0]
@@ -119,44 +117,40 @@ function PipBoy() {
 
   return (
     <PipBoyScreen>
-      {!booted ? (
-        <BootSequence onDone={() => setBooted(true)} />
-      ) : (
-        <div className="pip-layout">
-          <RadioHost />
-          <header className="pip-header">
-            <TopTabs tabs={TABS.map((t) => t.id)} active={nav.tab} onChange={goTab} />
-            <SubTabs subs={tab.subs} active={subIndex} onChange={goSub} />
-          </header>
-          <main
-            id="pip-panel"
-            className="pip-panel"
-            role="tabpanel"
-            aria-labelledby={`tab-${tab.id}`}
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-          >
-            {Overlay ? (
-              <div className="pip-overlay">
-                <Suspense fallback={<p className="loading">LOADING<span className="cursor">▌</span></p>}>
-                  <Overlay payload={overlay?.payload} onClose={closeOverlay} />
-                </Suspense>
-              </div>
-            ) : tab.id === 'STAT' ? (
-              <StatTab sub={sub} />
-            ) : tab.id === 'INV' ? (
-              <InvTab sub={sub} />
-            ) : tab.id === 'DATA' ? (
-              <DataTab sub={sub} />
-            ) : tab.id === 'MAP' ? (
-              <MapTab />
-            ) : (
-              <RadioTab />
-            )}
-          </main>
-          <StatusBar />
-        </div>
-      )}
+      <div className="pip-layout">
+        <RadioHost />
+        <header className="pip-header">
+          <TopTabs tabs={TABS.map((t) => t.id)} active={nav.tab} onChange={goTab} />
+          <SubTabs subs={tab.subs} active={subIndex} onChange={goSub} />
+        </header>
+        <main
+          id="pip-panel"
+          className="pip-panel"
+          role="tabpanel"
+          aria-labelledby={`tab-${tab.id}`}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          {Overlay ? (
+            <div className="pip-overlay">
+              <Suspense fallback={<p className="loading">LOADING<span className="cursor">▌</span></p>}>
+                <Overlay payload={overlay?.payload} onClose={closeOverlay} />
+              </Suspense>
+            </div>
+          ) : tab.id === 'STAT' ? (
+            <StatTab sub={sub} />
+          ) : tab.id === 'INV' ? (
+            <InvTab sub={sub} />
+          ) : tab.id === 'DATA' ? (
+            <DataTab sub={sub} />
+          ) : tab.id === 'MAP' ? (
+            <MapTab />
+          ) : (
+            <RadioTab />
+          )}
+        </main>
+        <StatusBar />
+      </div>
     </PipBoyScreen>
   )
 }

@@ -9,8 +9,11 @@
     <meta name="theme-color" content="#031007" />
     <link rel="preload" href="/fonts/alfa-slab-one-latin-400.woff2" as="font" type="font/woff2" crossorigin />
     <!--
-      Boot loader (see src/loader/handoff.ts): pure inline HTML/CSS/SVG so it paints
-      before the JS bundle arrives. Original art only: no Vault Boy, no Vault-Tec emblem.
+      Boot loader (contract: src/loader/handoff.ts). Pure inline HTML/CSS/JS so it paints
+      before the bundle arrives, and it is the app's ONLY boot: CRT warm-up, a fast boot
+      log (some lines wait on real load steps), the Pip-Me wordmark with a progress meter
+      tied to real progress, then a raster wipe into the already-mounted app.
+      All copy is original. No Vault Boy, no Vault-Tec art.
     -->
     <style>
       @font-face {
@@ -22,301 +25,521 @@
       #pip-loader {
         --h: 135;
         --pl: hsl(var(--h) 100% 55%);
-        --pl-hi: hsl(var(--h) 100% 75%);
-        --pl-60: hsl(var(--h) 100% 55% / .6);
-        --pl-30: hsl(var(--h) 100% 55% / .3);
-        --pl-15: hsl(var(--h) 100% 55% / .15);
-        --pl-bg: hsl(var(--h) 60% 4%);
-        --u: min(1vw, 1.1dvh, 14px);
+        --pl-hi: hsl(var(--h) 100% 78%);
+        --pl-hot: hsl(var(--h) 100% 92%);
+        --pl-70: hsl(var(--h) 100% 55% / .7);
+        --pl-45: hsl(var(--h) 100% 55% / .45);
+        --pl-25: hsl(var(--h) 100% 55% / .25);
+        --pl-12: hsl(var(--h) 100% 55% / .12);
+        --pl-dim: hsl(var(--h) 70% 38%);
+        --k: 1; /* time scale: 1 = first boot, smaller = returning visit */
+        --pad-t: max(18px, env(safe-area-inset-top));
+        --pad-r: max(18px, env(safe-area-inset-right));
+        --pad-b: max(14px, env(safe-area-inset-bottom));
+        --pad-l: max(18px, env(safe-area-inset-left));
+        --logo: clamp(52px, min(9.2vw, 15dvh), 150px);
+        --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace;
         position: fixed; inset: 0; z-index: 2147483000;
-        display: grid; place-items: center;
         background: #000; color: var(--pl);
         overflow: hidden;
-        transition: background-color .38s ease;
-        -webkit-tap-highlight-color: transparent;
-        user-select: none;
+        font-family: var(--mono);
         text-transform: none; letter-spacing: normal; font-weight: 400;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none; -webkit-user-select: none;
+        cursor: default;
       }
-      #pip-loader.pl-out { background-color: transparent; pointer-events: none; }
+      #pip-loader *, #pip-loader *::before, #pip-loader *::after { box-sizing: border-box; }
+      #pip-loader.pl-out { background: transparent; pointer-events: none; }
+
+      /* ---------- the tube ---------- */
       .pl-screen {
         position: absolute; inset: 0;
-        display: grid; place-items: center;
-        padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-        box-sizing: border-box;
-        background:
-          radial-gradient(ellipse 75% 65% at 50% 42%, hsl(var(--h) 80% 10%) 0%, hsl(var(--h) 70% 5%) 55%, hsl(var(--h) 60% 2%) 100%);
-        transform-origin: 50% 50%;
-        transform: scale(0, .004);
-        animation: pl-on .42s cubic-bezier(.2,.7,.2,1) .1s forwards, pl-flicker .5s steps(1) .52s 1;
-      }
-      /* scanlines + a slow vertical shimmer, both in the hue */
-      .pl-screen::before, .pl-screen::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
-      .pl-screen::before {
-        background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / .32) 2px 3px);
-        mix-blend-mode: multiply;
-      }
-      .pl-screen::after {
-        background: linear-gradient(to bottom, transparent 0%, hsl(var(--h) 100% 55% / .05) 48%, transparent 52%);
-        background-size: 100% 300%;
-        animation: pl-roll 3.2s linear infinite;
-      }
-      .pl-stage {
-        position: relative; z-index: 1;
-        display: flex; flex-direction: column; align-items: center;
-        gap: calc(var(--u) * 2.6);
-        max-width: 100%;
-      }
-      /* figure + six limb meters */
-      .pl-doll {
-        display: grid;
-        grid-template-columns: auto auto auto;
-        grid-template-rows: auto auto auto;
-        align-items: center; justify-items: center;
-        column-gap: calc(var(--u) * 2.2);
-        row-gap: calc(var(--u) * 1.4);
-      }
-      .pl-col { display: flex; flex-direction: column; justify-content: space-around; height: 78%; gap: calc(var(--u) * 6); }
-      .pl-fig {
-        grid-column: 2; grid-row: 2;
-        width: calc(var(--u) * 18); height: calc(var(--u) * 34.5);
-        overflow: visible;
+        background: radial-gradient(ellipse 80% 70% at 50% 46%, hsl(var(--h) 85% 8%) 0%, hsl(var(--h) 75% 4%) 55%, hsl(var(--h) 60% 1.5%) 100%);
         opacity: 0;
-        animation: pl-fade .32s ease-out .5s forwards;
-        filter: drop-shadow(0 0 calc(var(--u) * .6) var(--pl-60));
+        animation: pl-warm calc(.62s * var(--k)) cubic-bezier(.3,.6,.3,1) .05s forwards;
       }
-      .pl-fig path, .pl-fig circle { stroke: var(--pl); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; fill: var(--pl-bg); }
-      .pl-fig .pl-limb path { fill: none; stroke-width: 9; }
-      .pl-fig .pl-back path { stroke: var(--pl-60); }
-      .pl-fig .pl-boot { fill: var(--pl); }
-      .pl-fig .pl-back .pl-boot { fill: var(--pl-60); stroke: var(--pl-60); }
-      .pl-fig .pl-trim { fill: none; stroke: var(--pl-hi); stroke-width: 2.5; }
-      .pl-fig .pl-hair { fill: var(--pl-60); stroke-width: 2; }
-      .pl-limb { transform-box: view-box; animation: pl-swing .62s ease-in-out infinite alternate; }
-      .pl-arm { transform-origin: 60px 58px; }
-      .pl-leg { transform-origin: 60px 118px; }
-      .pl-arm.pl-front, .pl-leg.pl-back { animation-direction: alternate-reverse; }
-      .pl-body { transform-box: view-box; animation: pl-bob .31s ease-in-out infinite alternate; }
-      .pl-bar {
-        position: relative;
-        width: calc(var(--u) * 7.5); height: calc(var(--u) * 1.1); min-height: 5px;
-        border: 1px solid var(--pl-60);
-        box-shadow: 0 0 calc(var(--u) * .8) var(--pl-30);
-        opacity: 0;
-        animation: pl-fade .2s ease-out .6s forwards;
+      /* scanlines, rolling refresh band, noise, vignette: all unclickable overlays */
+      .pl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+      .pl-scan { background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / .34) 2px 3px); }
+      .pl-roll {
+        background: linear-gradient(to bottom, transparent 0%, hsl(var(--h) 100% 60% / .045) 46%, hsl(var(--h) 100% 70% / .07) 50%, transparent 54%);
+        background-size: 100% 320%;
+        animation: pl-roll 2.6s linear infinite;
       }
-      .pl-bar::after {
-        content: ''; position: absolute; inset: 1px;
-        background: var(--pl);
-        box-shadow: 0 0 calc(var(--u) * .8) var(--pl-60);
-        transform-origin: 0 50%;
-        transform: scaleX(var(--f, 0));
+      .pl-noise {
+        opacity: .085; mix-blend-mode: screen;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.6 -.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        animation: pl-grain .32s steps(4) infinite;
       }
-      .pl-bar--top { grid-column: 2; grid-row: 1; }
-      .pl-bar--bot { grid-column: 2; grid-row: 3; }
-      .pl-col--l { grid-column: 1; grid-row: 2; }
-      .pl-col--r { grid-column: 3; grid-row: 2; }
-      /* wordmark: copied from the Pip-Me logo (device.css .pipme-logo), loader-local */
-      .pl-word {
-        display: inline-flex; align-items: baseline;
-        font: calc(var(--u) * 7.6)/1 'Pip Loader Slab', 'Alfa Slab One', Rockwell, Georgia, serif;
-        letter-spacing: .01em;
-        white-space: nowrap;
+      .pl-vig {
+        background: radial-gradient(ellipse 72% 68% at 50% 48%, transparent 52%, rgb(0 0 0 / .55) 82%, rgb(0 0 0 / .92) 100%);
+        box-shadow: inset 0 0 6vmin rgb(0 0 0 / .9);
+      }
+      /* power-on: a hot dot at centre blooms out across the glass */
+      .pl-bloom {
+        position: absolute; left: 50%; top: 48%; z-index: 4;
+        width: 140vmax; height: 140vmax; margin: -70vmax 0 0 -70vmax;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--pl-hot) 0%, var(--pl-45) 9%, var(--pl-12) 26%, transparent 55%);
+        transform: scale(.004); opacity: 0;
+        pointer-events: none;
+        animation: pl-bloom calc(.7s * var(--k)) cubic-bezier(.2,.8,.25,1) .02s forwards;
+      }
+
+      /* ---------- beat 2: boot log ---------- */
+      .pl-log {
+        position: absolute; z-index: 1;
+        top: var(--pad-t); left: var(--pad-l);
+        bottom: calc(var(--pad-b) + 30px);
+        width: min(44em, calc(100% - var(--pad-l) - var(--pad-r)));
+        overflow: hidden;
+        font-size: clamp(8.5px, calc(.45vw + 6.5px), 15px);
+        line-height: 1.5;
         color: var(--pl);
-        text-shadow: 0 0 2px var(--pl), 0 0 calc(var(--u) * 1.6) var(--pl-60), 0 0 calc(var(--u) * 4.5) var(--pl-30);
+        text-shadow: 0 0 6px var(--pl-45);
+        transition: opacity .45s ease, filter .45s ease, transform .6s cubic-bezier(.2,.7,.2,1);
+      }
+      .pl-log-in { transition: transform 70ms linear; }
+      .pl-log.pl-scrolled { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4em); mask-image: linear-gradient(to bottom, transparent 0, #000 4em); }
+      .pl-ln { display: flex; gap: 1.1em; white-space: nowrap; overflow: hidden; animation: pl-type .09s steps(10, end) both; }
+      .pl-ln b { font-weight: 400; color: var(--pl-dim); flex: none; }
+      .pl-ln u { text-decoration: none; flex: 1 1 auto; min-width: 1em; margin: 0 .2em .32em; background: radial-gradient(circle, var(--pl-45) 32%, transparent 40%) 0 100% / .62em .62em repeat-x; }
+      .pl-ln em { font-style: normal; flex: none; text-align: right; color: var(--pl-hi); }
+      .pl-ln em.pl-ok { animation: pl-okflash .32s ease-out both; }
+      .pl-ln em.pl-soft { color: var(--pl-dim); }
+      .pl-ln em.pl-busy { color: var(--pl); }
+      .pl-ln.pl-hd { color: var(--pl-hi); text-shadow: 0 0 8px var(--pl-70); }
+      .pl-ln.pl-dump { color: var(--pl-dim); text-shadow: none; }
+      .pl-ln.pl-dump span:last-child { opacity: .7; }
+      .pl-ln span { overflow: hidden; text-overflow: clip; }
+      .pl-caret { display: inline-block; width: .6em; height: 1.05em; vertical-align: -.18em; background: var(--pl); box-shadow: 0 0 6px var(--pl-70); animation: pl-blink .5s steps(1) infinite; }
+      #pip-loader.pl-logo-on .pl-log { opacity: .2; transform: translateY(-1.5em); }
+
+      /* ---------- beat 3: wordmark + meter ---------- */
+      .pl-center {
+        position: absolute; inset: var(--pad-t) var(--pad-r) calc(var(--pad-b) + 30px) var(--pad-l);
+        z-index: 2;
+        display: grid; place-items: center;
+        pointer-events: none;
+      }
+      .pl-unit { display: inline-flex; flex-direction: column; align-items: stretch; gap: calc(var(--logo) * .2); visibility: hidden; }
+      #pip-loader.pl-logo-on .pl-unit { visibility: visible; }
+      /* the wordmark: copied from device.css .pipme-logo (slab italic, hyphen speed bar, speed lines) */
+      .pl-logo {
+        position: relative; align-self: center;
+        font: var(--logo)/1 'Pip Loader Slab', 'Alfa Slab One', Rockwell, Georgia, serif;
         transform: skewX(-12deg);
-        clip-path: inset(-20% 100% -20% 0);
-        animation: pl-wipe .36s steps(7, end) .7s forwards;
-        margin-top: calc(var(--u) * .6);
+        margin: 0 0 calc(var(--logo) * -.08) calc(var(--logo) * .1);
       }
-      .pl-dash {
-        align-self: center; width: .5em; height: .17em; margin: 0 .05em 0 .07em;
-        background: currentColor; transform: translateY(.08em);
-        box-shadow: 0 0 calc(var(--u) * 1.2) var(--pl-60);
-      }
+      .pl-w { display: inline-flex; align-items: baseline; white-space: nowrap; letter-spacing: .01em; padding: .16em .34em .14em .12em; color: var(--pl); }
+      .pl-w + .pl-w { position: absolute; inset: 0; }
+      .pl-dash { align-self: center; width: .5em; height: .17em; margin: 0 .05em 0 .07em; background: currentColor; transform: translateY(.08em); }
       .pl-speed { display: inline-flex; flex-direction: column; align-self: center; gap: .09em; margin-left: .14em; transform: translateY(.06em); }
-      .pl-speed i { display: block; height: .075em; background: currentColor; border-radius: 0 1em 1em 0; box-shadow: 0 0 calc(var(--u) * 1.2) var(--pl-60); }
+      .pl-speed i { display: block; height: .075em; background: currentColor; border-radius: 0 1em 1em 0; }
       .pl-speed i:nth-child(1) { width: 1.05em; }
       .pl-speed i:nth-child(2) { width: .75em; }
       .pl-speed i:nth-child(3) { width: .45em; }
-      .pl-tag { display: flex; flex-direction: column; align-items: center; gap: .5em; margin-top: calc(var(--u) * -.6); }
-      .pl-tag span {
-        display: block;
-        font: clamp(9px, min(calc(var(--u) * 1.75), calc((100vw - 40px) / 30)), 18px)/1.15 ui-monospace, 'Share Tech Mono', 'SFMono-Regular', Menlo, Consolas, 'Courier New', monospace;
-        letter-spacing: .02em;
-        white-space: nowrap;
-        clip-path: inset(-30% 100% -30% 0);
-        text-shadow: 0 0 calc(var(--u) * .9) var(--pl-60);
-      }
-      .pl-tag span:nth-child(1) { animation: pl-type .3s steps(43, end) .92s forwards; }
-      .pl-tag span:nth-child(2) { color: var(--pl-hi); opacity: .8; animation: pl-type .32s steps(48, end) 1.06s forwards; }
-      .pl-emblem {
-        width: calc(var(--u) * 6.2); height: calc(var(--u) * 6.2); min-width: 30px; min-height: 30px;
-        margin-top: calc(var(--u) * 1.2);
+      /* layer 1: halftone dot-matrix ghost (PIXEL BLAST) */
+      .pl-w--dots {
         opacity: 0;
-        animation: pl-glow .5s ease-out 1.22s forwards;
+        -webkit-mask: radial-gradient(circle, #000 42%, transparent 54%) 0 0 / 4px 4px;
+        mask: radial-gradient(circle, #000 42%, transparent 54%) 0 0 / 4px 4px;
+        filter: drop-shadow(0 0 4px var(--pl-45));
       }
-      .pl-emblem path, .pl-emblem circle { fill: none; stroke: var(--pl); stroke-width: 4; stroke-linejoin: round; }
-      .pl-emblem .pl-bolt { fill: var(--pl); stroke: none; }
-      /* exit: CRT power-off collapse */
-      #pip-loader.pl-out .pl-screen { animation: pl-off .38s cubic-bezier(.6,0,.9,.4) forwards; }
-      @keyframes pl-on {
-        0% { transform: scale(0, .004); filter: brightness(4); }
-        45% { transform: scale(1, .004); filter: brightness(4); }
-        100% { transform: scale(1, 1); filter: brightness(1); }
+      /* layer 2: solid phosphor, revealed by a soft left-to-right sweep */
+      .pl-w--solid {
+        text-shadow: 0 0 2px var(--pl), 0 0 calc(var(--logo) * .12) var(--pl-70), 0 0 calc(var(--logo) * .34) var(--pl-25);
+        -webkit-mask: linear-gradient(90deg, #000 44%, transparent 56%) 100% 0 / 300% 100% no-repeat;
+        mask: linear-gradient(90deg, #000 44%, transparent 56%) 100% 0 / 300% 100% no-repeat;
       }
-      @keyframes pl-flicker { 0% { opacity: .82; } 20% { opacity: 1; } 45% { opacity: .9; } 60% { opacity: 1; } 80% { opacity: .95; } 100% { opacity: 1; } }
-      @keyframes pl-off {
-        0% { transform: scale(1, 1); filter: brightness(1); opacity: 1; }
-        55% { transform: scale(1, .004); filter: brightness(3.5); opacity: 1; }
-        85% { transform: scale(.02, .004); filter: brightness(5); opacity: 1; }
-        100% { transform: scale(0, 0); opacity: 0; }
+      .pl-w--solid .pl-dash, .pl-w--solid .pl-speed i { box-shadow: 0 0 calc(var(--logo) * .1) var(--pl-70); }
+      /* layer 3: the hot glint riding the sweep edge */
+      .pl-w--glint {
+        color: var(--pl-hot);
+        text-shadow: 0 0 calc(var(--logo) * .08) var(--pl-hi);
+        -webkit-mask: linear-gradient(90deg, transparent 45%, #000 50%, transparent 55%) 100% 0 / 300% 100% no-repeat;
+        mask: linear-gradient(90deg, transparent 45%, #000 50%, transparent 55%) 100% 0 / 300% 100% no-repeat;
+      }
+      #pip-loader.pl-logo-on .pl-w--dots { animation: pl-dots calc(.5s * var(--k)) ease-out both; }
+      #pip-loader.pl-logo-on .pl-w--solid { animation: pl-sweep calc(.62s * var(--k)) cubic-bezier(.45,.05,.3,1) calc(.08s * var(--k)) both; }
+      #pip-loader.pl-logo-on .pl-w--glint { animation: pl-sweep calc(.62s * var(--k)) cubic-bezier(.45,.05,.3,1) calc(.08s * var(--k)) both; }
+      /* still waiting on the network: a slow shimmer keeps the mark alive */
+      #pip-loader.pl-logo-on.pl-wait .pl-w--glint { animation: pl-sweep 1.5s cubic-bezier(.45,.05,.3,1) .2s infinite; opacity: .55; }
+      .pl-tag {
+        align-self: center;
+        font-size: clamp(9px, calc(var(--logo) * .125), 17px);
+        letter-spacing: .38em; padding-left: .38em;
+        white-space: nowrap;
+        color: var(--pl-hi);
+        text-shadow: 0 0 8px var(--pl-70);
+        clip-path: inset(-40% 100% -40% 0);
+      }
+      #pip-loader.pl-logo-on .pl-tag { animation: pl-type-in calc(.42s * var(--k)) steps(30, end) calc(.36s * var(--k)) forwards; }
+      .pl-meter { display: flex; flex-direction: column; gap: 7px; opacity: 0; min-width: min(240px, 70vw); }
+      #pip-loader.pl-logo-on .pl-meter { animation: pl-fade calc(.3s * var(--k)) ease-out calc(.18s * var(--k)) forwards; }
+      .pl-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; font-size: clamp(9.5px, calc(var(--logo) * .1), 14px); letter-spacing: .14em; color: var(--pl); text-shadow: 0 0 6px var(--pl-45); }
+      .pl-pct { font-variant-numeric: tabular-nums; color: var(--pl-hi); }
+      .pl-segs { display: grid; grid-template-columns: repeat(24, 1fr); gap: clamp(2px, calc(var(--logo) * .03), 4px); padding: 0 4px; height: clamp(7px, calc(var(--logo) * .085), 12px); }
+      .pl-segs i { display: block; transform: skewX(-12deg); background: var(--pl-12); box-shadow: inset 0 0 0 1px hsl(var(--h) 100% 55% / .18); transition: background-color 90ms linear, box-shadow 90ms linear; }
+      .pl-segs i.on { background: var(--pl); box-shadow: 0 0 8px var(--pl-70), 0 0 1px var(--pl-hi); }
+      .pl-segs i.lead { background: var(--pl-hi); box-shadow: 0 0 10px var(--pl), 0 0 2px var(--pl-hot); }
+
+      /* ---------- footer rail ---------- */
+      .pl-foot {
+        position: absolute; z-index: 3;
+        left: var(--pad-l); right: var(--pad-r); bottom: var(--pad-b);
+        display: flex; justify-content: space-between; align-items: center; gap: 1em;
+        min-height: 22px; padding-top: 6px;
+        border-top: 1px solid var(--pl-25);
+        font-size: clamp(9px, calc(.25vw + 7.5px), 12px); letter-spacing: .18em;
+        color: var(--pl-hi);
+        opacity: 0;
+        animation: pl-fade .3s ease-out calc(.45s * var(--k)) forwards;
+        white-space: nowrap;
+      }
+      .pl-foot { text-shadow: 0 0 6px var(--pl-45); }
+      .pl-foot > span:first-child { opacity: .7; }
+      .pl-foot kbd { font: inherit; padding: 1px 5px; border: 1px solid var(--pl-45); border-radius: 2px; }
+      .pl-tap { display: none; }
+      @media (pointer: coarse) { .pl-key { display: none; } .pl-tap { display: inline; } }
+
+      /* ---------- beat 4: flash + raster wipe into the (already mounted) app ---------- */
+      .pl-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; background: radial-gradient(ellipse at 50% 46%, var(--pl), transparent 75%); opacity: 0; mix-blend-mode: screen; }
+      .pl-sweep { position: absolute; inset: 0; z-index: 7; pointer-events: none; transform: translateY(-2px); visibility: hidden; }
+      .pl-sweep::before { content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 3px; background: var(--pl-hot); box-shadow: 0 0 10px 2px var(--pl), 0 0 40px 8px var(--pl-45); }
+      .pl-sweep::after { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 22vh; background: linear-gradient(to bottom, transparent, var(--pl-12) 70%, var(--pl-25)); }
+      #pip-loader.pl-out .pl-flash { animation: pl-flash .5s ease-out forwards; }
+      #pip-loader.pl-out .pl-screen { animation: pl-wipe-tube .42s cubic-bezier(.55,0,.75,.6) .08s both; }
+      #pip-loader.pl-out .pl-fx { animation: pl-wipe .42s cubic-bezier(.55,0,.75,.6) .08s both; }
+      #pip-loader.pl-out .pl-sweep { visibility: visible; animation: pl-sweep-line .42s cubic-bezier(.55,0,.75,.6) .08s forwards, pl-fade-out .16s linear .5s forwards; }
+      #pip-loader.pl-out .pl-unit { animation: pl-hot .14s ease-out forwards; }
+
+      @keyframes pl-warm {
+        0% { opacity: 0; filter: brightness(2.2); }
+        18% { opacity: .5; }
+        26% { opacity: .2; }
+        40% { opacity: .85; }
+        52% { opacity: .55; }
+        70% { opacity: 1; filter: brightness(1.3); }
+        100% { opacity: 1; filter: brightness(1); }
+      }
+      @keyframes pl-bloom {
+        0% { transform: scale(.004); opacity: 1; }
+        22% { transform: scale(.05); opacity: 1; }
+        100% { transform: scale(1); opacity: 0; }
       }
       @keyframes pl-roll { from { background-position: 0 100%; } to { background-position: 0 0; } }
+      @keyframes pl-grain { 0% { background-position: 0 0; } 25% { background-position: -61px 37px; } 50% { background-position: 43px -79px; } 75% { background-position: -97px -23px; } 100% { background-position: 19px 71px; } }
+      @keyframes pl-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+      @keyframes pl-type-in { to { clip-path: inset(-40% -2% -40% -2%); } }
+      @keyframes pl-okflash { 0% { background: var(--pl-hi); color: #000; text-shadow: none; } 100% { background: transparent; } }
+      @keyframes pl-blink { 50% { opacity: 0; } }
+      @keyframes pl-dots { 0% { opacity: 0; } 30% { opacity: .9; } 100% { opacity: .5; } }
+      @keyframes pl-sweep { from { -webkit-mask-position: 100% 0; mask-position: 100% 0; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
       @keyframes pl-fade { to { opacity: 1; } }
-      @keyframes pl-wipe { to { clip-path: inset(-20% -40% -20% -10%); } }
-      @keyframes pl-type { to { clip-path: inset(-30% -2% -30% -2%); } }
-      @keyframes pl-glow {
-        0% { opacity: 0; filter: drop-shadow(0 0 0 transparent); }
-        60% { opacity: 1; filter: drop-shadow(0 0 calc(var(--u) * 2.4) var(--pl)); }
-        100% { opacity: 1; filter: drop-shadow(0 0 calc(var(--u) * .9) var(--pl-60)); }
+      @keyframes pl-fade-out { to { opacity: 0; } }
+      @keyframes pl-flash { 0% { opacity: 0; } 18% { opacity: .16; } 100% { opacity: 0; } }
+      @keyframes pl-hot { to { filter: brightness(1.35); } }
+      @keyframes pl-wipe { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(100% 0 0 0); } }
+      @keyframes pl-wipe-tube { from { opacity: 1; clip-path: inset(0 0 0 0); } to { opacity: 1; clip-path: inset(100% 0 0 0); } }
+      @keyframes pl-sweep-line { from { transform: translateY(0); } to { transform: translateY(100%); } }
+
+      @media (orientation: portrait) {
+        #pip-loader { --logo: clamp(52px, 15vw, 120px); }
+        .pl-log { width: calc(100% - var(--pad-l) - var(--pad-r)); }
+        #pip-loader.pl-logo-on .pl-log { opacity: .14; }
       }
-      @keyframes pl-swing { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
-      @keyframes pl-bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
-      @media (orientation: portrait) { #pip-loader { --u: min(1.9vw, 1.05dvh, 9px); } }
       @media (prefers-reduced-motion: reduce) {
-        .pl-screen { transform: none; animation: pl-fade .2s ease-out forwards; opacity: 0; }
-        .pl-screen::after, .pl-limb, .pl-body { animation: none; }
-        .pl-fig, .pl-bar, .pl-emblem { animation: pl-fade .2s ease-out forwards; }
-        .pl-word { clip-path: none; animation: none; }
-        .pl-tag span { clip-path: none; animation: none; }
-        #pip-loader.pl-out { transition: opacity .2s ease; opacity: 0; }
-        #pip-loader.pl-out .pl-screen { animation: none; }
+        .pl-screen { animation: pl-fade .2s ease-out forwards; }
+        .pl-bloom, .pl-roll, .pl-log, .pl-sweep { display: none; }
+        .pl-noise { animation: none; }
+        .pl-foot { animation-duration: .2s; animation-delay: 0s; }
+        #pip-loader.pl-logo-on .pl-w--dots, #pip-loader.pl-logo-on .pl-w--glint { animation: none; opacity: 0; }
+        #pip-loader.pl-logo-on .pl-w--solid { animation: none; -webkit-mask: none; mask: none; }
+        #pip-loader.pl-logo-on .pl-tag { animation: none; clip-path: none; }
+        #pip-loader.pl-logo-on .pl-meter { animation: pl-fade .2s ease-out forwards; }
+        .pl-segs i { transition: none; }
+        #pip-loader.pl-out { transition: opacity .22s ease; opacity: 0; }
+        #pip-loader.pl-out .pl-fx, #pip-loader.pl-out .pl-unit, #pip-loader.pl-out .pl-flash { animation: none; }
+        #pip-loader.pl-out .pl-screen { animation: none; opacity: 1; }
       }
     </style>
   </head>
   <body>
-    <div id="pip-loader" role="status" aria-label="Loading Pip-Me" aria-live="polite">
+    <div id="pip-loader" role="status" aria-live="polite" aria-label="Loading Pip-Me">
       <div class="pl-screen">
-        <div class="pl-stage" aria-hidden="true">
-          <div class="pl-doll">
-            <span class="pl-bar pl-bar--top"></span>
-            <div class="pl-col pl-col--l"><span class="pl-bar"></span><span class="pl-bar"></span></div>
-            <svg class="pl-fig" viewBox="0 0 120 230" focusable="false">
-              <g class="pl-body">
-                <g class="pl-limb pl-arm pl-back"><path d="M78 58 L84 92 L82 122" /></g>
-                <g class="pl-limb pl-leg pl-back"><path d="M68 118 L70 166 L69 204" /><path class="pl-boot" d="M62 204 h16 l6 8 h-22 z" /></g>
-                <path d="M44 52 Q60 46 76 52 L80 76 L74 120 H46 L40 76 Z" />
-                <path class="pl-trim" d="M60 50 V118 M45 104 H75 M52 50 Q60 56 68 50" />
-                <g class="pl-limb pl-leg pl-front"><path d="M52 118 L50 166 L51 204" /><path class="pl-boot" d="M44 204 h16 l6 8 h-22 z" /></g>
-                <g class="pl-limb pl-arm pl-front"><path d="M42 58 L36 92 L38 122" /></g>
-                <circle cx="60" cy="28" r="18" />
-                <path class="pl-hair" d="M42 27 Q42 8 60 8 Q78 8 78 27 Q71 15 60 16 Q49 15 42 27 Z" />
-              </g>
-            </svg>
-            <div class="pl-col pl-col--r"><span class="pl-bar"></span><span class="pl-bar"></span></div>
-            <span class="pl-bar pl-bar--bot"></span>
+        <div class="pl-log" aria-hidden="true"><div class="pl-log-in"></div></div>
+        <div class="pl-center" aria-hidden="true">
+          <div class="pl-unit">
+            <div class="pl-logo">
+              <span class="pl-w pl-w--dots"><span>Pip</span><i class="pl-dash"></i><span>Me</span><span class="pl-speed"><i></i><i></i><i></i></span></span>
+              <span class="pl-w pl-w--solid"><span>Pip</span><i class="pl-dash"></i><span>Me</span><span class="pl-speed"><i></i><i></i><i></i></span></span>
+              <span class="pl-w pl-w--glint"><span>Pip</span><i class="pl-dash"></i><span>Me</span><span class="pl-speed"><i></i><i></i><i></i></span></span>
+            </div>
+            <div class="pl-tag">PERSONAL INFORMATION PROCESSOR</div>
+            <div class="pl-meter">
+              <div class="pl-meta"><span class="pl-stage">INITIALIZING</span><span class="pl-pct">000%</span></div>
+              <div class="pl-segs"></div>
+            </div>
           </div>
-          <div class="pl-word"><span>Pip</span><span class="pl-dash"></span><span>Me</span><span class="pl-speed"><i></i><i></i><i></i></span></div>
-          <div class="pl-tag">
-            <span>PIP-ME 3000 CALIBRATED FOR ONE (1) DWELLER.</span>
-            <span>THANK YOU FOR TRUSTING VAULT-TEC WITH YOUR FACE.</span>
-          </div>
-          <!-- original emblem: a hex nut with a lightning bolt (not the Vault-Tec gear) -->
-          <svg class="pl-emblem" viewBox="0 0 64 64" focusable="false">
-            <path d="M32 4 L56 18 L56 46 L32 60 L8 46 L8 18 Z" />
-            <circle cx="32" cy="32" r="17" />
-            <path class="pl-bolt" d="M35 13 L22 35 H31 L28 51 L42 28 H33 Z" />
-          </svg>
+        </div>
+        <div class="pl-foot" aria-hidden="true">
+          <span>PIP-ME 3000 &middot; MK IV</span>
+          <span class="pl-key"><kbd>ANY KEY</kbd> &rsaquo; SKIP</span><span class="pl-tap"><kbd>TAP</kbd> &rsaquo; SKIP</span>
         </div>
       </div>
+      <div class="pl-fx pl-scan"></div>
+      <div class="pl-fx pl-roll"></div>
+      <div class="pl-fx pl-noise"></div>
+      <div class="pl-fx pl-vig"></div>
+      <div class="pl-bloom"></div>
+      <div class="pl-flash"></div>
+      <div class="pl-sweep"></div>
     </div>
     <script>
       // Pip-Me boot loader. Plain ES5 so it runs before (and without) the module bundle.
-      // Contract with src/loader/handoff.ts: window.__pipLoader = { onExit(fn), ready() }.
+      // Contract with src/loader/handoff.ts:
+      //   window.__pipLoader = { step(id), ready(), onExit(fn) }
+      //   step('bundle') when main.tsx starts, ready() once React has committed its first frame.
       ;(function () {
         var el = document.getElementById('pip-loader')
         if (!el) return
-        // Read-only hue lookup: the ONE allowed storage access outside src/lib/store.ts, so
-        // returning users see their colour before the bundle loads. Never writes.
+        var hue = 135, returning = false
+        // Read-only storage lookups (the documented exceptions to "storage only in
+        // src/lib/store.ts"): the hue, so returning users see their colour before the bundle
+        // loads, and the session's booted flag (written by store.ts) for the short re-boot.
         try {
           var keys = ['sessionStorage', 'localStorage']
           for (var k = 0; k < keys.length; k++) {
             var raw = window[keys[k]].getItem('pipboy:v1:effects')
-            var hue = raw ? JSON.parse(raw).hue : null
-            if (typeof hue === 'number' && isFinite(hue)) { el.style.setProperty('--h', String(hue)); break }
+            var h = raw ? JSON.parse(raw).hue : null
+            if (typeof h === 'number' && isFinite(h)) { hue = h; el.style.setProperty('--h', String(h)); break }
           }
-        } catch (e) { /* storage blocked: keep phosphor green */ }
+          returning = window.sessionStorage.getItem('pipboy:v1:booted') === 'true'
+        } catch (e) { /* storage blocked: phosphor green, full boot */ }
 
         var reduce = false
         try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch (e) {}
+        var quick = returning && !reduce
+        if (quick) el.style.setProperty('--k', '.5')
         var now = function () { return window.performance && performance.now ? performance.now() : Date.now() }
         var t0 = now()
-        var MIN = reduce ? 500 : 1750 // let the intro finish before powering off
-        var BAR_START = reduce ? 0 : 600, BAR_SPAN = reduce ? 250 : 700
-        var OUT = reduce ? 200 : 380
-        var bars = el.querySelectorAll('.pl-bar')
-        var shown = 0, target = 0.1, isReady = false, exiting = false, done = false, exitFns = []
-        var raise = function (v) { if (v > target) target = v }
+        // Timeline (ms). Full: warm-up 0-600, log 220-1150, logo from 950, meter ramps to 1900.
+        var LOGO_AT = reduce ? 0 : quick ? 60 : 950
+        var MIN = reduce ? 450 : quick ? 420 : 1900
+        var RAMP_A = reduce ? 0 : quick ? 60 : 980, RAMP_B = reduce ? 300 : quick ? 400 : 1850
+        var OUT = reduce ? 240 : 520
 
-        if (document.readyState !== 'loading') raise(0.45)
-        else document.addEventListener('DOMContentLoaded', function () { raise(0.45) })
-        window.addEventListener('load', function () { raise(0.8) })
+        var $ = function (s) { return el.querySelector(s) }
+        var logBox = $('.pl-log'), logIn = $('.pl-log-in'), pctEl = $('.pl-pct'), stageEl = $('.pl-stage'), segBox = $('.pl-segs')
+        var NSEG = 24, segs = []
+        for (var s = 0; s < NSEG; s++) segs.push(segBox.appendChild(document.createElement('i')))
 
-        function paint() {
-          var t = now() - t0
-          // creep toward 80% on time alone, real milestones push further, ready completes it
-          raise(0.8 * (1 - Math.exp(-t / 900)))
-          shown += ((isReady ? 1 : target) - shown) * 0.18
-          if (isReady && shown > 0.995) shown = 1
-          var ramp = Math.max(0, Math.min(1, (t - BAR_START) / BAR_SPAN))
-          var v = Math.min(shown, ramp)
-          for (var i = 0; i < bars.length; i++) {
-            var f = Math.max(0, Math.min(1, v * 1.15 - i * 0.03))
-            bars[i].style.setProperty('--f', f.toFixed(3))
+        // ---- real milestones ----
+        var got = { font: false, bundle: false, ui: false }
+        var bundleKB = 0
+        function mark(id) {
+          if (got[id]) return
+          got[id] = true
+          if (id === 'ui') try {
+            var res = performance.getEntriesByType('resource'), b = 0
+            for (var r = 0; r < res.length; r++) if (/\.(js|css)(\?|$)/.test(res[r].name)) b += res[r].transferSize || res[r].encodedBodySize || 0
+            bundleKB = Math.round(b / 1024)
+          } catch (e) {}
+          pump()
+        }
+        try {
+          if (document.fonts && document.fonts.load) document.fonts.load('1em "Pip Loader Slab"').then(function () { mark('font') }, function () { mark('font') })
+          else mark('font')
+        } catch (e) { mark('font') }
+        setTimeout(function () { mark('font') }, 2500) // never wait on the face for long
+
+        // ---- boot log: original copy ----
+        var hueName = hue === 135 ? 'GREEN' : hue === 38 ? 'AMBER' : hue === 200 ? 'BLUE' : hue === 85 ? 'LCD' : 'H' + Math.round(hue)
+        var d = new Date(), p2 = function (n) { return (n < 10 ? '0' : '') + n }
+        var clock = p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds())
+        var seed = 0x2f6e
+        function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed >> 8 }
+        function hex(n, w) { var x = n.toString(16).toUpperCase(); while (x.length < w) x = '0' + x; return x }
+        var addr = 0x07a00
+        function nextAddr() { addr += 0x40 + (rnd() & 0x1f0); return hex(addr, 5) }
+        function dump() {
+          var bytes = [], asc = ''
+          for (var i = 0; i < 10; i++) { var v = rnd() & 0xff; bytes.push(hex(v, 2)); asc += v > 47 && v < 91 ? String.fromCharCode(v) : '.' }
+          return ['d', bytes.join(' '), asc]
+        }
+        // [kind, label, status, waitFor]
+        var L = [
+          ['h', 'PIP-ME BIOS 3.04 // PERSONAL INFORMATION PROCESSOR'],
+          ['h', 'FAN-BUILT WRIST TERMINAL. NOT AN OFFICIAL PRODUCT.'],
+          ['s', 'CPU MK-IV CORE @ 2.0 MHZ', 'OK'],
+          dump(), dump(), dump(), dump(), dump(), dump(),
+          ['s', 'CORE MEMORY 64K PARITY SWEEP', 'OK'],
+          ['s', 'PHOSPHOR P1 WARM // ' + hueName, 'OK'],
+          ['s', 'DEFLECTION YOKE CENTERED', 'OK'],
+          ['s', 'GLYPH ROM // SLAB-1', 'OK', 'font'],
+          ['s', 'WRIST BUS // 4 PORTS', 'OK'],
+          ['s', 'RTC SYNC ' + clock, 'OK'],
+          dump(), dump(),
+          dump(), dump(), dump(), dump(),
+          ['s', 'GEIGER TUBE BIAS 500V', 'OK'],
+          ['s', 'COMPASS + GYRO TRIM', 'OK'],
+          ['s', 'LINK CORE MODULES', 'OK', 'bundle'],
+          ['s', 'HOLOTAPE DECK', 'READY'],
+          ['s', 'RADIO TUNER BAND SCAN', 'OK'],
+          ['s', 'SAT UPLINK', 'STANDBY'],
+          ['s', 'MOUNT INTERFACE', 'OK', 'ui'],
+          ['h', 'ALL SYSTEMS NOMINAL.']
+        ]
+        var li = 0, busy = null, spin = 0, logDone = false, rushing = false, caret = null
+        function line(cls, html) {
+          var n = document.createElement('div')
+          n.className = 'pl-ln' + (cls ? ' ' + cls : '')
+          n.innerHTML = html
+          if (caret && caret.parentNode) caret.parentNode.removeChild(caret)
+          logIn.appendChild(n)
+          // keep the newest line in view: the column scrolls upward like a fast terminal
+          var over = logIn.scrollHeight - logBox.clientHeight
+          if (over > 0) { logIn.style.transform = 'translateY(' + -over + 'px)'; logBox.className = 'pl-log pl-scrolled' }
+          return n
+        }
+        function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;') }
+        function statusRow(l, st, cls) {
+          return '<b>' + nextAddr() + '</b><span>' + esc(l) + '</span><u></u><em class="' + cls + '">' + st + '</em>'
+        }
+        function pump() {
+          if (busy) {
+            var w = L[li]
+            if (!got[w[3]]) return
+            var em = busy.querySelector('em')
+            var extra = w[3] === 'ui' && bundleKB ? ' ' + bundleKB + 'K' : ''
+            if (extra) busy.querySelector('span').textContent += extra
+            em.className = 'pl-ok'; em.textContent = w[2]
+            busy = null; li++
           }
-          return t
+        }
+        // Lines are due on a timeline, so a busy main thread (the app mounting underneath)
+        // makes the log burst to catch up instead of falling behind.
+        var due = 0
+        function emit() {
+          var w = L[li]
+          if (w[0] === 'h') { line('pl-hd', esc(w[1])); li++; return 70 }
+          if (w[0] === 'd') { line('pl-dump', '<b>' + nextAddr() + '</b><span>' + w[1] + '</span><span>' + esc(w[2]) + '</span>'); li++; return 16 }
+          if (w[3] && !got[w[3]]) { busy = line('', statusRow(w[1], '| ...', 'pl-busy')); return 0 }
+          line('', statusRow(w[1], w[2], w[2] === 'STANDBY' ? 'pl-soft' : 'pl-ok')); li++
+          return 34
+        }
+        function tick() {
+          if (logDone || exiting) return
+          var t = now() - t0
+          var wasBusy = !!busy
+          pump()
+          if (wasBusy && !busy) due = Math.max(due, t)
+          for (var n = 0; !busy && li < L.length && (t >= due || rushing) && n < 40; n++) due += emit()
+          if (busy) { // waiting on a real load step: spin, and let the meter show the wait
+            busy.querySelector('em').textContent = '|/-\\'.charAt(spin++ % 4) + ' ...'
+            el.classList.toggle('pl-wait', t > LOGO_AT + 700)
+            return setTimeout(tick, 90)
+          }
+          el.classList.remove('pl-wait')
+          if (li >= L.length) {
+            logDone = true
+            caret = document.createElement('span'); caret.className = 'pl-caret'
+            line('', '').appendChild(caret)
+            return
+          }
+          setTimeout(tick, Math.max(8, Math.min(40, due - t)))
+        }
+        if (reduce || quick) logDone = true
+        else { due = 230; setTimeout(tick, 230) }
+
+        // ---- progress: real milestones, eased, capped by the choreography ----
+        var shown = 0, isReady = false, exiting = false, done = false, skip = false, exitFns = []
+        function target(t) {
+          if (isReady) return 1
+          var v = 0.08 * (1 - Math.exp(-t / 300))
+          if (got.font) v += 0.12
+          if (got.bundle) v += 0.5
+          else v += 0.38 * (1 - Math.exp(-t / 2400)) // creep while the bundle downloads
+          if (got.bundle && !got.ui) v += 0.22 * (1 - Math.exp(-t / 700))
+          return Math.min(v, 0.96)
+        }
+        var lastLit = -1, lastT = 0
+        function paint(t) {
+          var dt = Math.min(250, t - lastT); lastT = t
+          var ramp = Math.max(0, Math.min(1, (t - RAMP_A) / (RAMP_B - RAMP_A)))
+          shown += (target(t) - shown) * (1 - Math.exp(-dt / (isReady ? 70 : 110)))
+          if (isReady && shown > 0.995) shown = 1
+          var v = skip ? shown : Math.min(shown, ramp)
+          var lit = Math.floor(v * NSEG + 1e-6)
+          if (lit !== lastLit) {
+            for (var i = 0; i < NSEG; i++) segs[i].className = i < lit - 1 || (i === lit - 1 && lit === NSEG) ? 'on' : i === lit - 1 ? 'lead' : ''
+            lastLit = lit
+          }
+          var pct = Math.round(v * 100)
+          pctEl.textContent = (pct < 10 ? '00' : pct < 100 ? '0' : '') + pct + '%'
+          stageEl.textContent = v >= 1 ? 'READY' : !got.bundle ? 'LINKING MODULES' : !isReady ? 'MOUNTING INTERFACE' : 'FINALIZING'
+          return v
         }
 
         function exit() {
           if (exiting) return
           exiting = true
-          for (var i = 0; i < bars.length; i++) bars[i].style.setProperty('--f', '1')
+          for (var i = 0; i < NSEG; i++) segs[i].className = 'on'
+          pctEl.textContent = '100%'; stageEl.textContent = 'READY'
+          el.classList.add('pl-logo-on')
+          el.classList.remove('pl-wait')
           el.classList.add('pl-out')
           for (var j = 0; j < exitFns.length; j++) { try { exitFns[j]() } catch (e) { setTimeout(function () { throw e }) } }
           exitFns = []
-          setTimeout(finish, OUT + 30)
+          setTimeout(finish, OUT + 40)
         }
-
         function finish() {
           if (done) return
           done = true
-          el.setAttribute('aria-hidden', 'true')
-          el.removeAttribute('role')
-          window.removeEventListener('keydown', onSkip, true)
+          window.removeEventListener('keydown', onKey, true)
           if (el.parentNode) el.parentNode.removeChild(el)
         }
 
         function loop() {
           if (exiting) return
-          var t = paint()
-          if (isReady && shown >= 1 && t >= MIN) return exit()
+          var t = now() - t0
+          if (t >= LOGO_AT) el.classList.add('pl-logo-on')
+          var v = paint(t)
+          if (isReady && v >= 1 && (logDone || skip) && (t >= MIN || skip)) return exit()
           requestAnimationFrame(loop)
         }
         requestAnimationFrame(loop)
 
-        function onSkip() { if (isReady) exit() }
-        window.addEventListener('keydown', onSkip, true)
-        el.addEventListener('pointerdown', onSkip)
+        // Skip: any key / tap jumps to the end as soon as the app is ready.
+        function doSkip() {
+          if (skip) return
+          skip = true; rushing = true
+          el.classList.add('pl-logo-on')
+          if (isReady) exit()
+        }
+        function onKey(e) {
+          if (e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.key) || e.key === 'Tab') return
+          // the keystroke belongs to the loader, not to the app mounting underneath
+          e.stopImmediatePropagation()
+          doSkip()
+        }
+        window.addEventListener('keydown', onKey, true)
+        el.addEventListener('pointerdown', doSkip)
+        // a backgrounded tab throttles timers and sleeps rAF: just get out of the way
+        document.addEventListener('visibilitychange', function () { if (document.hidden && isReady) exit() })
 
-        // Never stick: bail out after 6s whatever happens (also covers hidden tabs where rAF sleeps).
-        setTimeout(function () { isReady = true; exit() }, 6000)
+        // Never stick: bail out after 12s whatever happens (script error, blocked bundle).
+        setTimeout(function () { isReady = true; exit() }, 12000)
 
         window.__pipLoader = {
-          onExit: function (fn) { if (exiting) fn(); else exitFns.push(fn) },
+          step: function (id) { if (id === 'bundle' || id === 'font') mark(id) },
           ready: function () {
+            mark('bundle'); mark('ui')
             isReady = true
-            if (document.hidden) exit()
+            if (skip || document.hidden) exit()
           },
+          onExit: function (fn) { if (exiting) fn(); else exitFns.push(fn) },
         }
       })()
     </script>
