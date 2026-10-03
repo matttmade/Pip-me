@@ -189,8 +189,11 @@
   place-items: center;
   border: 1px solid var(--pip-60);
   border-radius: 50%;
-  background: radial-gradient(circle, var(--pip-15), transparent 70%), var(--screen-bg);
-  box-shadow: 0 0 calc(6px * var(--glow-amt)) var(--pip-30), inset 0 0 calc(6px * var(--glow-amt)) var(--pip-15);
+  /* frosted: it floats over the figure */
+  background: radial-gradient(circle, var(--pip-15), transparent 70%), var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(6px * var(--glow-amt)) var(--pip-30), inset 0 0 calc(6px * var(--glow-amt)) var(--pip-15);
   transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
 }
 /* a second, fainter ring so it reads as a dial rather than a bubble */
@@ -240,8 +243,11 @@
   padding: 4px;
   border: 1px solid var(--pip-60);
   border-top: 2px solid var(--pip);
-  background: var(--screen-bg);
-  box-shadow: 0 0 calc(10px * var(--glow-amt)) var(--pip-30);
+  /* the strong frost: rows of text over a moving figure must stay readable */
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(10px * var(--glow-amt)) var(--pip-30);
   animation: flyout-in .16s cubic-bezier(.2, .9, .3, 1.15) both;
 }
 .flyout--left .flyout__menu { left: 0; transform-origin: 26px 100%; }
@@ -303,6 +309,10 @@
 }
 .weapon-item--nuke .flyout__meta { color: var(--pip-hi); opacity: 1; }
 
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .flyout__menu, .flyout__ring, .status-effects[data-open] .status-effects__list, .weapon__banner, .weapon__note { background-color: var(--frost-bg-strong); }
+}
+
 @keyframes flyout-in { from { opacity: 0; transform: scale(.7) translateY(8px); } }
 @keyframes flyout-item { from { opacity: 0; transform: translateY(6px); } }
 
@@ -319,7 +329,7 @@
   gap: 1px;
   padding: 1px 3px;
   border: 1px solid var(--pip-60);
-  background: var(--screen-bg);
+  background: var(--frost-bg-strong);
   color: var(--pip-hi);
   font-size: 10px;
   line-height: 11px;
@@ -330,7 +340,7 @@
 .flyout.weapon--nuke .flyout__ring {
   border-color: var(--pip);
   background:
-    radial-gradient(circle, var(--screen-bg) 56%, transparent 57%),
+    radial-gradient(circle, var(--frost-bg-strong) 56%, transparent 57%),
     repeating-conic-gradient(var(--pip-60) 0 15deg, transparent 15deg 30deg);
 }
 .flyout.weapon--nuke .flyout__ring::before { display: none; }
@@ -347,15 +357,18 @@
 .weapon__note {
   display: block;
   padding: 2px 8px;
-  background: var(--pip);
-  color: var(--screen-bg);
-  text-shadow: none;
+  border: 1px solid var(--pip-60);
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge);
+  color: var(--pip-hi);
   font-size: var(--fs-xs);
   letter-spacing: .12em;
   white-space: nowrap;
 }
 .weapon__note { animation: weapon-note .9s ease-out both; }
-.weapon__banner { animation: weapon-warn .5s steps(2, jump-none) infinite; }
+.weapon__banner { border-color: var(--pip-hi); animation: weapon-warn .5s steps(2, jump-none) infinite; }
 
 .st-glyph,
 .readout__icon {
@@ -456,7 +469,7 @@
 }
 @keyframes weapon-armed {
   0% { background: var(--pip); color: var(--screen-bg); box-shadow: 0 0 calc(14px * var(--glow-amt)) var(--pip-60); }
-  100% { background: var(--screen-bg); color: var(--pip); }
+  100% { background: var(--frost-bg-strong); color: var(--pip); }
 }
 .flyout.is-armed .weapon__glyph { filter: none; }
 
@@ -674,8 +687,10 @@
   gap: 6px;
   width: min(260px, calc(100cqw - 16px));
   border: 1px solid var(--pip-60);
-  background: var(--screen-bg);
-  box-shadow: 0 0 calc(8px * var(--glow-amt)) var(--pip-30);
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(8px * var(--glow-amt)) var(--pip-30);
 }
 .fx {
   display: grid;
@@ -709,7 +724,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-flow: row;
-    width: min(330px, calc(100cqw - 8px));
+    width: min(390px, calc(100cqw - 8px));
     min-width: 0;
   }
   .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: 15px; }
