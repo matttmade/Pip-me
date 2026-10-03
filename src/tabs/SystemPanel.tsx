@@ -15,7 +15,7 @@ import { PipSlider } from '../shell/PipSlider'
 import { PipToggle } from '../shell/PipToggle'
 
 const pct = (v: number) => `${Math.round(v * 100)}%`
-const PRESETS: PresetName[] = ['OFF', 'SUBTLE', 'CLASSIC', 'DAMAGED']
+const PRESETS: PresetName[] = ['PIP-ME', 'OFF', 'SUBTLE', 'CLASSIC', 'DAMAGED']
 const COLORS: [string, number][] = [
   ['GREEN', HUES.GREEN],
   ['AMBER', HUES.AMBER],

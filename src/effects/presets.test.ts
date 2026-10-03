@@ -11,9 +11,10 @@ test('every preset produces a complete config', () => {
   }
 })
 
-test('default is CLASSIC green', () => {
-  expect(DEFAULT_EFFECTS.preset).toBe('CLASSIC')
-  expect(DEFAULT_EFFECTS.hue).toBe(135)
+test('default is the PIP-ME house preset', () => {
+  expect(DEFAULT_EFFECTS.preset).toBe('PIP-ME')
+  expect(DEFAULT_EFFECTS.hue).toBe(137)
+  expect(DEFAULT_EFFECTS.rollBar.interval).toBe(17)
 })
 
 test('presets are independent copies', () => {
@@ -30,7 +31,7 @@ test('editing a knob switches to CUSTOM and merges sections', () => {
 
 test('changing hue keeps the preset', () => {
   const next = patchConfig(DEFAULT_EFFECTS, { hue: 38 })
-  expect(next.preset).toBe('CLASSIC')
+  expect(next.preset).toBe('PIP-ME')
   expect(next.hue).toBe(38)
 })
 

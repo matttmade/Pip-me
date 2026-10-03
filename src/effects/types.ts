@@ -1,4 +1,4 @@
-export type PresetName = 'OFF' | 'SUBTLE' | 'CLASSIC' | 'DAMAGED' | 'CUSTOM'
+export type PresetName = 'PIP-ME' | 'OFF' | 'SUBTLE' | 'CLASSIC' | 'DAMAGED' | 'CUSTOM'
 
 export type EffectsConfig = {
   preset: PresetName

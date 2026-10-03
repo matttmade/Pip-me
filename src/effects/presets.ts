@@ -2,10 +2,21 @@ import type { EffectsConfig, EffectsPatch, PresetName } from './types'
 
 type Look = Omit<EffectsConfig, 'preset' | 'hue'>
 
-export const HUES = { GREEN: 135, AMBER: 38, BLUE: 200, TEAL: 160, LCD: 85 } as const
+export const HUES = { GREEN: 137, AMBER: 38, BLUE: 200, TEAL: 160, LCD: 85 } as const
 export const DEFAULT_HUE = HUES.GREEN
 
 export const PRESETS: Record<Exclude<PresetName, 'CUSTOM'>, Look> = {
+  /** The house default, tuned by the project owner. */
+  'PIP-ME': {
+    scanlines: { on: true, opacity: 0.15, density: 3, speed: 6 },
+    noise: { on: true, amount: 0.04, fps: 12 },
+    glitch: { on: true, frequency: 20, strength: 0.15, rgbSplit: false },
+    flicker: { on: true, amount: 0.045 },
+    rollBar: { on: true, interval: 17 },
+    glow: 1,
+    vignette: 1,
+    curvature: 0.22,
+  },
   OFF: {
     scanlines: { on: false, opacity: 0, density: 3, speed: 0 },
     noise: { on: false, amount: 0, fps: 0 },
@@ -52,11 +63,11 @@ const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v))
 
 /** A full config for a named preset. Hue is a color choice, so it is carried over. */
 export function applyPreset(name: PresetName, hue: number = DEFAULT_HUE, current?: EffectsConfig): EffectsConfig {
-  if (name === 'CUSTOM') return { ...(current ?? applyPreset('CLASSIC', hue)), preset: 'CUSTOM', hue }
+  if (name === 'CUSTOM') return { ...(current ?? applyPreset('PIP-ME', hue)), preset: 'CUSTOM', hue }
   return { preset: name, hue, ...clone(PRESETS[name]) }
 }
 
-export const DEFAULT_EFFECTS: EffectsConfig = applyPreset('CLASSIC')
+export const DEFAULT_EFFECTS: EffectsConfig = applyPreset('PIP-ME')
 
 /**
  * Apply a patch. Picking a preset loads it; changing hue keeps the preset;

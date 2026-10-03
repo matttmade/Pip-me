@@ -12,8 +12,8 @@ const COLORS: [string, number][] = [
   ['Teal', HUES.TEAL],
   ['LCD', HUES.LCD],
 ]
-const SIGNALS: PresetName[] = ['OFF', 'SUBTLE', 'CLASSIC', 'DAMAGED']
-const label = (p: string) => p.charAt(0) + p.slice(1).toLowerCase()
+const SIGNALS: PresetName[] = ['PIP-ME', 'OFF', 'SUBTLE', 'CLASSIC', 'DAMAGED']
+const label = (p: string) => (p === 'PIP-ME' ? 'Pip-Me' : p.charAt(0) + p.slice(1).toLowerCase())
 
 type Pop = 'sound' | 'color' | 'signal' | null
 
