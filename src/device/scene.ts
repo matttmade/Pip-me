@@ -23,7 +23,8 @@ export const DOCK_SPACE = 84 // px reserved under the device for the glass dock 
 export const isCompact = (vw: number) => vw < 700
 
 export function screenRect(vw: number, vh: number, safe: Insets = NO_INSETS): Rect {
-  const compact = isCompact(vw)
+  // phones in either orientation (landscape phones are wide but short)
+  const compact = isCompact(vw) || vh < 520
   const m = compact ? 10 : 18
   // top/bottom also hold the rim labels (ROBCO INDUSTRIES / Pip-Me logo) centred on the rim line
   const top = compact ? 16 : 22
