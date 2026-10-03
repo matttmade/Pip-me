@@ -8,6 +8,7 @@ import PaperDollFallback from './PaperDollFallback'
 import { EffectsList, EmoteBar, ReadoutStrip } from './StatusExtras'
 import { DEFAULT_FIGURE, FIGURE_KEY, normalizeFigure, type Figure } from './vaultboy/behavior'
 import { hasWebGL } from './webgl'
+import { WeaponSlot } from './WeaponSlot'
 import { useBootDone } from '../../loader/handoff'
 
 // three.js only loads with the scene, in its own chunk.
@@ -31,8 +32,8 @@ const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
 
 /**
  * STAT > STATUS: the figure with limb condition bars around it, floating emote buttons,
- * active EFFECTS, four readout boxes (TEMP, RADS, CAPS, QUESTS) and the name plate with
- * LEVEL + XP. Figure and detail options live in DATA > SYSTEM > FIGURE.
+ * active EFFECTS, four readout boxes (TEMP, RADS, CAPS, QUESTS), the WEAPON slot and the
+ * name plate with LEVEL + XP. Figure and detail options live in DATA > SYSTEM > FIGURE.
  * The panel is a size container; dweller.css picks wide / short / compact layouts from it.
  */
 export default function StatusPanel() {
@@ -110,6 +111,7 @@ export default function StatusPanel() {
         {!failed && <EmoteBar />}
         <EffectsList />
         <ReadoutStrip />
+        <WeaponSlot />
 
         <div className="status-id">
           <span className="status-id__name">{profile.name || 'VAULT DWELLER'}</span>

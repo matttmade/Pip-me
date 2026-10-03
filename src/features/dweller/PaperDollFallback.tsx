@@ -1,4 +1,5 @@
 import { useProfile } from '../../lib/contracts'
+import { figureTap } from './figureTap'
 
 /**
  * 2D fallback Dweller (no WebGL, or the scene failed): layered SVG limbs with a CSS
@@ -8,7 +9,8 @@ export default function PaperDollFallback() {
   const [profile] = useProfile()
 
   return (
-    <div className="paper-doll" data-no-swipe>
+    // taps go to the equipped weapon (STATUS weapon slot)
+    <div className="paper-doll" data-no-swipe onClick={(e) => figureTap({ x: e.clientX, y: e.clientY })}>
       <svg viewBox="0 0 120 230" role="img" aria-label="Your Vault Dweller, walking in place">
         <g className="pd-body">
           {/* back arm + back leg */}

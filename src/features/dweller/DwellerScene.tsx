@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useCoarsePointer, useEffectsConfig, usePageVisible, usePrefersReducedMotion, useProfile } from '../../lib/contracts'
 import { DWELLER_MOVE, onEmote } from './emotes'
+import { figureTap } from './figureTap'
 import { createDwellerEngine, RENDER_H, RENDER_W, type DwellerEngine } from './dwellerEngine'
 import { detailProfile, type DetailLevel } from './fidelity'
 
@@ -85,5 +86,6 @@ export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown
   useEffect(() => engine.current?.setVault(profile.vault), [profile.vault])
   useEffect(() => engine.current?.setRunning(visible), [visible])
 
-  return <div ref={host} className="dweller-scene" data-no-swipe />
+  // Taps go to the equipped weapon (STATUS weapon slot); it answers with an emote.
+  return <div ref={host} className="dweller-scene" data-no-swipe onClick={(e) => figureTap({ x: e.clientX, y: e.clientY })} />
 }

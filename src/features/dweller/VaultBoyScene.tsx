@@ -13,6 +13,7 @@ import {
 } from '../../lib/contracts'
 import { NO_PERKS, PERKS_KEY } from '../perks/perks'
 import { onEmote } from './emotes'
+import { figureTap } from './figureTap'
 import { eventGesture, PERK_GESTURE, tapGesture } from './vaultboy/behavior'
 import { createVaultBoyEngine, type VaultBoyEngine } from './vaultboy/vaultBoyEngine'
 
@@ -113,9 +114,10 @@ export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => vo
   useEffect(() => engine.current?.setGlow(cfg.glow), [cfg.glow])
   useEffect(() => engine.current?.setRunning(visible), [visible])
 
-  const tap = () => {
+  // The equipped weapon (STATUS weapon slot) gets first go at a tap; it asks for its own gesture.
+  const tap = (at: { x: number; y: number } | null) => {
     rng.current ??= mulberry32(Date.now() | 0)
-    engine.current?.react(tapGesture(rng.current))
+    if (!figureTap(at)) engine.current?.react(tapGesture(rng.current))
     emit({ type: 'figure-tapped' })
   }
   const onPointerDown = (e: PointerEvent) => {
@@ -124,12 +126,12 @@ export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => vo
   const onPointerUp = (e: PointerEvent) => {
     const d = down.current
     down.current = null
-    if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) <= TAP_SLOP) tap()
+    if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) <= TAP_SLOP) tap({ x: e.clientX, y: e.clientY })
   }
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key !== 'Enter' && e.key !== ' ') return
     e.preventDefault()
-    tap()
+    tap(null)
   }
 
   return (
