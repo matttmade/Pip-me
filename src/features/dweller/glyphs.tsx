@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Gesture } from './vaultboy/behavior'
 import type { ReadoutId } from './statusReadouts'
+import type { WeaponId } from './weapons'
 
 /** Original line-art glyphs for the STATUS emote buttons and readout boxes (24×24). */
 function Glyph({ children, className = 'st-glyph' }: { children: ReactNode; className?: string }) {
@@ -58,3 +59,38 @@ const READOUT_GLYPH: Record<ReadoutId, ReactNode> = {
 
 export const EmoteGlyph = ({ id }: { id: Gesture }) => <Glyph>{EMOTE_GLYPH[id]}</Glyph>
 export const ReadoutGlyph = ({ id }: { id: ReadoutId }) => <Glyph className="readout__icon">{READOUT_GLYPH[id]}</Glyph>
+
+/* ---------- weapon slot pictograms (original line art) ---------- */
+
+const WEAPON_GLYPH: Record<WeaponId, ReactNode> = {
+  // a clenched fist, knuckles forward
+  fist: (
+    <path d="M6 10.2V8.4a1.6 1.6 0 013.2 0v1 M9.2 9.4V7.2a1.6 1.6 0 013.2 0v2.2 M12.4 9.4V7.4a1.6 1.6 0 013.2 0v2.4 M15.6 9.8V8.6a1.6 1.6 0 013.2 0v4.6c0 3.4-2.5 5.9-5.9 5.9h-1.6c-3.1 0-5.5-2.3-5.5-5.3v-1.6 M4 12.2c0-1 .8-1.8 1.8-1.8h4.4a1.6 1.6 0 010 3.2H8 M9.5 19.2V22 M15.5 19V22" />
+  ),
+  // toy squirt gun: tank on top, stubby nozzle, chunky grip
+  water: (
+    <>
+      <path d="M2.5 9.8h12.8l1.8 1.3h2.4v2.2h-2.4l-1.8 1.1H11l-1.3 6.1H5.9l1-6.1H4.2L2.5 12.6z M7 9.8V6.9A1.7 1.7 0 018.7 5.2h3.6A1.7 1.7 0 0114 6.9v2.9 M9.8 14.4c.3 1.2.9 1.9 1.9 2.1 M7.5 7.6h5" />
+      <path className="st-glyph__fill" d="M22 10.4c.7.9 1.1 1.5 1.1 2a1.1 1.1 0 01-2.2 0c0-.5.4-1.1 1.1-2z" />
+    </>
+  ),
+  // a finned mini-nuke with a trefoil band
+  nuke: (
+    <>
+      <path d="M3 12c0-2.9 3.4-4.8 7.8-4.8h3.4l1.6 1.4v6.8l-1.6 1.4h-3.4C6.4 16.8 3 14.9 3 12z M15.8 9.6l3.4-2.8h1.8v10.4h-1.8l-3.4-2.8 M19.2 6.8v10.4 M12.2 7.2v9.6" />
+      <path
+        className="st-glyph__fill"
+        d="M8.3 12a.9.9 0 101.8 0 .9.9 0 10-1.8 0z M8.6 10.4L7.6 8.7a3.3 3.3 0 013.3 0l-1 1.7z M10.8 12.8l1 1.7a3.3 3.3 0 01-1.7 1.4V14z M7.6 12.8v1.9a3.3 3.3 0 01-1.6-1.4l1-1.7z"
+      />
+    </>
+  ),
+}
+
+export const WeaponGlyph = ({ id }: { id: WeaponId }) => <Glyph className="weapon__glyph">{WEAPON_GLYPH[id]}</Glyph>
+
+/** Water-drop ammo pip. */
+export const DropGlyph = () => (
+  <Glyph className="weapon__drop">
+    <path className="st-glyph__fill" d="M12 3c3.4 4.3 5.6 7.4 5.6 10.4a5.6 5.6 0 01-11.2 0C6.4 10.4 8.6 7.3 12 3z" />
+  </Glyph>
+)
