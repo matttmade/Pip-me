@@ -1,10 +1,9 @@
-import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useProfile, useStored } from '../../lib/contracts'
+import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { usePageVisible, useProfile, useStored } from '../../lib/contracts'
 import { useXp } from '../quests/useXp'
 import { startPerkTracking } from '../perks/perks'
 import { DEFAULT_DETAIL, DETAIL_KEY, normalizeDetail, type DetailLevel } from './fidelity'
 import { LIMBS, limbCondition, type Limb } from './limbs'
-import PaperDollFallback from './PaperDollFallback'
 import { EffectsList, EmoteBar, ReadoutStrip } from './StatusExtras'
 import { DEFAULT_FIGURE, FIGURE_KEY, normalizeFigure, type Figure } from './vaultboy/behavior'
 import { hasWebGL } from './webgl'
@@ -45,31 +44,56 @@ export default function StatusPanel() {
   const detail = normalizeDetail(storedDetail)
   const [storedFigure] = useStored<Figure>(FIGURE_KEY, DEFAULT_FIGURE)
   const figure = normalizeFigure(storedFigure)
-  const [failed, setFailed] = useState(() => !hasWebGL())
-  // Vault Boy failed (GLB or WebGL trouble): show the procedural Dweller instead.
-  const [vbFailed, setVbFailed] = useState(false)
-  const showVaultBoy = figure === 'VAULTBOY' && !vbFailed
+  const visible = usePageVisible()
+  // 3D trouble is usually transient on phones (Safari drops WebGL when backgrounded or low on
+  // memory), so remount the scene instead of giving up. After repeated failures show an
+  // OFFLINE notice with a retry, never a substitute figure.
+  const [attempt, setAttempt] = useState(0)
+  const [fails, setFails] = useState(0)
+  const [lastError, setLastError] = useState<string | null>(() => (hasWebGL() ? null : 'WEBGL UNAVAILABLE'))
+  const offline = lastError !== null && (fails >= 3 || lastError === 'WEBGL UNAVAILABLE')
   const limbs = useMemo(() => limbCondition(profile.name), [profile.name])
   const xp = useXp()
 
-  const onFail = (err: unknown) => {
-    console.warn('[dweller] 3D unavailable, using paper doll', err)
-    setFailed(true)
+  const onFail = useCallback((err: unknown) => {
+    console.warn('[dweller] 3D figure failed, retrying', err)
+    setLastError(String((err as Error)?.message ?? err).slice(0, 80).toUpperCase())
+    setFails((n) => n + 1)
+  }, [])
+  // retry: right away while visible (short delay), or as soon as the page is visible again
+  useEffect(() => {
+    if (!lastError || offline || !visible) return
+    const t = window.setTimeout(() => setAttempt((a) => a + 1), 700)
+    return () => window.clearTimeout(t)
+  }, [lastError, fails, offline, visible])
+  // a successful scene clears the error streak after a while
+  useEffect(() => {
+    if (!fails || lastError) return
+    const t = window.setTimeout(() => setFails(0), 20_000)
+    return () => window.clearTimeout(t)
+  }, [fails, lastError])
+  const retry = () => {
+    setFails(0)
+    setLastError(hasWebGL() ? null : 'WEBGL UNAVAILABLE')
+    setAttempt((a) => a + 1)
   }
-  const onVbFail = (err: unknown) => {
-    console.warn('[dweller] Vault Boy unavailable, using the Dweller', err)
-    setVbFailed(true)
-  }
+  const sceneKey = `${figure}-${attempt}`
+  const showVaultBoy = figure === 'VAULTBOY'
+  const failed = offline
 
   return (
     <div className="status-panel">
       <div className={`status-grid${failed ? '' : ' has-emotes'}`}>
         <div className="status-stage">
           <div className="status-figure">
-            {failed ? (
-              <PaperDollFallback />
+            {offline ? (
+              <button type="button" className="figure-offline" onClick={retry}>
+                <span className="figure-offline__title">FIGURE OFFLINE</span>
+                <span>TAP TO RETRY</span>
+                <small>{lastError}</small>
+              </button>
             ) : (
-              <SceneBoundary key={showVaultBoy ? 'vb' : 'dweller'} onError={showVaultBoy ? onVbFail : onFail}>
+              <SceneBoundary key={sceneKey} onError={onFail}>
                 <Suspense
                   fallback={
                     <p className="loading status-loading">
@@ -82,9 +106,9 @@ export default function StatusPanel() {
                       LOADING<span className="cursor">▌</span>
                     </p>
                   ) : showVaultBoy ? (
-                    <VaultBoyScene onFail={onVbFail} />
+                    <VaultBoyScene onFail={onFail} onReady={() => setLastError(null)} />
                   ) : (
-                    <DwellerScene onFail={onFail} detail={detail} />
+                    <DwellerScene onFail={onFail} onReady={() => setLastError(null)} detail={detail} />
                   )}
                 </Suspense>
               </SceneBoundary>
@@ -107,7 +131,6 @@ export default function StatusPanel() {
           ))}
         </div>
 
-        {/* the paper doll can't gesture, so no emote buttons with it */}
         {!failed && <EmoteBar />}
         <EffectsList />
         <ReadoutStrip />

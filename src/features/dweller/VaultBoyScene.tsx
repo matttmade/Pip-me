@@ -24,16 +24,16 @@ const TAP_SLOP = 10
  * the GLB only load with STAT. Walks in place, takes a beat every so often, and gestures
  * when tapped or when something good happens elsewhere in the app.
  */
-export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => void }) {
+export default function VaultBoyScene({ onFail, onReady }: { onFail: (err: unknown) => void; onReady?: () => void }) {
   const host = useRef<HTMLDivElement>(null)
   const engine = useRef<VaultBoyEngine | null>(null)
   const [cfg] = useEffectsConfig()
   const visible = usePageVisible()
   const reduced = usePrefersReducedMotion()
   const coarse = useCoarsePointer()
-  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, visible, onFail })
+  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, visible, onFail, onReady })
   useLayoutEffect(() => {
-    latest.current = { hue: cfg.hue, glow: cfg.glow, visible, onFail }
+    latest.current = { hue: cfg.hue, glow: cfg.glow, visible, onFail, onReady }
   })
   const rng = useRef<Rng | null>(null)
   const down = useRef<{ x: number; y: number } | null>(null)
@@ -75,6 +75,7 @@ export default function VaultBoyScene({ onFail }: { onFail: (err: unknown) => vo
         e.setHue(latest.current.hue)
         e.setGlow(latest.current.glow)
         e.setRunning(latest.current.visible)
+        latest.current.onReady?.()
       })
       .catch((err) => !cancelled && latest.current.onFail(err))
 

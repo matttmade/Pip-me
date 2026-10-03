@@ -8,6 +8,7 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three'
+import { safeTargetOptions } from '../webgl'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
@@ -91,7 +92,7 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
   scene.add(vb.object)
   const camera = new PerspectiveCamera(30, width / height, 0.05, 30)
 
-  const target = new WebGLRenderTarget(width, height, { type: HalfFloatType, samples: 4 })
+  const target = new WebGLRenderTarget(width, height, safeTargetOptions(renderer, 4) as { type: typeof HalfFloatType; samples: number })
   const composer = new EffectComposer(renderer, target)
   composer.setPixelRatio(1)
   composer.setSize(width, height)

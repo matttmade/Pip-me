@@ -18,6 +18,7 @@ import {
   WebGLRenderTarget,
   type Material,
 } from 'three'
+import { safeTargetOptions } from './webgl'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
@@ -159,7 +160,7 @@ function buildEngine(
   }
   if (profile.floor) scene.add(makeFloor())
 
-  const msaaTarget = smooth ? new WebGLRenderTarget(width, height, { type: HalfFloatType, samples: profile.msaa }) : undefined
+  const msaaTarget = smooth ? new WebGLRenderTarget(width, height, safeTargetOptions(renderer, profile.msaa) as { type: typeof HalfFloatType; samples: number }) : undefined
   const composer = new EffectComposer(renderer, msaaTarget)
   composer.setPixelRatio(1)
   composer.setSize(width, height)

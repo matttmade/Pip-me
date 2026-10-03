@@ -10,7 +10,7 @@ import { detailProfile, type DetailLevel } from './fidelity'
  * The canvas is created per mount and per DETAIL level (StrictMode-safe: a disposed context
  * is never reused, and everything is rebuilt cleanly when the level changes).
  */
-export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown) => void; detail: DetailLevel }) {
+export default function DwellerScene({ onFail, onReady, detail }: { onFail: (err: unknown) => void; onReady?: () => void; detail: DetailLevel }) {
   const host = useRef<HTMLDivElement>(null)
   const engine = useRef<DwellerEngine | null>(null)
   const [cfg] = useEffectsConfig()
@@ -18,9 +18,9 @@ export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown
   const visible = usePageVisible()
   const reduced = usePrefersReducedMotion()
   const coarse = useCoarsePointer()
-  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, vault: profile.vault, visible, onFail })
+  const latest = useRef({ hue: cfg.hue, glow: cfg.glow, vault: profile.vault, visible, onFail, onReady })
   useLayoutEffect(() => {
-    latest.current = { hue: cfg.hue, glow: cfg.glow, vault: profile.vault, visible, onFail }
+    latest.current = { hue: cfg.hue, glow: cfg.glow, vault: profile.vault, visible, onFail, onReady }
   })
 
   useEffect(() => {
@@ -65,6 +65,7 @@ export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown
         e.setGlow(latest.current.glow)
         e.setVault(latest.current.vault)
         e.setRunning(latest.current.visible)
+        latest.current.onReady?.()
       })
       .catch((err) => !cancelled && latest.current.onFail(err))
 
