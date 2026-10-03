@@ -24,3 +24,9 @@ test('arm view keeps the glass centered and the UI scaled onto it', () => {
     expect(L.arm.x).toBeLessThanOrEqual(0)
   }
 })
+
+test('landscape phones get the compact frame', () => {
+  const r = screenRect(844, 390)
+  expect(r.x).toBe(10)
+  expect(r.y).toBe(16)
+})

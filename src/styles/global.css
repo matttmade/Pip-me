@@ -604,3 +604,15 @@ button, input, select, textarea {
   .saved-preset { grid-template-columns: auto 1fr; }
   .saved-preset__actions { grid-column: 1 / -1; }
 }
+
+/* ---------- short screens (phones in landscape): give the panel the height ---------- */
+@media (max-height: 520px) {
+  .pip-layout { padding: 4px clamp(10px, 2vw, 18px) 6px; gap: 4px; }
+  .top-tabs { padding: 2px 6px 0; }
+  .top-tab { min-height: 30px; padding: 2px 10px 2px; font-size: 20px; }
+  .top-tab.is-active { padding-inline: 12px; }
+  .sub-tabs { padding: 2px 0 1px; }
+  .sub-tab { min-height: 24px; font-size: 13px; }
+  .status-bar { font-size: 12px; }
+  .status-box { min-height: 26px; padding: 1px 6px; }
+}
