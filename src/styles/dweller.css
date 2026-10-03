@@ -1,15 +1,26 @@
-/* ---------- STAT > STATUS ---------- */
+/* ---------- STAT > STATUS ----------
+   .status-panel is a size container; .status-grid picks one of three layouts from it:
+   compact (phones, narrow): stage / emotes row / readouts / name plate, EFFECTS as a popover;
+   short (ON ARM view, landscape phones): emotes column | stage + name | readouts 2x2;
+   wide (desktop screen): emotes | stage | EFFECTS, readouts + name under the stage. */
 .status-panel {
   position: relative;
   height: 100%;
+  container: status / size;
+}
+.status-grid {
+  height: 100%;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  grid-template-areas: "stage" "emotes" "strip" "id";
   justify-items: center;
-  gap: 10px;
+  row-gap: 8px;
   padding-bottom: 4px;
 }
 
 .status-stage {
+  grid-area: stage;
   position: relative;
   width: 100%;
   max-width: 620px;
@@ -105,13 +116,15 @@
 .limb--torso { bottom: 0; left: 50%; transform: translateX(-50%); }
 
 .status-id {
+  grid-area: id;
   display: flex;
-  gap: 16px;
+  gap: 6px 16px;
   align-items: baseline;
   justify-content: center;
   flex-wrap: wrap;
+  max-width: 100%;
   font-family: var(--font-display);
-  font-size: clamp(20px, 4.4vw, 26px);
+  font-size: clamp(18px, 4.4vw, 26px);
   line-height: 1;
   letter-spacing: var(--track-display);
   text-shadow: var(--bloom);
@@ -120,13 +133,284 @@
   padding: 4px 18px;
 }
 .status-id__vault { opacity: .85; }
+.status-id__level {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .8em;
+}
+.status-id__level .xp-bar { width: 72px; flex: none; height: 8px; --notch: 4px; }
 
-@media (min-width: 720px) {
+@container status (min-width: 600px) {
   .limb { font-size: 12px; }
   .limb--l-arm { left: 8%; }
   .limb--r-arm { right: 8%; }
   .limb--l-leg { left: 12%; }
   .limb--r-leg { right: 12%; }
+}
+
+/* ---------- emote buttons: small phosphor rings that float beside the figure ---------- */
+.emote-bar {
+  grid-area: emotes;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  z-index: 2;
+}
+.emote-btn {
+  /* a 44px hit area around a small visible ring */
+  position: relative;
+  width: var(--touch);
+  height: var(--touch);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: .5;
+  transition: opacity .15s ease;
+}
+.emote-btn::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid var(--pip-60);
+  border-radius: 50%;
+  background: var(--screen-bg);
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.emote-btn .st-glyph { position: relative; width: 18px; height: 18px; }
+.emote-btn:hover,
+.emote-btn:focus-visible,
+.emote-btn.is-lit,
+.emote-bar:focus-within .emote-btn { opacity: 1; }
+.emote-btn:hover::before,
+.emote-btn:focus-visible::before { border-color: var(--pip); box-shadow: 0 0 calc(6px * var(--glow-amt)) var(--pip-60); }
+.emote-btn:focus-visible { outline: none; }
+.emote-btn.is-lit::before,
+.emote-btn:active::before { background: var(--pip); border-color: var(--pip-hi); box-shadow: 0 0 calc(8px * var(--glow-amt)) var(--pip-60); }
+.emote-btn.is-lit .st-glyph,
+.emote-btn:active .st-glyph { stroke: var(--screen-bg); filter: none; }
+@media (hover: none) {
+  .emote-btn { opacity: .8; }
+}
+
+.st-glyph,
+.readout__icon {
+  display: block;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60));
+}
+.st-glyph__fill { fill: currentColor; stroke: none; }
+
+/* ---------- readout boxes (TEMP RADS CAPS QUESTS) ---------- */
+.status-strip {
+  grid-area: strip;
+  width: 100%;
+  max-width: 620px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.readout {
+  position: relative;
+  min-width: 0;
+  min-height: var(--touch);
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas: "icon value" "meta meta";
+  justify-content: center;
+  align-items: center;
+  column-gap: 7px;
+  row-gap: 1px;
+  padding: 4px 6px 3px;
+  border: 1px solid var(--pip-30);
+  border-top: 2px solid var(--pip-60);
+  background: linear-gradient(to bottom, var(--pip-15), transparent);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.readout:hover,
+.readout:focus-visible { border-color: var(--pip-60); border-top-color: var(--pip); background-color: var(--pip-15); }
+.readout:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
+.readout__icon { grid-area: icon; width: 18px; height: 18px; }
+.readout__value {
+  grid-area: value;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: .04em;
+  text-shadow: var(--bloom);
+  white-space: nowrap;
+}
+.readout__meta {
+  grid-area: meta;
+  min-width: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: .1em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.readout__label { opacity: .8; }
+.readout__sub { display: none; opacity: .55; }
+.readout__sub::before { content: ' \00B7 '; }
+.readout.is-dim .readout__value,
+.readout.is-dim .readout__icon { opacity: .45; }
+
+/* ---------- EFFECTS ---------- */
+.status-effects {
+  grid-area: stage;
+  justify-self: start;
+  align-self: start;
+  z-index: 3;
+  max-width: 100%;
+  font-size: var(--fs-sm);
+}
+.status-effects__title { display: none; }
+.status-effects__toggle {
+  min-height: var(--touch);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 2px;
+  border: 0;
+  background: none;
+  font-size: var(--fs-xs);
+  letter-spacing: .12em;
+  cursor: pointer;
+  opacity: .8;
+}
+.status-effects__toggle b {
+  min-width: 18px;
+  padding: 1px 4px;
+  background: var(--pip);
+  color: var(--screen-bg);
+  text-shadow: none;
+  font-weight: normal;
+  text-align: center;
+}
+.status-effects__toggle:hover,
+.status-effects[data-open] .status-effects__toggle { opacity: 1; }
+.status-effects__list {
+  display: none;
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+}
+.status-effects[data-open] .status-effects__list {
+  display: grid;
+  gap: 6px;
+  width: min(260px, calc(100cqw - 16px));
+  border: 1px solid var(--pip-60);
+  background: var(--screen-bg);
+  box-shadow: 0 0 calc(8px * var(--glow-amt)) var(--pip-30);
+}
+.fx {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 10px;
+  line-height: 1.25;
+}
+.fx__name { letter-spacing: .06em; }
+.fx__mod { text-align: right; white-space: nowrap; }
+.fx__note {
+  grid-column: 1 / -1;
+  font-size: var(--fs-xs);
+  letter-spacing: .04em;
+  text-transform: none;
+  opacity: .6;
+}
+.fx--buff .fx__mod { color: var(--pip-hi); }
+.fx--debuff { opacity: .8; }
+.fx--none { opacity: .6; letter-spacing: .1em; }
+
+/* narrow phones: tighter readout boxes */
+@container status (max-width: 380px) {
+  .readout { padding-inline: 4px; column-gap: 4px; }
+  .readout__icon { width: 15px; height: 15px; }
+  .readout__value { font-size: 19px; }
+}
+
+/* short + wide: the ON ARM screen (~570x290) and landscape phones */
+@container status (min-width: 500px) and (max-height: 480px) {
+  .status-grid {
+    grid-template-columns: auto minmax(0, 1fr) minmax(130px, 28%);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "emotes stage strip" "emotes id strip";
+    column-gap: 8px;
+    row-gap: 4px;
+  }
+  .emote-bar { flex-direction: column; justify-content: center; gap: 0; }
+  .status-strip { grid-template-columns: 1fr 1fr; align-content: center; align-self: center; }
+  .status-id { font-size: 18px; padding: 3px 10px; }
+  .status-id__level .xp-bar { width: 48px; }
+  .limb { font-size: 10px; width: clamp(48px, 18%, 80px); }
+}
+
+/* very short (landscape phones): six 44px buttons won't stack, so two columns of three */
+@container status (min-width: 500px) and (max-height: 280px) {
+  .emote-bar { display: grid; grid-template-columns: repeat(2, var(--touch)); align-content: center; }
+}
+
+/* wide: emotes | stage | effects, with readouts + name under the stage */
+@container status (min-width: 820px) {
+  .status-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 620px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas: "emotes stage effects" ". strip ." ". id .";
+    column-gap: 16px;
+  }
+  .emote-bar {
+    flex-direction: column;
+    justify-self: end;
+    align-self: center;
+  }
+  .status-effects {
+    grid-area: effects;
+    align-self: center;
+    justify-self: start;
+    width: min(270px, 100%);
+  }
+  .status-effects__toggle { display: none; }
+  .status-effects__title {
+    display: block;
+    margin: 0 0 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--pip-60);
+    font-family: var(--font-display);
+    font-weight: normal;
+    font-size: 20px;
+    letter-spacing: var(--track-display);
+    text-shadow: var(--bloom);
+  }
+  .status-effects .status-effects__list,
+  .status-effects[data-open] .status-effects__list {
+    display: grid;
+    gap: 8px;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .readout__sub { display: inline; }
+  .readout__value { font-size: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emote-btn, .emote-btn::before, .readout { transition: none; }
 }
 
 /* ---------- paper doll fallback ---------- */

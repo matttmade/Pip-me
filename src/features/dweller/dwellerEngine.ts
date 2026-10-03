@@ -2,6 +2,7 @@ import {
   AmbientLight,
   CanvasTexture,
   DirectionalLight,
+  Group,
   HalfFloatType,
   HemisphereLight,
   Mesh,
@@ -23,6 +24,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { detailProfile, renderSize, scanPeriod, type DetailProfile } from './fidelity'
+import { moveOffset, MOVE_SECS, type DwellerMove } from './emotes'
 import { createGlbDweller, glbAvailable } from './glbDweller'
 import { PipMonochromeShader, PipSmoothShader, setPipHue, setSmoothHue } from './pipMonochromeShader'
 import { createProceduralDweller } from './proceduralDweller'
@@ -53,6 +55,8 @@ export type DwellerEngine = {
   setGlow(glow: number): void
   /** Match the backing store to a CSS box (smooth levels only; RETRO stays 240×320). */
   resize(cssW: number, cssH: number, dpr: number): void
+  /** A simple whole-body reaction (hop / bounce / spin) standing in for a gesture. */
+  play(move: DwellerMove): void
   readonly source: 'procedural' | 'glb'
   dispose(): void
 }
@@ -142,7 +146,10 @@ function buildEngine(
     rim.position.set(-2, 2, -3)
     scene.add(rim)
   }
-  scene.add(rig.root)
+  // Reactions move this wrapper, so they never fight the rig's own root/hips transforms.
+  const mover = new Group()
+  mover.add(rig.root)
+  scene.add(mover)
   if (profile.rim > 0) {
     rig.root.traverse((o) => {
       const mesh = o as Mesh
@@ -202,9 +209,18 @@ function buildEngine(
   let disposed = false
   const animate = opts.animate
 
+  let move: { kind: DwellerMove; start: number } | null = null
+  let stillTimer = 0
+
   const draw = () => {
     if (disposed) return
     rig.update(time, Math.min(0.1, FRAME_MS / 1000))
+    if (move) {
+      const o = moveOffset(move.kind, time - move.start)
+      mover.position.y = o.y
+      mover.rotation.y = o.yaw
+      if (time - move.start >= MOVE_SECS[move.kind]) move = null
+    }
     const yaw = BASE_YAW + (animate ? ORBIT * Math.sin(time * 0.35) : 0)
     camera.position.set(Math.sin(yaw) * DIST, 1.2, Math.cos(yaw) * DIST)
     camera.lookAt(target)
@@ -260,9 +276,27 @@ function buildEngine(
       if (!raf) draw()
     },
     setRunning,
+    play(kind) {
+      if (disposed) return
+      if (animate && raf) {
+        move = { kind, start: time }
+        return
+      }
+      // Reduced motion (or paused): one held, still frame instead of an animation.
+      window.clearTimeout(stillTimer)
+      mover.rotation.y = kind === 'spin' ? Math.PI / 2 : 0
+      mover.position.y = kind === 'spin' ? 0 : 0.08
+      draw()
+      stillTimer = window.setTimeout(() => {
+        mover.position.y = 0
+        mover.rotation.y = 0
+        if (!raf) draw()
+      }, 1200)
+    },
     dispose() {
       if (disposed) return
       disposed = true
+      window.clearTimeout(stillTimer)
       cancelAnimationFrame(raf)
       scene.traverse((o) => {
         const mesh = o as Mesh

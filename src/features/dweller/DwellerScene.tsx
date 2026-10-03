@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useCoarsePointer, useEffectsConfig, usePageVisible, usePrefersReducedMotion, useProfile } from '../../lib/contracts'
+import { DWELLER_MOVE, onEmote } from './emotes'
 import { createDwellerEngine, RENDER_H, RENDER_W, type DwellerEngine } from './dwellerEngine'
 import { detailProfile, type DetailLevel } from './fidelity'
 
@@ -75,6 +76,9 @@ export default function DwellerScene({ onFail, detail }: { onFail: (err: unknown
       canvas.remove()
     }
   }, [reduced, detail, coarse])
+
+  // Emote buttons: the procedural figure has no gesture rig, so it hops / bounces / spins.
+  useEffect(() => onEmote((g) => engine.current?.play(DWELLER_MOVE[g])), [])
 
   useEffect(() => engine.current?.setHue(cfg.hue), [cfg.hue])
   useEffect(() => engine.current?.setGlow(cfg.glow), [cfg.glow])
