@@ -5,10 +5,10 @@ test('screen view fills the viewport with even margins', () => {
   const r = screenRect(1440, 900)
   expect(r.x).toBe(18)
   expect(r.w).toBe(1440 - 36)
-  expect(r.y + r.h).toBe(900 - 18)
+  expect(r.y + r.h).toBe(900 - 26)
   const phone = screenRect(390, 844, { top: 47, right: 0, bottom: 34, left: 0 })
-  expect(phone.y).toBe(57)
-  expect(phone.y + phone.h).toBe(844 - 34 - 10)
+  expect(phone.y).toBe(47 + 16)
+  expect(phone.y + phone.h).toBe(844 - 34 - 22)
 })
 
 test('arm view keeps the glass centered and the UI scaled onto it', () => {

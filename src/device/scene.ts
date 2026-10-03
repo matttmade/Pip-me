@@ -23,12 +23,16 @@ export const DOCK_SPACE = 84 // px reserved under the device for the glass dock 
 export const isCompact = (vw: number) => vw < 700
 
 export function screenRect(vw: number, vh: number, safe: Insets = NO_INSETS): Rect {
-  const m = isCompact(vw) ? 10 : 18
+  const compact = isCompact(vw)
+  const m = compact ? 10 : 18
+  // top/bottom also hold the rim labels (ROBCO INDUSTRIES / Pip-Me logo) centred on the rim line
+  const top = compact ? 16 : 22
+  const bottom = compact ? 22 : 26
   return {
     x: safe.left + m,
-    y: safe.top + m,
+    y: safe.top + top,
     w: Math.max(200, vw - safe.left - safe.right - 2 * m),
-    h: Math.max(200, vh - safe.top - safe.bottom - 2 * m),
+    h: Math.max(200, vh - safe.top - safe.bottom - top - bottom),
   }
 }
 
