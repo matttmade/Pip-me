@@ -31,8 +31,8 @@ const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
 
 /**
  * STAT > STATUS: an EFFECTS tile column on the left, the figure with short limb condition
- * bars around it, a loadout row under it (WEAPON + DMG, EMOTE, then TEMP / RADS / CAPS /
- * QUESTS tiles) and a one-line name plate. LEVEL, HP and AP live in the bottom status bar.
+ * bars (label + condition) around it, a one-line name plate, then the loadout row (WEAPON +
+ * DMG, EMOTE, then TEMP / RADS / CAPS / QUESTS tiles). LEVEL, HP and AP live in the bottom status bar.
  * Figure and detail options live in DATA > SYSTEM > FIGURE. The panel is a size container;
  * dweller.css picks the portrait / short / wide layout from it.
  */
@@ -133,21 +133,23 @@ export default function StatusPanel() {
               >
                 <span style={{ width: `${limbs[l] * 100}%` }} />
               </span>
-              <span className="limb__label">{l}</span>
+              <span className="limb__label">
+                {l} <b>{Math.round(limbs[l] * 100)}</b>
+              </span>
             </div>
           ))}
-        </div>
-
-        <div className="status-loadout">
-          <WeaponSlot {...menuProps('weapon')} />
-          {!failed && <EmoteFlyout {...menuProps('emotes')} />}
-          <ReadoutStrip />
         </div>
 
         <div className="status-id">
           <span className="status-id__name">{profile.name || 'VAULT DWELLER'}</span>
           <span className="status-id__sep" aria-hidden />
           <span className="status-id__vault">VAULT {profile.vault || '111'}</span>
+        </div>
+
+        <div className="status-loadout">
+          <WeaponSlot {...menuProps('weapon')} />
+          {!failed && <EmoteFlyout {...menuProps('emotes')} />}
+          <ReadoutStrip />
         </div>
       </div>
     </div>

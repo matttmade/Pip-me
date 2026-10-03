@@ -26,12 +26,12 @@ export type SolidWireLook = {
   fill: number
 }
 
-/** Smooth dithered shading + hologram bands; softer light than before so more of him sits in the dithered mid-tones. */
-export const SOLID_WIRE_LOOK: SolidWireLook = { wireOpacity: 0, bands: 16, key: 1.7, back: 0.8, fill: 0.3 }
+/** Smooth dithered shading (no wire, no bands); soft light so more of him sits in the dithered mid-tones. */
+export const SOLID_WIRE_LOOK: SolidWireLook = { wireOpacity: 0, bands: 0, key: 1.8, back: 0.7, fill: 0.3 }
 
 /**
  * "Solid wireframe" look (owner pick #2): an opaque, lit grey body hides back faces,
- * hologram bands ride on the body, a fresnel rim and a black ink outline define the
+ * smooth dithered shading, a fresnel rim and a black ink outline define the
  * silhouette. Everything is greyscale; the Bayer dither pass maps brightness onto the
  * phosphor ramp, so the screen colour drives the final look.
  */
@@ -133,9 +133,9 @@ export function applySolidWire(root: Object3D, scene: Scene, look: SolidWireLook
   }
   extra(outlineMat, -1)
 
-  // harsh key from upper-left, a back rim light, almost no fill
+  // key from the front, a little high and left (beside the camera), a back rim light, low fill
   const key = new DirectionalLight(0xffffff, look.key)
-  key.position.set(-3, 3.5, 2.5)
+  key.position.set(-1.3, 2.4, 4.2)
   const back = new DirectionalLight(0xffffff, look.back)
   back.position.set(3, 2, -3)
   const fill = new AmbientLight(0xffffff, look.fill)

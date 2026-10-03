@@ -18,7 +18,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto auto;
-  grid-template-areas: "stage" "load" "id";
+  grid-template-areas: "stage" "id" "load";
   row-gap: 8px;
   padding-bottom: 4px;
 }
@@ -111,14 +111,15 @@
   width: 100%;
   height: 6px;
 }
+.limb { display: grid; justify-items: center; gap: 3px; }
 .limb__label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: .1em;
   white-space: nowrap;
+  opacity: .8;
 }
+.limb__label b { font-weight: normal; color: var(--pip-hi); opacity: 1; }
 .limb--head  { top: calc(var(--top0) + var(--fh) * .05); left: 50%; transform: translateX(-50%); }
 .limb--l-arm { top: calc(var(--top0) + var(--fh) * .33); left: calc(50cqw - var(--fw) * .4); }
 .limb--r-arm { top: calc(var(--top0) + var(--fh) * .37); right: calc(50cqw - var(--fw) * .4); }
@@ -786,7 +787,7 @@
     max-width: none;
     grid-template-columns: minmax(0, 1fr) minmax(200px, 36%);
     grid-template-rows: minmax(0, 1fr) auto;
-    grid-template-areas: "stage load" "id id";
+    grid-template-areas: "stage id" "stage load";
     column-gap: 10px;
     row-gap: 4px;
   }
@@ -799,7 +800,12 @@
   }
   .status-effects__tiles { gap: 3px; }
   .status-effects[data-open] .status-effects__list { width: min(250px, 55cqw); }
-  .status-id { font-size: 16px; gap: 8px; }
+  /* the figure is small here: give the labelled bars room beside him */
+  .limb--l-arm { left: calc(50cqw - var(--fw) * .72); }
+  .limb--r-arm { right: calc(50cqw - var(--fw) * .72); }
+  .limb--l-leg { left: calc(50cqw - var(--fw) * .66); }
+  .limb--r-leg { right: calc(50cqw - var(--fw) * .66); }
+  .status-id { font-size: 16px; gap: 8px; align-self: end; max-width: 100%; }
   .flyout { --fly-row: 36px; }
   .flyout__item { font-size: 14px; }
 }

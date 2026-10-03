@@ -16,31 +16,53 @@ import { armLayout, DESIGN, isCompact, screenRect, type Insets } from './scene'
  * iOS launches the Home Screen web app (they can report the pre-fullscreen size and never fire
  * resize), which left a gap at the bottom and content under the status bar.
  */
+const isStandalone = () =>
+  window.matchMedia?.('(display-mode: standalone), (display-mode: fullscreen)').matches || (navigator as { standalone?: boolean }).standalone === true
+
+/**
+ * iOS 26 Home Screen apps (WebKit bug 301108) report a viewport one status bar short of the
+ * screen bottom, and blur whatever sits under the status bar. There, size the stage to the
+ * large viewport (100lvh is the full screen) and keep the frame clear of the blur.
+ */
+const STANDALONE_TOP_CLEAR = 22
+
 function useViewport() {
-  const measure = (el: HTMLElement) => {
+  const measure = (el: HTMLElement, tall: HTMLElement) => {
     const s = getComputedStyle(el)
     const r = el.getBoundingClientRect()
+    const standalone = isStandalone()
+    const h = Math.round(r.height) || window.innerHeight
+    const top = parseFloat(s.paddingTop) || 0
     return {
       w: Math.round(r.width) || window.innerWidth,
-      h: Math.round(r.height) || window.innerHeight,
-      safe: { top: parseFloat(s.paddingTop) || 0, right: parseFloat(s.paddingRight) || 0, bottom: parseFloat(s.paddingBottom) || 0, left: parseFloat(s.paddingLeft) || 0 },
+      h: standalone ? Math.max(h, Math.round(tall.getBoundingClientRect().height)) : h,
+      standalone,
+      safe: {
+        top: standalone && top > 0 ? top + STANDALONE_TOP_CLEAR : top,
+        right: parseFloat(s.paddingRight) || 0,
+        bottom: parseFloat(s.paddingBottom) || 0,
+        left: parseFloat(s.paddingLeft) || 0,
+      },
     }
   }
-  const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight, safe: { top: 0, right: 0, bottom: 0, left: 0 } as Insets }))
+  const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight, standalone: false, safe: { top: 0, right: 0, bottom: 0, left: 0 } as Insets }))
   useLayoutEffect(() => {
     const probe = document.createElement('div')
     probe.setAttribute('aria-hidden', 'true')
     probe.style.cssText =
       'position:fixed;inset:0;visibility:hidden;pointer-events:none;z-index:-1;box-sizing:border-box;' +
       'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'
-    document.body.appendChild(probe)
+    const tall = document.createElement('div')
+    tall.setAttribute('aria-hidden', 'true')
+    tall.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:100vh;height:100lvh;visibility:hidden;pointer-events:none;z-index:-1'
+    document.body.append(probe, tall)
     let raf = 0
     const update = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() =>
         setVp((prev) => {
-          const next = measure(probe)
-          const same = prev.w === next.w && prev.h === next.h && (Object.keys(next.safe) as (keyof Insets)[]).every((k) => prev.safe[k] === next.safe[k])
+          const next = measure(probe, tall)
+          const same = prev.w === next.w && prev.h === next.h && prev.standalone === next.standalone && (Object.keys(next.safe) as (keyof Insets)[]).every((k) => prev.safe[k] === next.safe[k])
           return same ? prev : next
         }),
       )
@@ -48,6 +70,7 @@ function useViewport() {
     update()
     const ro = new ResizeObserver(update)
     ro.observe(probe)
+    ro.observe(tall)
     const events: [EventTarget | undefined, string][] = [
       [window, 'resize'],
       [window, 'orientationchange'],
@@ -64,6 +87,7 @@ function useViewport() {
       events.forEach(([t, e]) => t?.removeEventListener(e, update))
       late.forEach(clearTimeout)
       probe.remove()
+      tall.remove()
     }
   }, [])
   return vp
@@ -186,7 +210,12 @@ export function DeviceStage({ children }: { children: ReactNode }) {
 
   return (
     <ViewContext.Provider value={ctx}>
-      <div ref={stage} className={`stage stage--${view}${compact ? ' stage--compact' : ''}${switching ? ' is-switching' : ''}`}>
+      <div
+        ref={stage}
+        className={`stage stage--${view}${compact ? ' stage--compact' : ''}${switching ? ' is-switching' : ''}`}
+        // Home Screen app: the full screen, not the short viewport iOS reports
+        style={vp.standalone ? { bottom: 'auto', height: vp.h } : undefined}
+      >
         {arm && (
           <div className="scene" aria-hidden>
             <img className="scene__layer scene__bg" src="/scene/background.webp" alt="" draggable={false} />
