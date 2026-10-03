@@ -161,9 +161,11 @@
   height: 100%;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
+  /* without this the grid column grows to its widest child (long rows, readout) and spills off phones */
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
-.inv-tab__body { min-height: 0; }
+.inv-tab__body { min-height: 0; min-width: 0; }
 .inv-readout {
   margin: 0;
   display: flex;
