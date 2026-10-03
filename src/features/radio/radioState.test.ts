@@ -51,6 +51,15 @@ describe('radioReducer', () => {
     expect(s.sc.muted).toBe(true)
     expect(s.file?.name).toBe('a.mp3')
   })
+
+  it('stores the waveform envelope and keeps it across retries', () => {
+    const env = Float32Array.from([0.2, 0.8])
+    let s = radioReducer(initialRadioState(), { type: 'sc-envelope', envelope: env })
+    expect(s.sc.envelope).toBe(env)
+    expect(radioReducer(s, { type: 'sc-envelope', envelope: env })).toBe(s)
+    s = radioReducer(s, { type: 'sc-retry' })
+    expect(s.sc.envelope).toBe(env)
+  })
 })
 
 describe('helpers', () => {

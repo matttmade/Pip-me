@@ -4,6 +4,7 @@
  */
 import { APPALACHIA_ID, APPALACHIA_STATION, FALLBACK_META, type SoundMeta } from './soundcloud'
 import { STATIONS, YOUR_STATION } from './stations'
+import type { Envelope } from './waveform'
 
 export const OFF = 'OFF'
 
@@ -19,6 +20,8 @@ export type ScState = {
   /** MUTE on the transport (the SYSTEM volume is kept). */
   muted: boolean
   meta: SoundMeta
+  /** Loudness envelope of the track (SoundCloud waveform), null until fetched or when unavailable. */
+  envelope: Envelope | null
 }
 
 export type RadioState = {
@@ -40,6 +43,7 @@ export type RadioAction =
   | { type: 'sc-retry' }
   | { type: 'sc-mute'; muted: boolean }
   | { type: 'sc-meta'; meta: SoundMeta }
+  | { type: 'sc-envelope'; envelope: Envelope | null }
   | { type: 'file'; file: LocalFile | null }
   | { type: 'analyser'; analyser: AnalyserNode | null }
 
@@ -49,7 +53,7 @@ export const SAVE_EVERY = 5000
 export function initialRadioState(saved?: { position: number | null; duration: number }): RadioState {
   return {
     station: null,
-    sc: { status: 'loading', attempt: 0, position: saved?.position ?? 0, duration: saved?.duration ?? 0, muted: false, meta: FALLBACK_META },
+    sc: { status: 'loading', attempt: 0, position: saved?.position ?? 0, duration: saved?.duration ?? 0, muted: false, meta: FALLBACK_META, envelope: null },
     file: null,
     analyser: null,
   }
@@ -77,6 +81,8 @@ export function radioReducer(s: RadioState, a: RadioAction): RadioState {
       return s.sc.muted === a.muted ? s : { ...s, sc: { ...s.sc, muted: a.muted } }
     case 'sc-meta':
       return { ...s, sc: { ...s.sc, meta: a.meta } }
+    case 'sc-envelope':
+      return s.sc.envelope === a.envelope ? s : { ...s, sc: { ...s.sc, envelope: a.envelope } }
     case 'file':
       return { ...s, file: a.file }
     case 'analyser':

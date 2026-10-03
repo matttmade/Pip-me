@@ -32,7 +32,7 @@ export function RadioHost() {
       startAt={radio.scStartAt}
       onStatus={radio.onScStatus}
       onProgress={radio.onScProgress}
-      onMeta={radio.onScMeta}
+      onSound={radio.onScSound}
     />
   )
 }

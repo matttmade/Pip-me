@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { pipRgb, useEffectsConfig, usePageVisible, usePrefersReducedMotion, useSettings, useStored } from '../../lib/contracts'
 import { ListDetail, type ListItem } from '../../shell/ListDetail'
-import { radio, useRadio } from './engine'
-import { Oscilloscope } from './Oscilloscope'
+import { radio, scPlayhead, useRadio } from './engine'
+import { Oscilloscope, type ScopeSource } from './Oscilloscope'
 import { OFF, type ScStatus } from './radioState'
 import { ScTransport } from './ScTransport'
 import { APPALACHIA_ID, APPALACHIA_STATION, simulatedSignal } from './soundcloud'
@@ -59,10 +59,19 @@ export default function RadioPanel() {
   const scHeld = scOn && (scStatus === 'playing' || scStatus === 'ready')
   const scVolume = sc.muted ? 0 : settings.volume
   // The trace's height follows what you'd hear; paused, it freezes in place.
-  const simulateSc = useMemo(() => {
-    const level = 0.12 + 0.78 * Math.min(1, scVolume * 1.4)
-    return (x: number, t: number) => simulatedSignal(x, t, level)
-  }, [scVolume])
+  const scGain = 0.12 + 0.88 * Math.min(1, scVolume * 1.4)
+  const envelope = sc.envelope
+  const scDuration = sc.duration
+  const scSource = useMemo<ScopeSource>(
+    () =>
+      envelope && scDuration > 0
+        ? { kind: 'envelope', envelope, duration: scDuration, gain: scGain, playhead: scPlayhead }
+        : { kind: 'sim', fn: (x, t) => simulatedSignal(x, t, scGain) },
+    [envelope, scDuration, scGain],
+  )
+  const synthSource = useMemo<ScopeSource | null>(() => (analyser ? { kind: 'analyser', analyser } : null), [analyser])
+  const source = scOn ? (scHeld ? scSource : null) : active ? synthSource : null
+  const scopeTag = scOn ? (scSource.kind === 'envelope' ? 'WAVEFORM // SOUNDCLOUD ENVELOPE' : 'SIGNAL SIMULATED') : active ? 'WAVEFORM // LIVE AUDIO' : null
 
   const detail = (
     <div className={`radio-detail pip-frame${isSc ? ' radio-detail--sc' : ''}`}>
@@ -71,13 +80,8 @@ export default function RadioPanel() {
         <small className="pip-frame__aside">{isOff ? '--.-' : isYours ? 'LOCAL' : `${station?.freq} MHZ`}</small>
       </h2>
       <div className="radio-scope" data-no-swipe>
-        <Oscilloscope
-          analyser={active && !scOn ? analyser : null}
-          color={`${r}, ${g}, ${b}`}
-          running={scOn ? visible && scLive && !reducedMotion : visible && active != null}
-          simulate={scHeld ? simulateSc : undefined}
-        />
-        {scOn && <span className="radio-scope__tag">SIGNAL SIMULATED</span>}
+        <Oscilloscope source={source} color={`${r}, ${g}, ${b}`} running={visible && !reducedMotion && (scOn ? scLive : active != null)} />
+        {scopeTag && <span className="radio-scope__tag">{scopeTag}</span>}
       </div>
       {muted ? (
         <p className="radio-warn">

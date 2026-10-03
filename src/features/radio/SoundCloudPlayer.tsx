@@ -1,7 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
 import type { ScControls } from './engine'
 import type { ScStatus } from './radioState'
-import { loadWidgetApi, soundMeta, widgetVolume, type ScApi, type ScProgress, type ScWidget, type SoundMeta } from './soundcloud'
+import { loadWidgetApi, widgetVolume, type ScApi, type ScProgress, type ScWidget } from './soundcloud'
 
 type Props = {
   /** Full widget iframe URL (buildWidgetUrl). Read once on mount. */
@@ -15,7 +15,8 @@ type Props = {
   startAt: (duration: number) => number
   onStatus: (s: ScStatus) => void
   onProgress: (position: number, duration: number) => void
-  onMeta: (m: SoundMeta) => void
+  /** Raw track object from getCurrentSound (attribution, waveform_url). */
+  onSound: (sound: unknown) => void
   ref?: Ref<ScControls>
 }
 
@@ -31,7 +32,7 @@ const EVENTS = ['READY', 'PLAY', 'PAUSE', 'FINISH', 'PLAY_PROGRESS', 'ERROR'] as
  * Mounted by the always-present RadioHost only while tuned (keyed for a fresh RETRY),
  * so switching tabs doesn't touch it; unmounting pauses it.
  */
-export function SoundCloudPlayer({ src, title, volume, visible, startAt, onStatus, onProgress, onMeta, ref }: Props) {
+export function SoundCloudPlayer({ src, title, volume, visible, startAt, onStatus, onProgress, onSound, ref }: Props) {
   const [api, setApi] = useState<ScApi | null>(null)
   const [frameSrc] = useState(src)
   const frame = useRef<HTMLIFrameElement>(null)
@@ -40,11 +41,11 @@ export function SoundCloudPlayer({ src, title, volume, visible, startAt, onStatu
   const resume = useRef(false)
   const duration = useRef(0)
   const vol = useRef(volume)
-  const cb = useRef({ startAt, onStatus, onProgress, onMeta })
+  const cb = useRef({ startAt, onStatus, onProgress, onSound })
 
   useEffect(() => {
     vol.current = volume
-    cb.current = { startAt, onStatus, onProgress, onMeta }
+    cb.current = { startAt, onStatus, onProgress, onSound }
   })
 
   useImperativeHandle(
@@ -103,7 +104,7 @@ export function SoundCloudPlayer({ src, title, volume, visible, startAt, onStatu
       window.clearTimeout(timer)
       widget.current = w
       w.setVolume(widgetVolume(vol.current))
-      w.getCurrentSound((s) => cb.current.onMeta(soundMeta(s)))
+      w.getCurrentSound((s) => cb.current.onSound(s))
       readDuration((d) => {
         const at = d > 0 ? Math.max(0, Math.min(d - 1000, cb.current.startAt(d))) : 0
         pendingSeek = at
