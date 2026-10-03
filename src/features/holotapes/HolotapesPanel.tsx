@@ -5,7 +5,9 @@ import { useStored } from '../../lib/store'
 import { ListDetail, type ListItem } from '../../shell/ListDetail'
 import { domainOf, holotapeId, mergeHolotapes, normalizeUrl, parseBookmarks } from './parseBookmarks'
 import { AID_KEY, HOLOTAPES_KEY, NO_AID, NO_HOLOTAPES, type Holotape } from './types'
-import { Facts, InvDetail } from './ui'
+import { colHead } from './colHead'
+import { Cols, Counted, Facts, InvDetail } from './ui'
+import { holotapeWgVal, ROBCO_WGVAL, totals } from './weight'
 import { fmtDate, openLink, useNotice } from './util'
 
 const ROBCO = '__robco'
@@ -30,8 +32,13 @@ export default function HolotapesPanel() {
   const pinned = useMemo(() => new Set(aid.map((a) => a.url)), [aid])
 
   const items: ListItem[] = [
-    { id: ROBCO, label: 'ROBCO TERMINAL', right: 'EXE' },
-    ...filtered.map((t) => ({ id: t.id, label: t.title, right: pinned.has(t.url) ? '+AID' : undefined })),
+    colHead('HOLOTAPE'),
+    { id: ROBCO, label: 'ROBCO TERMINAL', right: <Cols wgVal={ROBCO_WGVAL} extra="EXE" /> },
+    ...filtered.map((t) => ({
+      id: t.id,
+      label: <Counted label={t.title} count={t.uses} />,
+      right: <Cols wgVal={holotapeWgVal(t)} extra={pinned.has(t.url) ? '+AID' : undefined} />,
+    })),
   ]
   if (!filtered.length) items.push({ id: EMPTY, label: query ? 'NO MATCHES' : 'NO HOLOTAPES LOADED', disabled: true })
 
@@ -100,12 +107,11 @@ export default function HolotapesPanel() {
   } else if (current) {
     const isPinned = pinned.has(current.url)
     detail = (
-      <InvDetail title={current.title} sub={domainOf(current.url)}>
+      <InvDetail title={current.title} sub={domainOf(current.url)} icon="holotape" wgVal={holotapeWgVal(current)} stats={[['PLAYS', current.uses ?? 0]]}>
         <Facts
           rows={[
             ['FOLDER', current.folder || 'ROOT'],
             ['RECORDED', fmtDate(current.addedAt)],
-            ['PLAYS', current.uses ?? 0],
           ]}
         />
         <div className="pip-choices">
@@ -123,7 +129,7 @@ export default function HolotapesPanel() {
     )
   } else {
     detail = (
-      <InvDetail title="ROBCO TERMINAL" sub="SECURITY BYPASS UTILITY // V2.77">
+      <InvDetail title="ROBCO TERMINAL" sub="SECURITY BYPASS UTILITY // V2.77" icon="terminal" wgVal={ROBCO_WGVAL} stats={[['TYPE', 'EXE']]}>
         <p className="inv-copy">
           A memory dump hides the password among same-length decoys. Each wrong guess reports its likeness. One daily lock pays out caps; practice
           locks are unlimited.
@@ -172,7 +178,8 @@ export default function HolotapesPanel() {
         />
       </div>
       <p className="inv-status" role="status">
-        {notice ?? `${tapes.length} HOLOTAPE${tapes.length === 1 ? '' : 'S'}${query ? ` // ${filtered.length} MATCH${filtered.length === 1 ? '' : 'ES'}` : ''}`}
+        {notice ??
+          `${tapes.length} HOLOTAPE${tapes.length === 1 ? '' : 'S'} // WG ${totals(tapes.map(holotapeWgVal)).wg}${query ? ` // ${filtered.length} MATCH${filtered.length === 1 ? '' : 'ES'}` : ''}`}
       </p>
       <div className="inv-body">
         <ListDetail label="Holotapes" items={items} selected={selected} onSelect={select} onActivate={activate} detail={detail} />
@@ -195,7 +202,7 @@ function AddForm({ onSave, onCancel }: { onSave: (title: string, url: string) =>
   }
 
   return (
-    <InvDetail title="RECORD HOLOTAPE">
+    <InvDetail title="RECORD HOLOTAPE" icon="holotape">
       <form className="inv-form" onSubmit={submit} noValidate>
         <label className="pip-field">
           <span>TITLE</span>
