@@ -548,7 +548,7 @@ button, input, select, textarea {
 .offline { display: grid; gap: 8px; padding: 12px 0; align-content: start; }
 .offline p { margin: 0; }
 .overlay-stub { display: grid; gap: 16px; justify-items: start; }
-.pip-overlay { position: absolute; inset: 0; z-index: 10; background: var(--screen-bg); overflow: auto; }
+.pip-overlay { position: absolute; inset: 0; z-index: 10; background: var(--frost-bg-strong); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); overflow: auto; }
 .loading { margin: 12px 0; }
 
 .cursor { animation: blink 1s steps(1) infinite; }
@@ -615,4 +615,31 @@ button, input, select, textarea {
   .sub-tab { min-height: 24px; font-size: 13px; }
   .status-bar { font-size: 12px; }
   .status-box { min-height: 26px; padding: 1px 6px; }
+}
+
+/* ---------- app, not a document: no accidental text selection / callouts ---------- */
+html, body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none; /* iOS long-press copy/share sheet */
+  -webkit-tap-highlight-color: transparent;
+}
+img, svg, canvas { -webkit-user-drag: none; }
+/* real text entry still selects normally */
+input, textarea, [contenteditable='true'], .selectable {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+::selection { background: var(--pip); color: var(--screen-bg); text-shadow: none; }
+
+/* reusable frosted panel */
+.frost {
+  background: var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .frost { background: var(--frost-bg-strong); }
 }

@@ -128,7 +128,9 @@
   justify-items: center;
   gap: 4px;
   padding: 14px 12px;
-  background: var(--screen-bg);
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
   border-top: var(--rule) solid var(--pip);
   border-bottom: var(--rule) solid var(--pip);
   box-shadow: 0 0 24px var(--pip-30), inset 0 0 18px var(--pip-15);
@@ -386,7 +388,9 @@
   justify-items: center;
   gap: 6px;
   padding: 14px 12px;
-  background: var(--screen-bg);
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
   border-top: var(--rule) solid var(--pip);
   border-bottom: var(--rule) solid var(--pip);
   box-shadow: 0 0 24px var(--pip-30), inset 0 0 18px var(--pip-15);

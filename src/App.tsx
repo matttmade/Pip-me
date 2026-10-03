@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, type ComponentType } from 'react'
 import { DeviceStage } from './device/DeviceStage'
+import { InstallPrompt } from './features/install/InstallPrompt'
 import { EffectsProvider, useEffectsConfig } from './effects/EffectsProvider'
 import { triggerGlitch } from './effects/glitchScheduler'
 import { RadioHost } from './features/radio/RadioHost'
@@ -161,6 +162,7 @@ export default function App() {
       <DeviceStage>
         <PipBoy />
       </DeviceStage>
+      <InstallPrompt />
     </EffectsProvider>
   )
 }

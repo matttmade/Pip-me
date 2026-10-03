@@ -9,6 +9,7 @@ import { resetAll, useStored } from '../lib/store'
 import { PRESETS_KEY, type SavedPreset } from '../lib/systemPresets'
 import { ListDetail, type ListItem } from '../shell/ListDetail'
 import { SavedPresets } from './SavedPresets'
+import { requestInstallPrompt } from '../features/install/installStore'
 import { DEFAULT_DETAIL, DETAIL_KEY, DETAIL_LEVELS, normalizeDetail, type DetailLevel } from '../features/dweller/fidelity'
 import { DEFAULT_FIGURE, FIGURE_KEY, FIGURE_LABEL, FIGURES, normalizeFigure, type Figure } from '../features/dweller/vaultboy/behavior'
 import { PipSlider } from '../shell/PipSlider'
@@ -152,6 +153,9 @@ export function SystemPanel() {
                 </button>
               ))}
             </div>
+            <button className="pip-btn" onClick={requestInstallPrompt}>
+              [ ADD TO HOME SCREEN ]
+            </button>
             <PipToggle label="CRT WARP" on={warp} onChange={(w) => setDevice({ ...device, warp: w })} />
             <PipToggle label="PIP CURSOR" on={device.cursor !== false} onChange={(cursor) => setDevice({ ...device, cursor })} />
             <PipSlider label="CURVATURE" value={cfg.curvature} min={0} max={1} onChange={(curvature) => update({ curvature })} format={pct} />

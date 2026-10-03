@@ -1,4 +1,9 @@
 :root {
+  /* frosted glass for panels that float over other UI (map cards, menus, banners, sheets) */
+  --frost-bg: hsl(var(--pip-hue) 55% 5% / .58);
+  --frost-bg-strong: hsl(var(--pip-hue) 55% 4% / .78);
+  --frost-blur: blur(10px) saturate(150%) brightness(.85);
+  --frost-edge: inset 0 1px 0 hsl(var(--pip-hue) 100% 75% / .16), inset 0 0 0 1px hsl(var(--pip-hue) 100% 60% / .08);
   --pip-hue: 135;
   --pip:      hsl(var(--pip-hue) 100% 55%);
   --pip-hi:   hsl(var(--pip-hue) 100% 75%);
