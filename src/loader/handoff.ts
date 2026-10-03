@@ -1,12 +1,21 @@
 /**
  * Hand-off between the inline boot loader in index.html and the React app.
  *
- * The loader paints before the bundle downloads. Once main.tsx runs it calls `afterLoader(mount)`:
- * the loader is told the bundle is ready, and React mounts the moment the loader starts its
- * power-off, so the text BootSequence plays in full underneath rather than behind the loader.
- * With no loader (tests, script blocked, already gone) it mounts straight away.
+ * The loader is the app's only boot sequence. It paints before the bundle downloads; when
+ * main.tsx runs, `bootApp` tells it the bundle is in (`step('bundle')`), mounts React straight
+ * away UNDER the loader, and once the first commit has painted calls `ready()`. The loader then
+ * finishes its choreography and wipes away to reveal an app that is already rendered.
+ * When it leaves, the session is marked as booted so a reload in the same session gets the
+ * short version. With no loader (tests, script blocked, already gone) it just mounts.
  */
-export type PipLoader = { onExit: (fn: () => void) => void; ready: () => void }
+import { writeStored } from '../lib/store'
+
+export type LoaderStep = 'bundle' | 'font'
+export type PipLoader = {
+  step: (id: LoaderStep) => void
+  ready: () => void
+  onExit: (fn: () => void) => void
+}
 
 declare global {
   interface Window {
@@ -14,13 +23,31 @@ declare global {
   }
 }
 
-export function afterLoader(mount: () => void, loader: PipLoader | undefined = globalThis.window?.__pipLoader): void {
-  if (!loader) return mount()
-  let mounted = false
-  loader.onExit(() => {
-    if (mounted) return
-    mounted = true
-    mount()
+/** Session flag the loader reads (read-only) to choose the short re-boot. */
+export const BOOTED_KEY = 'booted'
+
+type Options = {
+  loader?: PipLoader
+  nextFrame?: (fn: () => void) => void
+  markBooted?: () => void
+}
+
+/**
+ * `mount` renders the app and must call `mounted` after its first commit (e.g. from an effect).
+ */
+export function bootApp(mount: (mounted: () => void) => void, opts: Options = {}): void {
+  const {
+    loader = globalThis.window?.__pipLoader,
+    nextFrame = (fn) => requestAnimationFrame(() => fn()),
+    markBooted = () => void writeStored(BOOTED_KEY, true),
+  } = opts
+  if (!loader) return mount(() => {})
+  loader.step('bundle')
+  loader.onExit(markBooted)
+  let signalled = false
+  mount(() => {
+    if (signalled) return
+    signalled = true
+    nextFrame(() => loader.ready())
   })
-  loader.ready()
 }
