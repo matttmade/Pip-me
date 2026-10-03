@@ -8,7 +8,7 @@
  * When it leaves, the session is marked as booted so a reload in the same session gets the
  * short version. With no loader (tests, script blocked, already gone) it just mounts.
  */
-import { writeStored } from '../lib/store'
+import { useStored, writeStored } from '../lib/store'
 
 export type LoaderStep = 'bundle' | 'font'
 export type PipLoader = {
@@ -50,4 +50,13 @@ export function bootApp(mount: (mounted: () => void) => void, opts: Options = {}
     signalled = true
     nextFrame(() => loader.ready())
   })
+}
+
+/**
+ * True once the boot loader has left (or there is none). Heavy work like the STAT 3D scene
+ * waits for this so it doesn't fight the loader's animation for the main thread.
+ */
+export function useBootDone(): boolean {
+  const [booted] = useStored<boolean>(BOOTED_KEY, false)
+  return booted || !globalThis.window?.__pipLoader
 }

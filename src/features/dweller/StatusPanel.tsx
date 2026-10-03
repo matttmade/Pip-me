@@ -8,6 +8,7 @@ import PaperDollFallback from './PaperDollFallback'
 import { EffectsList, EmoteBar, ReadoutStrip } from './StatusExtras'
 import { DEFAULT_FIGURE, FIGURE_KEY, normalizeFigure, type Figure } from './vaultboy/behavior'
 import { hasWebGL } from './webgl'
+import { useBootDone } from '../../loader/handoff'
 
 // three.js only loads with the scene, in its own chunk.
 const DwellerScene = lazy(() => import('./DwellerScene'))
@@ -36,6 +37,8 @@ const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
  */
 export default function StatusPanel() {
   useEffect(startPerkTracking, [])
+  // don't start the 3D scene until the boot loader has finished animating
+  const bootDone = useBootDone()
   const [profile] = useProfile()
   const [storedDetail] = useStored<DetailLevel>(DETAIL_KEY, DEFAULT_DETAIL)
   const detail = normalizeDetail(storedDetail)
@@ -73,7 +76,15 @@ export default function StatusPanel() {
                     </p>
                   }
                 >
-                  {showVaultBoy ? <VaultBoyScene onFail={onVbFail} /> : <DwellerScene onFail={onFail} detail={detail} />}
+                  {!bootDone ? (
+                    <p className="loading status-loading">
+                      LOADING<span className="cursor">▌</span>
+                    </p>
+                  ) : showVaultBoy ? (
+                    <VaultBoyScene onFail={onVbFail} />
+                  ) : (
+                    <DwellerScene onFail={onFail} detail={detail} />
+                  )}
                 </Suspense>
               </SceneBoundary>
             )}
