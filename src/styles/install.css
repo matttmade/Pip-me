@@ -23,7 +23,9 @@
   font-family: var(--font-ui);
   text-transform: none;
   text-shadow: 0 0 4px var(--pip-60);
-  background: linear-gradient(180deg, hsl(var(--pip-hue) 60% 7% / .96), hsl(var(--pip-hue) 60% 4% / .98));
+  background: linear-gradient(180deg, hsl(var(--pip-hue) 60% 8% / .72), hsl(var(--pip-hue) 60% 4% / .82));
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
   border: 2px solid var(--pip);
   border-radius: 18px;
   box-shadow: 0 0 24px hsl(var(--pip-hue) 100% 50% / .35), 0 18px 40px #000;
