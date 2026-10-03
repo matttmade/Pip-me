@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useEffectsConfig } from '../effects/EffectsProvider'
 import { usePageVisible, usePrefersReducedMotion } from '../lib/hooks'
 import { buildCursors } from './cursors'
@@ -10,27 +10,60 @@ import { ViewContext } from './viewContext'
 import { Disclaimer } from '../shell/Disclaimer'
 import { armLayout, DESIGN, isCompact, screenRect, type Insets } from './scene'
 
-function readSafeArea(): Insets {
-  const probe = document.createElement('div')
-  probe.style.cssText =
-    'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'
-  document.body.appendChild(probe)
-  const s = getComputedStyle(probe)
-  const out = { top: parseFloat(s.paddingTop) || 0, right: parseFloat(s.paddingRight) || 0, bottom: parseFloat(s.paddingBottom) || 0, left: parseFloat(s.paddingLeft) || 0 }
-  probe.remove()
-  return out
-}
-
+/**
+ * The true layout viewport + safe-area insets, from one invisible full-screen probe that's
+ * watched with a ResizeObserver. window.innerHeight / a one-off env() read are unreliable when
+ * iOS launches the Home Screen web app (they can report the pre-fullscreen size and never fire
+ * resize), which left a gap at the bottom and content under the status bar.
+ */
 function useViewport() {
-  const read = () => ({ w: window.innerWidth, h: window.innerHeight, safe: readSafeArea() })
-  const [vp, setVp] = useState(read)
-  useEffect(() => {
-    const on = () => setVp(read())
-    window.addEventListener('resize', on)
-    window.visualViewport?.addEventListener('resize', on)
+  const measure = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    const r = el.getBoundingClientRect()
+    return {
+      w: Math.round(r.width) || window.innerWidth,
+      h: Math.round(r.height) || window.innerHeight,
+      safe: { top: parseFloat(s.paddingTop) || 0, right: parseFloat(s.paddingRight) || 0, bottom: parseFloat(s.paddingBottom) || 0, left: parseFloat(s.paddingLeft) || 0 },
+    }
+  }
+  const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight, safe: { top: 0, right: 0, bottom: 0, left: 0 } as Insets }))
+  useLayoutEffect(() => {
+    const probe = document.createElement('div')
+    probe.setAttribute('aria-hidden', 'true')
+    probe.style.cssText =
+      'position:fixed;inset:0;visibility:hidden;pointer-events:none;z-index:-1;box-sizing:border-box;' +
+      'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'
+    document.body.appendChild(probe)
+    let raf = 0
+    const update = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() =>
+        setVp((prev) => {
+          const next = measure(probe)
+          const same = prev.w === next.w && prev.h === next.h && (Object.keys(next.safe) as (keyof Insets)[]).every((k) => prev.safe[k] === next.safe[k])
+          return same ? prev : next
+        }),
+      )
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(probe)
+    const events: [EventTarget | undefined, string][] = [
+      [window, 'resize'],
+      [window, 'orientationchange'],
+      [window, 'pageshow'],
+      [window.visualViewport ?? undefined, 'resize'],
+      [document, 'visibilitychange'],
+    ]
+    events.forEach(([t, e]) => t?.addEventListener(e, update))
+    // iOS standalone sometimes settles insets a moment after launch without any event
+    const late = [150, 600, 1500].map((ms) => window.setTimeout(update, ms))
     return () => {
-      window.removeEventListener('resize', on)
-      window.visualViewport?.removeEventListener('resize', on)
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+      events.forEach(([t, e]) => t?.removeEventListener(e, update))
+      late.forEach(clearTimeout)
+      probe.remove()
     }
   }, [])
   return vp
