@@ -2,22 +2,18 @@ import {
   HalfFloatType,
   PerspectiveCamera,
   Scene,
-  Texture,
-  Vector2,
   Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three'
 import { safeTargetOptions } from '../webgl'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { mulberry32 } from '../../../lib/contracts'
 import { renderSize } from '../fidelity'
 import { GestureDirector, hueToHex, WALK_CLIP, type Command } from './behavior'
-import { BLOOM, HueSafeShader } from './phosphor'
+import { applySolidWire, DitherShader, setDitherHue } from './solidWire'
 import { VaultBoy } from './VaultBoy'
 
 export const VAULTBOY_URL = `${import.meta.env.BASE_URL}models/vaultboy.glb`
@@ -40,29 +36,6 @@ export type VaultBoyEngine = {
   /** Play a gesture now (tap / app event). Returns false when swallowed. */
   react(name: string): boolean
   dispose(): void
-}
-
-/**
- * The kit's renderer output is opaque black. The Pip screen is not quite black, so turn
- * brightness into alpha (premultiplied): black stays see-through, glow adds onto the screen.
- */
-const ScreenAlphaShader = {
-  name: 'ScreenAlphaShader',
-  uniforms: { tDiffuse: { value: null as Texture | null }, uFloor: { value: 0.05 } },
-  vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse; uniform float uFloor; varying vec2 vUv;
-    void main(){
-      vec3 c = texture2D(tDiffuse, vUv).rgb;
-      // drop the faint bloom haze floor and fade it out toward the canvas edges,
-      // so the canvas never shows as a lighter rectangle on the screen
-      vec2 e = min(vUv, 1.0 - vUv);
-      float edge = smoothstep(0.0, 0.14, min(e.x, e.y));
-      float m = max(c.r, max(c.g, c.b));
-      float keep = m > 1e-4 ? max(m - uFloor * (2.0 - edge), 0.0) / m : 0.0;
-      c *= keep * mix(0.0, 1.0, edge);
-      gl_FragColor = vec4(c, clamp(max(c.r, max(c.g, c.b)), 0.0, 1.0));
-    }`,
 }
 
 export async function createVaultBoyEngine(canvas: HTMLCanvasElement, opts: VaultBoyEngineOptions): Promise<VaultBoyEngine> {
@@ -97,19 +70,22 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
   composer.setPixelRatio(1)
   composer.setSize(width, height)
   composer.addPass(new RenderPass(scene, camera))
-  const bloom = new UnrealBloomPass(new Vector2(width, height), BLOOM.strength, BLOOM.radius, BLOOM.threshold)
-  composer.addPass(bloom)
-  const hueSafe = new ShaderPass(HueSafeShader)
-  composer.addPass(hueSafe)
-  composer.addPass(new OutputPass())
-  const screenAlpha = new ShaderPass(ScreenAlphaShader)
-  composer.addPass(screenAlpha)
+  // dither reads linear light (more contrast) and writes final display colours itself
+  const dither = new ShaderPass(DitherShader)
+  composer.addPass(dither)
+  // greyscale materials + lights; the dither pass turns brightness into phosphor tones
+  vb.setColor('#ffffff')
+  const look = applySolidWire(vb.object, scene)
 
-  const applyHue = (hue: number) => vb.setColor(hueToHex(hue))
+  let hueNow = opts.hue
+  let glowNow = opts.glow
+  const applyHue = (hue: number) => {
+    hueNow = hue
+    setDitherHue(dither.uniforms as (typeof DitherShader)['uniforms'], hueNow, glowNow)
+  }
   const applyGlow = (glow: number) => {
-    const g = Math.min(1, Math.max(0, glow))
-    bloom.strength = BLOOM.strength * (0.3 + 0.9 * g)
-    bloom.enabled = g > 0.01
+    glowNow = glow
+    setDitherHue(dither.uniforms as (typeof DitherShader)['uniforms'], hueNow, glowNow)
   }
   applyHue(opts.hue)
   applyGlow(opts.glow)
@@ -200,10 +176,9 @@ function buildEngine(canvas: HTMLCanvasElement, vb: VaultBoy, opts: VaultBoyEngi
       if (disposed) return
       disposed = true
       cancelAnimationFrame(raf)
+      look.dispose()
       vb.dispose()
-      bloom.dispose()
-      hueSafe.dispose()
-      screenAlpha.dispose()
+      dither.dispose()
       composer.dispose()
       target.dispose()
       renderer.dispose()
