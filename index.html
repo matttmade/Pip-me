@@ -8,6 +8,8 @@
     <meta name="description" content="Unofficial Fallout fan case study: Pip-Me, a Pip-Boy style personal dashboard on a curved CRT in your browser." />
     <meta name="theme-color" content="#031007" />
     <link rel="preload" href="/fonts/alfa-slab-one-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- start downloading the STAT figure while the boot screen plays -->
+    <link rel="preload" href="/models/vaultboy.glb" as="fetch" type="model/gltf-binary" crossorigin />
     <!--
       Boot loader (contract: src/loader/handoff.ts). Pure inline HTML/CSS/JS so it paints
       before the bundle arrives, and it is the app's ONLY boot: CRT warm-up, a fast boot

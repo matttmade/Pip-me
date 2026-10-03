@@ -5,6 +5,7 @@ import { buildCursors } from './cursors'
 import { CrtGlass } from './CrtGlass'
 import { useDeviceSettings, useView, warpAutoDefault, type View } from './deviceSettings'
 import { Dock } from './Dock'
+import { ScreenRim } from './ScreenRim'
 import { ViewContext } from './viewContext'
 import { Disclaimer } from '../shell/Disclaimer'
 import { armLayout, DESIGN, isCompact, screenRect, type Insets } from './scene'
@@ -174,7 +175,16 @@ export function DeviceStage({ children }: { children: ReactNode }) {
               </CrtGlass>
             </div>
           </div>
-          {view === 'screen' && <div className="screen-rim" style={host} aria-hidden />}
+          {view === 'screen' && (
+            <ScreenRim
+              left={Number(host.left)}
+              top={Number(host.top)}
+              width={Number(host.width)}
+              height={Number(host.height)}
+              radius={16 + cfg.curvature * 30}
+              compact={compact}
+            />
+          )}
           {arm && <img className="front__pipboy" src="/scene/pipboy.webp" alt="" draggable={false} aria-hidden />}
         </div>
         {view === 'arm' && (

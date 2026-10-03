@@ -34,21 +34,43 @@ body { overflow: hidden; }
 .screen-rim {
   position: absolute;
   pointer-events: none;
-  border-radius: calc(16px + var(--curve) * 30px);
-  /* a thin phosphor ring a few px outside the glass, like a lit bezel edge */
+  /* dark gap between glass and rim, plus soft light spilling onto the surround */
   box-shadow:
-    0 0 0 7px #020302,
-    0 0 0 9px hsl(var(--pip-hue) 100% 55% / .85),
-    0 0 14px 9px hsl(var(--pip-hue) 100% 50% / .45),
-    0 0 70px 20px hsl(var(--pip-hue) 100% 50% / .16),
-    0 0 180px 40px hsl(var(--pip-hue) 100% 45% / .08);
+    0 0 0 calc(var(--rim-offset) - 1px) #020302,
+    0 0 70px 20px hsl(var(--pip-hue) 100% 50% / .14),
+    0 0 180px 40px hsl(var(--pip-hue) 100% 45% / .07);
 }
-.stage--compact .screen-rim {
-  box-shadow:
-    0 0 0 4px #020302,
-    0 0 0 5.5px hsl(var(--pip-hue) 100% 55% / .8),
-    0 0 10px 6px hsl(var(--pip-hue) 100% 50% / .35);
+.screen-rim--compact { box-shadow: 0 0 0 calc(var(--rim-offset) - 1px) #020302, 0 0 30px 8px hsl(var(--pip-hue) 100% 50% / .12); }
+.screen-rim__svg { position: absolute; overflow: visible; }
+.screen-rim__svg path {
+  fill: none;
+  stroke: hsl(var(--pip-hue) 100% 58% / .9);
+  stroke-width: 2;
+  stroke-linecap: square;
+  filter: drop-shadow(0 0 3px hsl(var(--pip-hue) 100% 55% / .9)) drop-shadow(0 0 10px hsl(var(--pip-hue) 100% 50% / .45));
 }
+.screen-rim--compact .screen-rim__svg path { stroke-width: 1.5; }
+.screen-rim__label {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  line-height: 1;
+  color: var(--pip);
+  text-shadow: var(--glow);
+}
+.screen-rim__label--top {
+  top: calc(var(--rim-offset) * -1);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: .32em;
+  padding-left: .32em; /* balance the trailing letter-spacing */
+}
+.screen-rim__label--bottom { top: calc(100% + var(--rim-offset)); --logo-size: 17px; }
+.screen-rim__label--bottom .pipme-logo { color: var(--pip-hi); }
+.screen-rim__label--bottom .pipme-logo__word { text-shadow: 0 0 2px var(--pip), 0 0 8px var(--pip-60); }
+.screen-rim--compact .screen-rim__label--top { font-size: 8px; letter-spacing: .26em; }
+.screen-rim--compact .screen-rim__label--bottom { --logo-size: 12px; }
 
 .screen-host {
   position: absolute;

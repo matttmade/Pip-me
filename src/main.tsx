@@ -13,6 +13,12 @@ import { Mounted } from './loader/Mounted'
 startSfx()
 startPerkTracking()
 
+// Warm the STAT figure (three.js + Vault Boy scene chunk) while the boot screen plays;
+// the model file itself is preloaded from index.html. StatusPanel's lazy import reuses this.
+const warm = () => void import('./features/dweller/VaultBoyScene').catch(() => {})
+if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 800 })
+else setTimeout(warm, 300)
+
 // The inline boot loader (index.html) is the only boot: React mounts underneath it right away
 // and tells it when the first frame is in, then the loader wipes away to reveal the app.
 bootApp((mounted) =>
