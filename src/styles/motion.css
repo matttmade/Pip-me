@@ -1,0 +1,115 @@
+/* ---------- section transitions + per-section entrance motion ----------
+   App.tsx keys .pip-section on the current tab/sub-tab, so these replay on every change.
+   data-dir: next | prev (slide from the side you moved toward); data-kind: tab | sub (a new
+   top tab also gets a CRT scan sweep). Short and phosphor-ish; none of it under reduced motion. */
+:root {
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --t-section: .26s;
+  --t-item: .3s;
+  --stagger: 32ms;
+}
+
+.pip-section {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  animation: section-in-next var(--t-section) var(--ease-out) both;
+}
+.pip-section[data-dir="prev"] { animation-name: section-in-prev; }
+/* a new top tab: a bright scan line sweeps down over the fresh section */
+.pip-section[data-kind="tab"]::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 20;
+  height: 3px;
+  background: var(--pip-hi);
+  box-shadow: 0 0 calc(12px * var(--glow-amt)) var(--pip), 0 0 calc(30px * var(--glow-amt)) var(--pip-60);
+  opacity: 0;
+  pointer-events: none;
+  animation: section-scan .42s var(--ease-out) both;
+}
+@keyframes section-in-next {
+  0% { opacity: 0; transform: translateX(16px); filter: brightness(1.8); }
+  45% { opacity: var(--o-mid); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@keyframes section-in-prev {
+  0% { opacity: 0; transform: translateX(-16px); filter: brightness(1.8); }
+  45% { opacity: var(--o-mid); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@keyframes section-scan {
+  0% { top: 0; opacity: 1; }
+  85% { opacity: var(--o-mid); }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* lists (INV, DATA, RADIO, PERKS, SPECIAL): rows type in one after another */
+.pip-section .pip-row { animation: row-in var(--t-item) var(--ease-out) both; }
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* STATS / MAP cards rise in */
+.pip-section .stats-box,
+.pip-section .map-card { animation: card-in var(--t-item) var(--ease-out) both; }
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* STATUS: effect tiles and loadout tiles pop in, limb bars fill, the name plate types on */
+.pip-section .fx-tile,
+.pip-section .status-grid > .flyout--emotes,
+.pip-section .status-loadout > :not(.status-strip),
+.pip-section .status-strip > * { animation: tile-in var(--t-item) var(--ease-out) both; }
+@keyframes tile-in {
+  from { opacity: 0; transform: scale(.8); }
+  to { opacity: 1; transform: none; }
+}
+.pip-section .limb__bar > span { transform-origin: 0 50%; animation: bar-fill .6s var(--ease-out) .12s both; }
+@keyframes bar-fill { from { transform: scaleX(0); } }
+.pip-section .limb__label { animation: tile-in var(--t-item) var(--ease-out) .2s both; }
+.pip-section .status-id { animation: type-on .5s steps(12, end) .1s both; }
+@keyframes type-on { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* stagger: the nth item waits n steps (capped, so long lists don't drag) */
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(7) { animation-delay: calc(var(--stagger) * 6); }
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(8) { animation-delay: calc(var(--stagger) * 7); }
+.pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *):nth-child(n + 9) { animation-delay: calc(var(--stagger) * 8); }
+/* the four readouts follow the WEAPON / DMG / EMOTE tiles */
+.pip-section .status-strip > * { animation-delay: calc(var(--stagger) * 4); }
+.pip-section .status-strip > :nth-child(2) { animation-delay: calc(var(--stagger) * 5); }
+.pip-section .status-strip > :nth-child(3) { animation-delay: calc(var(--stagger) * 6); }
+.pip-section .status-strip > :nth-child(4) { animation-delay: calc(var(--stagger) * 7); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pip-section,
+  .pip-section::after,
+  .pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-grid > .flyout--emotes, .status-loadout > :not(.status-strip), .status-strip > *, .limb__bar > span, .limb__label, .status-id) {
+    animation: none;
+  }
+}
+
+/* ---------- DATA > SYSTEM > DEVICE: display readout ---------- */
+.display-readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 12px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--pip-30);
+  background: var(--pip-15);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--track-mid);
+}
+.display-readout div { display: flex; justify-content: space-between; gap: 8px; }
+.display-readout dt { opacity: var(--o-mid); }
+.display-readout dd { margin: 0; color: var(--pip-hi); }

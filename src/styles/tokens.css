@@ -1,0 +1,55 @@
+:root {
+  /* frosted glass for panels that float over other UI (map cards, menus, banners, sheets) */
+  --frost-bg: hsl(var(--pip-hue) var(--pip-sat) 5% / .6);
+  --frost-bg-strong: hsl(var(--pip-hue) var(--pip-sat) 4% / .8);
+  --frost-blur: blur(10px) saturate(150%) brightness(.85);
+  --frost-edge: inset 0 1px 0 hsl(var(--pip-hue) var(--pip-sat) 75% / .16), inset 0 0 0 1px hsl(var(--pip-hue) var(--pip-sat) 60% / .08);
+  --pip-hue: 152;
+  /* soft minty phosphor (not neon): every pip colour shares this saturation */
+  --pip-sat: 60%;
+  --pip:      hsl(var(--pip-hue) var(--pip-sat) 60%);
+  --pip-hi:   hsl(var(--pip-hue) var(--pip-sat) 78%);
+  --pip-60:   hsl(var(--pip-hue) var(--pip-sat) 60% / .6);
+  --pip-30:   hsl(var(--pip-hue) var(--pip-sat) 60% / .3);
+  --pip-15:   hsl(var(--pip-hue) var(--pip-sat) 60% / .15);
+  --pip-deep: hsl(var(--pip-hue) var(--pip-sat) 18%);
+  --screen-bg: hsl(var(--pip-hue) var(--pip-sat) 4%);
+  /* off-screen chrome (dock glass, reflections, backdrops) also follows the colour preference:
+     hsl(var(--tint-hsl) / a) is a near-white glint, hsl(var(--shade-hsl) / a) a near-black */
+  --tint-hsl: var(--pip-hue) var(--pip-sat) 94%;
+  --shade-hsl: var(--pip-hue) var(--pip-sat) 6%;
+  --glow-amt: 1;
+  --glow: 0 0 2px var(--pip), 0 0 calc(10px * var(--glow-amt)) var(--pip-60);
+  /* bigger, softer phosphor halo for display type and the selected bar */
+  --bloom:
+    0 0 1px var(--pip-hi),
+    0 0 calc(5px * var(--glow-amt)) var(--pip-60),
+    0 0 calc(16px * var(--glow-amt)) var(--pip-30);
+  /* horizontal scan banding laid over large filled shapes (FO3 notice) */
+  --band: repeating-linear-gradient(to bottom, transparent 0 2px, hsl(var(--pip-hue) var(--pip-sat) 18% / .22) 2px 3px);
+  --font-ui: 'Share Tech Mono', monospace;
+  --font-display: 'VT323', monospace;
+  /* type scale: every font-size snaps to one of these */
+  --fs-2xs: 10px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 20px;
+  --fs-xl: 24px;
+  --fs-2xl: 28px;
+  /* opacity steps for dimmed text and icons */
+  --o-faint: .4;
+  --o-dim: .55;
+  --o-mid: .7;
+  --o-soft: .85;
+  /* letter-spacing steps (display type uses --track-display) */
+  --track-tight: .04em;
+  --track-mid: .08em;
+  --track-wide: .12em;
+  --track-display: .08em;
+  --rule: 2px;
+  --hair: 1px;
+  /* angled lead-in on progress bars (Shelter) */
+  --notch: 6px;
+  --touch: 44px;
+}

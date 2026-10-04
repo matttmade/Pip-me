@@ -1,0 +1,913 @@
+/* ---------- STAT > STATUS ----------
+   Laid out like the in-game STATUS screen: an EFFECTS tile column down the left, the figure
+   centred with short limb bars around it, one loadout row underneath (WEAPON + DMG, EMOTE,
+   then TEMP / RADS / CAPS / QUESTS tiles) and a one-line name plate. LEVEL / HP / AP are in
+   the bottom status bar. .status-panel is a size container; short stages (landscape phones,
+   ON ARM) move the loadout into a column on the right. */
+.status-panel {
+  position: relative;
+  height: 100%;
+  container: status / size;
+}
+.status-grid {
+  --tile: 44px;
+  --load-h: 54px;
+  height: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-areas: "stage" "id" "load";
+  row-gap: 8px;
+  padding-bottom: 4px;
+}
+
+.status-stage {
+  grid-area: stage;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  /* limb bars are placed against the figure's 3:4 box, so they hug him at any stage shape */
+  container-type: size;
+}
+
+.status-figure {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.status-figure { container-type: size; }
+.dweller-scene {
+  position: relative;
+  /* 3:4 box that fits the stage on BOTH axes (tall phones are width-limited) */
+  width: min(100cqw, 75cqh);
+  height: min(100cqh, 133.333cqw);
+  display: grid;
+  place-items: center;
+  touch-action: pan-y;
+}
+.dweller-canvas {
+  /* out of flow, so the backing-store size never feeds back into the box size */
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  /* soft phosphor bloom; the shader already did the colour */
+  filter: drop-shadow(0 0 calc(4px * var(--glow-amt)) var(--pip-30));
+}
+/* CLEAN / HI-FI: full-resolution canvas with its own bloom, so scale smoothly and keep the
+   CSS halo light (it would double up on the in-shader glow). */
+.dweller-canvas--smooth {
+  image-rendering: auto;
+  filter: drop-shadow(0 0 calc(3px * var(--glow-amt)) var(--pip-15));
+}
+.status-loading { align-self: center; }
+/* Vault Boy hologram: tap for a gesture. Its own bloom, so only a faint CSS halo. */
+.vaultboy-scene { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.vaultboy-scene:focus-visible { outline: 1px dashed var(--pip-60); outline-offset: -4px; }
+.vaultboy-canvas { filter: none; }
+
+/* DETAIL: [RETRO] [CLEAN] [HI-FI] segmented selector */
+.dweller-detail {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.dweller-detail__label {
+  margin-right: 8px;
+  font-size: var(--fs-sm);
+  letter-spacing: var(--track-wide);
+  opacity: var(--o-mid);
+}
+.dweller-detail__opt {
+  min-width: var(--touch);
+  padding: 4px 10px;
+  font-size: var(--fs-sm);
+  letter-spacing: var(--track-mid);
+}
+.dweller-detail__opt + .dweller-detail__opt { border-left: 0; }
+.dweller-detail__opt:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+
+/* short limb condition bars around the figure (labels are for screen readers) */
+.limb {
+  /* the figure box (see .dweller-scene): 3:4, centred, fitting the stage on both axes */
+  --fw: min(100cqw, 75cqh);
+  --fh: min(100cqh, 133.333cqw);
+  --top0: calc(50cqh - var(--fh) / 2);
+  position: absolute;
+  width: clamp(34px, calc(var(--fw) * .14), 64px);
+  pointer-events: none;
+}
+/* shape + fill come from the shared angled-bar rule in global.css */
+.limb__bar {
+  --notch: 4px;
+  display: block;
+  width: 100%;
+  height: 6px;
+}
+.limb { display: grid; justify-items: center; gap: 3px; }
+.limb__label {
+  font-size: var(--fs-2xs);
+  line-height: 1;
+  letter-spacing: var(--track-wide);
+  white-space: nowrap;
+  opacity: var(--o-soft);
+}
+.limb__label b { font-weight: normal; color: var(--pip-hi); opacity: 1; }
+.limb--head  { top: calc(var(--top0) + var(--fh) * .05); left: 50%; transform: translateX(-50%); }
+.limb--l-arm { top: calc(var(--top0) + var(--fh) * .33); left: calc(50cqw - var(--fw) * .4); }
+.limb--r-arm { top: calc(var(--top0) + var(--fh) * .37); right: calc(50cqw - var(--fw) * .4); }
+.limb--l-leg { top: calc(var(--top0) + var(--fh) * .6); left: calc(50cqw - var(--fw) * .36); }
+.limb--r-leg { top: calc(var(--top0) + var(--fh) * .64); right: calc(50cqw - var(--fw) * .36); }
+.limb--torso { top: calc(var(--top0) + var(--fh) * .93); left: 50%; transform: translateX(-50%); }
+
+/* NAME | VAULT */
+.status-id {
+  grid-area: id;
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-size: clamp(18px, 4.6vw, 26px);
+  line-height: 1;
+  letter-spacing: var(--track-display);
+  text-shadow: var(--bloom);
+  white-space: nowrap;
+}
+.status-id__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.status-id__sep { flex: none; width: var(--rule); height: .9em; background: currentColor; opacity: var(--o-mid); }
+.status-id__vault { flex: none; opacity: var(--o-soft); }
+
+/* ---------- fly-out triggers + menus (EMOTES, WEAPON) ----------
+   A round phosphor trigger in a bottom corner of the stage; its menu stacks up out of it,
+   item 0 nearest the thumb. Short stages lay long menus out in two columns. */
+.flyout {
+  --fly-ring: 46px;
+  --fly-row: var(--touch);
+  position: absolute;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+}
+.flyout--left { left: 0; align-items: flex-start; }
+.flyout--right { right: 0; align-items: flex-end; }
+@media (pointer: coarse) {
+  .flyout { --fly-row: 48px; }
+}
+.flyout__trigger {
+  position: relative;
+  min-width: 52px;
+  min-height: 52px;
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 1px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.flyout__ring {
+  position: relative;
+  width: var(--fly-ring);
+  height: var(--fly-ring);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--pip-60);
+  border-radius: 50%;
+  /* frosted: it floats over the figure */
+  background: radial-gradient(circle, var(--pip-15), transparent 70%), var(--frost-bg);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(6px * var(--glow-amt)) var(--pip-30), inset 0 0 calc(6px * var(--glow-amt)) var(--pip-15);
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+}
+/* a second, fainter ring so it reads as a dial rather than a bubble */
+.flyout__ring::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px dashed var(--pip-30);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.flyout__ring .st-glyph,
+.flyout__ring .weapon__glyph { position: relative; width: 24px; height: 24px; }
+.flyout__caption {
+  font-size: var(--fs-2xs);
+  line-height: 12px;
+  letter-spacing: var(--track-wide);
+  white-space: nowrap;
+  opacity: var(--o-soft);
+}
+.flyout__trigger:hover .flyout__ring,
+.flyout__trigger:focus-visible .flyout__ring,
+.flyout.is-open .flyout__ring { border-color: var(--pip); box-shadow: 0 0 calc(10px * var(--glow-amt)) var(--pip-60), inset 0 0 calc(6px * var(--glow-amt)) var(--pip-30); }
+.flyout__trigger:focus-visible { outline: none; }
+.flyout__trigger:focus-visible .flyout__ring { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+.flyout__trigger:active .flyout__ring { transform: scale(.94); }
+.flyout.is-open .flyout__caption { opacity: 1; }
+.flyout.is-open .flyout__ring,
+.flyout.is-lit .flyout__ring { background: var(--pip); border-color: var(--pip-hi); }
+.flyout.is-open .flyout__ring > *,
+.flyout.is-lit .flyout__ring > * { color: var(--screen-bg); }
+.flyout.is-open .flyout__ring svg,
+.flyout.is-lit .flyout__ring svg { filter: none; }
+.flyout.is-open .flyout__ring::before,
+.flyout.is-lit .flyout__ring::before { border-color: var(--screen-bg); opacity: var(--o-faint); }
+
+.flyout__menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  width: max-content;
+  min-width: 186px;
+  max-width: calc(100cqw - 8px);
+  padding: 4px;
+  border: 1px solid var(--pip-60);
+  border-top: 2px solid var(--pip);
+  /* the strong frost: rows of text over a moving figure must stay readable */
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(10px * var(--glow-amt)) var(--pip-30);
+  animation: flyout-in .16s cubic-bezier(.2, .9, .3, 1.15) both;
+}
+.flyout--left .flyout__menu { left: 0; transform-origin: 26px 100%; }
+.flyout--right .flyout__menu { right: 0; transform-origin: calc(100% - 26px) 100%; }
+.flyout__item {
+  position: relative;
+  min-height: var(--fly-row);
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  background: none;
+  font-size: var(--fs-md);
+  letter-spacing: var(--track-mid);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: flyout-item .18s ease-out both;
+  animation-delay: calc(var(--i, 0) * 22ms);
+  -webkit-tap-highlight-color: transparent;
+}
+.flyout__icon { display: grid; place-items: center; }
+.flyout__icon svg { width: 24px; height: 24px; }
+.flyout__label { overflow: hidden; text-overflow: ellipsis; }
+.flyout__meta { font-size: var(--fs-xs); letter-spacing: var(--track-mid); opacity: var(--o-mid); }
+/* FO4 rows: the selected row inverts */
+.flyout__item:hover,
+.flyout__item:focus-visible { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; outline: none; }
+.flyout__item:hover svg,
+.flyout__item:focus-visible svg { filter: none; }
+.flyout__item:hover .weapon__drop path,
+.flyout__item:focus-visible .weapon__drop path { fill: var(--screen-bg); }
+.flyout__item:hover .flyout__meta,
+.flyout__item:focus-visible .flyout__meta { opacity: 1; }
+/* the equipped weapon: a filled pip at the left edge, like FO4's inventory */
+.flyout__item.is-checked::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 50%;
+  width: 4px;
+  height: 60%;
+  background: var(--pip-hi);
+  box-shadow: 0 0 calc(4px * var(--glow-amt)) var(--pip-60);
+  transform: translateY(-50%);
+}
+.flyout__item.is-checked .flyout__label { color: var(--pip-hi); }
+.flyout__item.is-checked:hover .flyout__label,
+.flyout__item.is-checked:focus-visible .flyout__label { color: inherit; }
+.flyout__ammo { display: inline-flex; align-items: center; gap: 3px; }
+.flyout__ammo b { font-weight: normal; }
+/* MINI NUKE: hazard-striped row */
+.weapon-item--nuke {
+  margin-bottom: 4px;
+  border: 1px solid var(--pip-60);
+  background: repeating-linear-gradient(-45deg, var(--pip-15) 0 6px, transparent 6px 12px);
+}
+.weapon-item--nuke .flyout__meta { color: var(--pip-hi); opacity: 1; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .flyout__menu, .flyout__ring, .status-effects[data-open] .status-effects__list, .weapon__banner, .weapon__note { background-color: var(--frost-bg-strong); }
+}
+
+@keyframes flyout-in { from { opacity: 0; transform: scale(.7) translateY(8px); } }
+@keyframes flyout-item { from { opacity: 0; transform: translateY(6px); } }
+
+/* WEAPON trigger: hazard ring for the nuke, strobe while asking */
+.weapon__icon { display: grid; place-items: center; color: inherit; animation: weapon-pop .32s cubic-bezier(.3, 1.6, .5, 1); }
+.flyout.weapon--nuke .flyout__ring {
+  border-color: var(--pip);
+  background:
+    radial-gradient(circle, var(--frost-bg-strong) 56%, transparent 57%),
+    repeating-conic-gradient(var(--pip-60) 0 15deg, transparent 15deg 30deg);
+}
+.flyout.weapon--nuke .flyout__ring::before { display: none; }
+.flyout.is-armed .flyout__ring { animation: weapon-armed .5s steps(2, jump-none) infinite; }
+.flyout.is-armed .flyout__caption { color: var(--pip-hi); opacity: 1; animation: weapon-blink .5s steps(2, jump-none) infinite; }
+.flyout.is-launched { pointer-events: none; }
+.weapon__notes {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  pointer-events: none;
+}
+.weapon__banner,
+.weapon__note {
+  display: block;
+  padding: 2px 8px;
+  border: 1px solid var(--pip-60);
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge);
+  color: var(--pip-hi);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--track-wide);
+  white-space: nowrap;
+}
+.weapon__note { animation: weapon-note .9s ease-out both; }
+.weapon__banner { border-color: var(--pip-hi); animation: weapon-warn .5s steps(2, jump-none) infinite; }
+
+.st-glyph,
+.readout__icon {
+  display: block;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60));
+}
+.st-glyph__fill { fill: currentColor; stroke: none; }
+
+/* weapon pictograms (trigger + menu) */
+.weapon__glyph {
+  display: block;
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60));
+}
+.weapon__drop { width: 12px; height: 15px; flex: none; filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60)); }
+.weapon__drop path { fill: var(--pip-hi); }
+.weapon__reload { animation: weapon-blink .4s steps(2, jump-none) infinite; }
+
+@keyframes weapon-pop { from { transform: scale(.4) rotate(-20deg); opacity: 0; } }
+@keyframes weapon-blink { 50% { opacity: .25; } }
+@keyframes weapon-warn { 50% { opacity: var(--o-dim); } }
+@keyframes weapon-note {
+  0% { opacity: 0; transform: translateY(6px); }
+  15%, 75% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes weapon-armed {
+  0% { background: var(--pip); color: var(--screen-bg); box-shadow: 0 0 calc(14px * var(--glow-amt)) var(--pip-60); }
+  100% { background: var(--frost-bg-strong); color: var(--pip); }
+}
+.flyout.is-armed .weapon__glyph { filter: none; }
+
+/* weapon hits drawn over the CRT glass (portalled into .crt) */
+.weapon-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 21;
+  pointer-events: none;
+}
+
+/* ---------- NUKE detonation (portalled into body, covers the viewport) ---------- */
+.nuke {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: wait;
+  color: var(--pip);
+  font-family: var(--font-display);
+}
+.nuke__screen {
+  position: absolute;
+  overflow: hidden;
+  container-type: size;
+}
+.nuke__dim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 97%, var(--pip-deep), var(--screen-bg) 70%);
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+.nuke[data-phase="cloud"] .nuke__dim { opacity: var(--o-dim); }
+.nuke[data-phase="melt"] .nuke__dim { opacity: var(--o-faint); }
+/* LOST: clear the way so the tube switch-off shows, then go dark */
+.nuke[data-phase="lost"] .nuke__dim,
+.nuke[data-phase="reboot"] .nuke__dim { background: var(--screen-bg); opacity: 1; transition: opacity .25s ease .3s; }
+.nuke__noise {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  mix-blend-mode: screen;
+  opacity: .22;
+  transition: opacity .3s ease;
+}
+.nuke[data-phase="cloud"] .nuke__noise { opacity: .1; }
+.nuke[data-phase="melt"] .nuke__noise { opacity: var(--o-faint); }
+.nuke[data-phase="lost"] .nuke__noise,
+.nuke[data-phase="reboot"] .nuke__noise { opacity: .14; transition: opacity .2s ease .35s; }
+
+/* the white-out: phosphor pushed past white, then a second smaller pulse */
+.nuke__flash {
+  position: absolute;
+  inset: 0;
+  background: var(--pip-hi);
+  filter: saturate(.15) brightness(1.6);
+  opacity: 0;
+  animation: nuke-flash .9s ease-out both;
+}
+@keyframes nuke-flash {
+  0% { opacity: 1; }
+  12% { opacity: 1; }
+  30% { opacity: .2; }
+  38% { opacity: var(--o-mid); }
+  100% { opacity: 0; }
+}
+
+/* the shockwave: a flat ring racing out from ground zero */
+.nuke__ring {
+  position: absolute;
+  left: 50%;
+  top: 97%;
+  width: calc(var(--nh) * .5);
+  height: calc(var(--nh) * .12);
+  margin: calc(var(--nh) * -.06) 0 0 calc(var(--nh) * -.25);
+  border: 3px solid var(--pip-hi);
+  border-radius: 50%;
+  box-shadow: 0 0 calc(18px * var(--glow-amt)) var(--pip), inset 0 0 calc(12px * var(--glow-amt)) var(--pip-60);
+  opacity: 0;
+  animation: nuke-ring 1.1s cubic-bezier(.15, .7, .3, 1) .12s both;
+}
+@keyframes nuke-ring {
+  0% { opacity: 1; transform: scale(.1); }
+  100% { opacity: 0; transform: scale(9, 6); }
+}
+
+/* the mushroom cloud: grows off the bottom of the screen */
+.nuke__cloud {
+  position: absolute;
+  left: calc(50% - var(--nh) * .4167);
+  top: calc(97% - var(--nh));
+  width: calc(var(--nh) * .8333);
+  height: var(--nh);
+  overflow: visible;
+  filter: drop-shadow(0 0 calc(6px * var(--glow-amt)) var(--pip)) drop-shadow(0 0 calc(22px * var(--glow-amt)) var(--pip-60));
+  opacity: 0;
+}
+.nuke:not([data-phase="flash"]) .nuke__cloud { opacity: 1; }
+.nuke__cloud * { transform-box: fill-box; }
+.nuke__band { fill: var(--pip-deep); }
+.nuke__body,
+.nuke__puff { fill: var(--pip-30); stroke: var(--pip-hi); stroke-width: 1.6; }
+.nuke__puff { fill: url(#nuke-band) var(--pip-30); }
+.nuke__swirl,
+.nuke__collar { fill: none; stroke: var(--pip-hi); stroke-width: 1.2; stroke-linecap: round; }
+.nuke__core { fill: var(--pip-hi); opacity: var(--o-dim); filter: blur(6px); }
+.nuke__stem { transform-origin: 50% 100%; transform: scaleY(0); }
+.nuke__cap { transform-origin: 50% 100%; transform: translateY(140px) scale(.2); }
+.nuke__base { transform-origin: 50% 100%; transform: scale(0, 0); }
+.nuke__collar { transform-origin: 50% 50%; opacity: 0; }
+.nuke:not([data-phase="flash"]) .nuke__stem { animation: nuke-stem 1.5s cubic-bezier(.2, .8, .3, 1) forwards; }
+.nuke:not([data-phase="flash"]) .nuke__cap { animation: nuke-cap 1.5s cubic-bezier(.2, .8, .3, 1) forwards, nuke-swell 3s ease-out 1.5s forwards; }
+.nuke:not([data-phase="flash"]) .nuke__base { animation: nuke-base 1.2s cubic-bezier(.2, .8, .3, 1) forwards; }
+.nuke:not([data-phase="flash"]) .nuke__collar { animation: nuke-collar 1.4s ease-out .5s forwards; }
+.nuke:not([data-phase="flash"]) .nuke__cap .nuke__puff { animation: nuke-billow .7s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+.nuke:not([data-phase="flash"]) .nuke__core { animation: nuke-core 1.8s ease-out forwards; }
+@keyframes nuke-stem { to { transform: scaleY(1); } }
+@keyframes nuke-cap { to { transform: translateY(0) scale(1); } }
+@keyframes nuke-swell { from { transform: none; } to { transform: translateY(-6px) scale(1.08); } }
+@keyframes nuke-base { to { transform: scale(1, 1); } }
+@keyframes nuke-collar {
+  0% { opacity: 0; transform: scale(.4, .6); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.8, 1.4) translateY(-14px); }
+}
+@keyframes nuke-billow { to { transform: scale(1.09); } }
+@keyframes nuke-core { 0% { opacity: 1; } 100% { opacity: .25; } }
+/* MELT: the cloud smears and slides with the UI */
+.nuke[data-phase="melt"] .nuke__cloud { animation: nuke-melt .8s cubic-bezier(.5, 0, .9, .6) forwards; }
+@keyframes nuke-melt {
+  to { transform: skewX(8deg) scale(1.1, 1.4) translateY(14%); filter: blur(6px) drop-shadow(0 0 20px var(--pip)); opacity: var(--o-dim); }
+}
+.nuke[data-phase="lost"] .nuke__cloud,
+.nuke[data-phase="reboot"] .nuke__cloud,
+.nuke[data-phase="lost"] .nuke__ring { opacity: 0; transition: opacity .15s; }
+
+.nuke__lost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  transform: translate(-50%, -50%);
+  text-shadow: var(--bloom);
+  white-space: nowrap;
+  opacity: 0;
+}
+.nuke[data-phase="lost"] .nuke__lost,
+.nuke[data-phase="reboot"] .nuke__lost { animation: nuke-lost .36s steps(4, jump-end) .4s forwards; }
+.nuke--reduced[data-phase="lost"] .nuke__lost { animation: none; opacity: 1; transition: opacity .5s ease .4s; }
+.nuke__lost-title { font-size: clamp(28px, 11cqw, 72px); letter-spacing: var(--track-wide); }
+.nuke__lost-sub { font-size: clamp(13px, 3.8cqw, 26px); letter-spacing: .24em; }
+@keyframes nuke-lost {
+  0% { opacity: 0; }
+  50% { opacity: 1; transform: translate(-50%, -50%) skewX(-12deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flyout__ring { transition: none; }
+  .flyout__menu, .flyout__item, .weapon__icon, .weapon__reload, .weapon__note, .weapon__banner,
+  .flyout.is-armed .flyout__ring, .flyout.is-armed .flyout__caption { animation: none !important; }
+  .flyout.is-armed .flyout__ring { background: var(--pip); color: var(--screen-bg); }
+}
+
+/* ---------- loadout row: WEAPON + DMG, EMOTE, then TEMP / RADS / CAPS / QUESTS ---------- */
+.status-loadout {
+  grid-area: load;
+  /* the fly-out menus and weapon notes open from the row */
+  position: relative;
+  height: var(--load-h);
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 4.3fr);
+  grid-template-areas: "weapon dmg strip";
+  gap: 4px;
+}
+.status-loadout > .flyout--weapon { grid-area: weapon; }
+.status-loadout > .loadout-dmg { grid-area: dmg; }
+
+/* EMOTE: a tile in the stage's top-right corner, across from the EFFECTS column */
+.status-grid > .flyout--emotes {
+  grid-area: stage;
+  justify-self: end;
+  align-self: start;
+  position: relative;
+  z-index: 3;
+  bottom: auto;
+  display: block;
+  width: max(var(--tile), 40px);
+}
+.status-grid > .flyout--emotes .flyout__trigger { height: max(var(--tile), var(--touch)); }
+.status-grid > .flyout--emotes .flyout__caption { display: none; }
+.status-grid > .flyout--emotes .flyout__menu {
+  top: calc(100% + 6px);
+  bottom: auto;
+  right: 0;
+  left: auto;
+  flex-direction: column;
+  transform-origin: calc(100% - 20px) 0;
+}
+.status-grid > .flyout--emotes .flyout__item { order: 0; }
+.status-strip {
+  grid-area: strip;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+/* one tile shape for everything in the row */
+.status-panel .flyout__trigger,
+.loadout-dmg,
+.readout {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  min-height: var(--touch);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  padding: 3px 2px;
+  border: 0;
+  background: var(--band), var(--pip-15);
+  box-shadow: inset 0 0 0 1px var(--pip-30);
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+/* WEAPON + EMOTE are the solid (inverted) tiles */
+.status-panel .flyout__trigger { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; }
+.status-panel .flyout__trigger svg { filter: none; }
+.status-panel .flyout__trigger:hover { background: var(--band), var(--pip-hi); }
+.status-panel .flyout__trigger:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+.status-panel .flyout__trigger:active { transform: scale(.96); }
+
+.status-loadout .flyout { position: static; display: block; min-width: 0; }
+.status-panel .flyout__ring,
+.status-panel .flyout.is-open .flyout__ring,
+.status-panel .flyout.is-lit .flyout__ring,
+.status-panel .flyout.weapon--nuke .flyout__ring {
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  animation: none;
+  transform: none;
+}
+.status-panel .flyout__ring::before { display: none; }
+.status-panel .flyout .flyout__ring > * { color: inherit; }
+.status-panel .flyout__ring .st-glyph,
+.status-panel .flyout__ring .weapon__glyph { width: 24px; height: 24px; }
+.status-panel .flyout--weapon .flyout__ring .weapon__glyph { width: 28px; height: 28px; }
+.status-panel .flyout__caption { font-size: var(--fs-2xs); line-height: 10px; letter-spacing: var(--track-wide); opacity: 1; }
+/* open / just fired: the tile flips to an outline */
+.status-panel .flyout.is-open .flyout__trigger,
+.status-panel .flyout.is-lit .flyout__trigger { background: var(--frost-bg-strong); color: var(--pip-hi); box-shadow: inset 0 0 0 2px var(--pip); }
+/* MINI NUKE: hazard stripes; strobes while it waits for the second tap */
+.status-panel .flyout.weapon--nuke .flyout__trigger {
+  background: repeating-linear-gradient(-45deg, var(--pip) 0 6px, var(--pip-60) 6px 12px);
+}
+.status-panel .flyout.is-armed .flyout__trigger { animation: weapon-armed .5s steps(2, jump-none) infinite; }
+.status-panel .flyout.is-armed .flyout__caption { color: inherit; }
+/* menus open up from the row's left edge */
+.status-loadout .flyout__menu { left: 0; right: auto; bottom: calc(100% + 6px); transform-origin: 30px 100%; }
+
+.loadout-dmg b,
+.readout__value {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-weight: normal;
+  font-size: var(--fs-lg);
+  line-height: 1;
+  letter-spacing: var(--track-tight);
+  text-shadow: var(--bloom);
+  white-space: nowrap;
+}
+.loadout-dmg .st-glyph { width: 18px; height: 18px; }
+.loadout-dmg.is-reloading b { animation: weapon-blink .4s steps(2, jump-none) infinite; }
+
+.readout { cursor: pointer; color: inherit; }
+.readout:hover,
+.readout:focus-visible { background: var(--band), var(--pip-30); box-shadow: inset 0 0 0 1px var(--pip-60); }
+.readout:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
+.readout__icon { width: 18px; height: 18px; }
+/* labels are in aria-label/title; wide stages show them */
+.readout__meta { display: none; font-size: var(--fs-2xs); letter-spacing: var(--track-wide); line-height: 1.1; opacity: var(--o-mid); }
+.readout__sub { display: none; }
+.readout.is-dim .readout__value,
+.readout.is-dim .readout__icon { opacity: var(--o-faint); }
+
+/* ---------- EFFECTS: tile column over the stage's left edge, details in a frosted list ---------- */
+.status-effects {
+  grid-area: stage;
+  justify-self: start;
+  align-self: start;
+  position: relative;
+  z-index: 3;
+  font-size: var(--fs-sm);
+}
+.status-effects__tiles {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.status-effects__tiles:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+.fx-tile {
+  width: var(--tile);
+  height: var(--tile);
+  display: grid;
+  place-items: center;
+  /* buffs: solid tiles, like the loadout's WEAPON */
+  background: var(--band), var(--pip);
+  color: var(--screen-bg);
+  text-shadow: none;
+}
+.fx-tile .st-glyph { width: 60%; height: 60%; filter: none; }
+.fx-tile .st-glyph__fill { fill: currentColor; }
+/* debuffs: outlined with hazard hatching, so they read differently at a glance */
+.fx-tile--debuff {
+  background: repeating-linear-gradient(-45deg, var(--pip-15) 0 4px, transparent 4px 8px);
+  color: var(--pip-hi);
+  box-shadow: inset 0 0 0 1px var(--pip-60);
+}
+.fx-tile--debuff .st-glyph { filter: drop-shadow(0 0 calc(2px * var(--glow-amt)) var(--pip-60)); }
+.fx-tile--more,
+.fx-tile--none {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  background: var(--pip-15);
+  color: var(--pip-hi);
+  box-shadow: inset 0 0 0 1px var(--pip-30);
+}
+.fx-tile--none { opacity: var(--o-dim); }
+.status-effects__tiles:hover .fx-tile,
+.status-effects[data-open] .fx-tile { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
+
+.status-effects__list { display: none; margin: 0; padding: 8px 10px; list-style: none; }
+.status-effects[data-open] .status-effects__list {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 0;
+  z-index: 6;
+  display: grid;
+  gap: 8px;
+  width: min(260px, calc(100cqw - var(--tile) - 16px));
+  border: 1px solid var(--pip-60);
+  border-top: 2px solid var(--pip);
+  background: var(--frost-bg-strong);
+  -webkit-backdrop-filter: var(--frost-blur);
+  backdrop-filter: var(--frost-blur);
+  box-shadow: var(--frost-edge), 0 0 calc(8px * var(--glow-amt)) var(--pip-30);
+}
+.fx {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
+  line-height: 1.25;
+}
+.fx .st-glyph { width: 18px; height: 18px; }
+.fx__name { letter-spacing: var(--track-mid); }
+.fx__mod { text-align: right; white-space: nowrap; }
+.fx__note {
+  grid-column: 2 / -1;
+  font-size: var(--fs-xs);
+  letter-spacing: var(--track-tight);
+  text-transform: none;
+  opacity: var(--o-dim);
+}
+.fx--buff .fx__mod { color: var(--pip-hi); }
+.fx--debuff { opacity: var(--o-soft); }
+.fx--none { display: block; opacity: var(--o-dim); letter-spacing: var(--track-wide); }
+
+/* narrow phones: tighter tiles */
+@container status (max-width: 380px) {
+  .status-grid { --tile: 40px; --load-h: 50px; }
+  .status-loadout, .status-strip { gap: 3px; }
+  .loadout-dmg b, .readout__value { font-size: var(--fs-md); }
+  .readout__icon, .loadout-dmg .st-glyph { width: 15px; height: 15px; }
+  .status-panel .flyout__caption { font-size: 8px; letter-spacing: var(--track-mid); }
+}
+
+/* short stages (small phones, ON ARM, landscape): smaller tiles */
+@container status (max-height: 560px) {
+  .status-grid { --tile: 36px; }
+}
+
+/* very short stages (landscape, ON ARM): the emote menu goes two columns so it fits */
+@container status (max-height: 420px) {
+  .flyout--emotes .flyout__menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    width: min(390px, calc(100cqw - 8px));
+    min-width: 0;
+  }
+  .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: var(--fs-sm); }
+  .flyout--emotes .flyout__meta { display: none; }
+}
+
+/* short + wide: the ON ARM screen (~570x290) and landscape phones (~800x200-330).
+   Figure | loadout column (WEAPON DMG EMOTE over the four readouts); name plate under both. */
+@container status (min-width: 500px) and (max-height: 480px) {
+  .status-grid {
+    --tile: 32px;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 36%);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "stage id" "stage load";
+    column-gap: 10px;
+    row-gap: 4px;
+  }
+  .status-loadout {
+    height: auto;
+    align-self: end;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-areas: "weapon weapon dmg dmg" "strip strip strip strip";
+    grid-auto-rows: 48px;
+  }
+  .status-effects__tiles { gap: 3px; }
+  .status-effects[data-open] .status-effects__list { width: min(250px, 55cqw); }
+  /* the figure is small here: give the labelled bars room beside him */
+  .limb--l-arm { left: calc(50cqw - var(--fw) * .72); }
+  .limb--r-arm { right: calc(50cqw - var(--fw) * .72); }
+  .limb--l-leg { left: calc(50cqw - var(--fw) * .66); }
+  .limb--r-leg { right: calc(50cqw - var(--fw) * .66); }
+  .status-id { font-size: var(--fs-md); gap: 8px; align-self: end; max-width: 100%; }
+  .flyout { --fly-row: 36px; }
+  .flyout__item { font-size: var(--fs-sm); }
+}
+@media (pointer: coarse) {
+  @container status (min-width: 500px) and (max-height: 480px) {
+    .flyout { --fly-row: 44px; }
+  }
+}
+
+/* wide + tall (desktop screen): bigger tiles, readout labels shown */
+@container status (min-width: 820px) and (min-height: 481px) {
+  .status-grid { --tile: 52px; --load-h: 66px; }
+  .readout__meta { display: block; }
+  .loadout-dmg b, .readout__value { font-size: var(--fs-xl); }
+  .status-panel .flyout__ring .st-glyph { width: 28px; height: 28px; }
+  .status-panel .flyout--weapon .flyout__ring .weapon__glyph { width: 34px; height: 34px; }
+  .status-panel .flyout__caption { font-size: var(--fs-xs); line-height: 12px; }
+  .status-effects[data-open] .status-effects__list { width: 300px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readout, .status-panel .flyout__trigger { transition: none; }
+}
+
+/* ---------- SPECIAL + PERKS ---------- */
+.special-detail, .perk-detail { display: grid; gap: 10px; align-content: start; }
+.special-detail h2, .perk-detail h2 {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-weight: normal;
+  font-size: var(--fs-2xl);
+  letter-spacing: var(--track-display);
+  text-shadow: var(--bloom);
+  border-bottom: 1px solid var(--pip-60);
+  padding-bottom: 4px;
+}
+.special-detail p, .perk-detail p { margin: 0; text-transform: none; line-height: 1.4; }
+.special-detail__total { font-size: var(--fs-xs); opacity: var(--o-mid); text-transform: uppercase !important; }
+.seg-bar {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  height: 18px;
+  padding: 3px;
+  border-left: 2px solid var(--pip);
+  border-right: 2px solid var(--pip);
+}
+.seg-bar > span { background: var(--pip-15); }
+.seg-bar > span.is-on { background: var(--band), var(--pip); box-shadow: 0 0 4px var(--pip-60); }
+
+/* ---------- PERKS ---------- */
+.perk-mark { display: inline-block; width: 1em; }
+.perk-detail__state { font-size: var(--fs-sm); letter-spacing: var(--track-wide); text-transform: uppercase !important; }
+.perk-badge { width: 96px; height: 96px; justify-self: center; filter: drop-shadow(0 0 4px var(--pip-60)); }
+.perk-badge rect { fill: var(--pip); }
+.perk-badge__ring { fill: var(--pip); }
+.perk-badge__inner { fill: var(--screen-bg); stroke: var(--pip); stroke-width: 2; }
+.perk-badge text { fill: var(--pip); font: 28px var(--font-display); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-limb, .pd-body { animation: none; }
+}
+
+/* 3D figure couldn't start after several tries */
+.figure-offline {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  align-self: center;
+  justify-self: center;
+  min-height: var(--touch);
+  padding: 18px 24px;
+  background: none;
+  border: 1px dashed var(--pip-60);
+  cursor: pointer;
+  text-align: center;
+}
+.figure-offline__title { font-family: var(--font-display); font-size: var(--fs-2xl); letter-spacing: var(--track-display); text-shadow: var(--bloom); }
+.figure-offline small { max-width: 32ch; font-size: var(--fs-2xs); opacity: var(--o-dim); }
