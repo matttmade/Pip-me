@@ -1,4 +1,4 @@
-import { hslToRgb, pipRgb } from '../../effects/color'
+import { hslToRgb, PIP_SAT, pipRgb } from '../../effects/color'
 import { iconImageId } from './icons'
 import { poiIconExpression } from './poi'
 
@@ -115,15 +115,15 @@ const rgb = ([r, g, b]: [number, number, number], a = 1) => (a >= 1 ? `rgb(${r},
 export function pipPalette(hue: number) {
   const pip = pipRgb(hue)
   return {
-    bg: rgb(hslToRgb(hue, 0.6, 0.04)),
-    bgSolid: hslToRgb(hue, 0.6, 0.04),
+    bg: rgb(hslToRgb(hue, PIP_SAT, 0.04)),
+    bgSolid: hslToRgb(hue, PIP_SAT, 0.04),
     /** Land: a touch lighter than the screen so water reads darker (reference). */
-    land: rgb(hslToRgb(hue, 0.55, 0.075)),
+    land: rgb(hslToRgb(hue, PIP_SAT, 0.075)),
     pipRgb: pip,
     pip: rgb(pip),
     hi: rgb(pipRgb(hue, 0.75)),
     a: (alpha: number) => rgb(pip, alpha),
-    shadow: rgb(hslToRgb(hue, 0.6, 0.05), 0.9),
+    shadow: rgb(hslToRgb(hue, PIP_SAT, 0.05), 0.9),
   }
 }
 

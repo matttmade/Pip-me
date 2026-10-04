@@ -18,8 +18,8 @@ import type { Gesture } from './vaultboy/behavior'
 const isTyping = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
 
 /**
- * EMOTES fly-out: a round trigger in the stage's bottom-right corner that fans the six
- * gestures up out of it. Number keys 1-6 still fire them directly while STATUS is open
+ * EMOTES fly-out: a tile in the stage's top-right corner (across from EFFECTS) that drops
+ * the six gestures down out of it. Number keys 1-6 still fire them directly while STATUS is open
  * (not while typing, not under an overlay); the trigger blinks to show it.
  */
 export function EmoteFlyout({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {

@@ -3,6 +3,7 @@ import { emit } from '../lib/events'
 import { usePageVisible } from '../lib/hooks'
 import { useEffectsConfig } from './EffectsProvider'
 import { makeGlitch, nextDelay, onGlitchRequest, triggerGlitch, type Glitch } from './glitchScheduler'
+import { PIP_SAT } from './color'
 
 /**
  * Horizontal slice tearing via an SVG displacement filter whose map only varies along y,
@@ -37,7 +38,7 @@ export function GlitchLayer({
       disp.current?.setAttribute('scale', String(g.scale))
       const hue = cfgRef.current.hue
       const split = g.rgb
-        ? ` drop-shadow(${g.rgb}px 0 0 hsl(${hue + 60} 100% 60% / .55)) drop-shadow(${-g.rgb}px 0 0 hsl(${hue - 60} 100% 60% / .55))`
+        ? ` drop-shadow(${g.rgb}px 0 0 hsl(${hue + 60} ${PIP_SAT * 100}% 60% / .55)) drop-shadow(${-g.rgb}px 0 0 hsl(${hue - 60} ${PIP_SAT * 100}% 60% / .55))`
         : ''
       el.style.filter = `url(#pip-glitch)${split}`
       scr.style.transform = g.dy ? `translateY(${g.dy}px)` : ''

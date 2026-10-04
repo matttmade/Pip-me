@@ -4,6 +4,7 @@ import { triggerGlitch } from '../effects/glitchScheduler'
 import { HUES } from '../effects/presets'
 import type { PresetName } from '../effects/types'
 import { useSettings } from '../lib/profile'
+import { PIP_SAT } from '../effects/color'
 
 const COLORS: [string, number][] = [
   ['Green', HUES.GREEN],
@@ -72,7 +73,7 @@ export function Dock({ onScreen, onDegauss }: { onScreen: () => void; onDegauss:
               <button
                 key={name}
                 className={`dock__swatch${cfg.hue === hue ? ' is-on' : ''}`}
-                style={{ '--sw': `hsl(${hue} 60% 60%)` } as React.CSSProperties}
+                style={{ '--sw': `hsl(${hue} ${PIP_SAT * 100}% 60%)` } as React.CSSProperties}
                 onClick={() => update({ hue })}
                 aria-label={name}
                 title={name}
@@ -126,7 +127,7 @@ function DockItem({
     <div className="dock__item">
       <button className={`dock__btn${active ? ' is-on' : ''}`} onClick={onClick} aria-label={label} aria-expanded={children !== undefined ? active : undefined} data-tip={label}>
         {icon && <Icon d={icon} />}
-        {swatch !== undefined && <span className="dock__dot" style={{ background: `hsl(${swatch} 60% 60%)` }} />}
+        {swatch !== undefined && <span className="dock__dot" style={{ background: `hsl(${swatch} ${PIP_SAT * 100}% 60%)` }} />}
       </button>
       {children}
     </div>

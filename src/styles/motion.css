@@ -62,6 +62,7 @@
 
 /* STATUS: effect tiles and loadout tiles pop in, limb bars fill, the name plate types on */
 .pip-section .fx-tile,
+.pip-section .status-grid > .flyout--emotes,
 .pip-section .status-loadout > :not(.status-strip),
 .pip-section .status-strip > * { animation: tile-in var(--t-item) var(--ease-out) both; }
 @keyframes tile-in {
@@ -92,7 +93,7 @@
 @media (prefers-reduced-motion: reduce) {
   .pip-section,
   .pip-section::after,
-  .pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-loadout > :not(.status-strip), .status-strip > *, .limb__bar > span, .limb__label, .status-id) {
+  .pip-section :is(.pip-row, .stats-box, .map-card, .fx-tile, .status-grid > .flyout--emotes, .status-loadout > :not(.status-strip), .status-strip > *, .limb__bar > span, .limb__label, .status-id) {
     animation: none;
   }
 }

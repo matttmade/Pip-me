@@ -14,6 +14,7 @@ import {
   sameSnapshot,
   type SavedPreset,
 } from '../lib/systemPresets'
+import { PIP_SAT } from '../effects/color'
 
 const fmtDate = (t: number) => new Date(t).toLocaleDateString([], { month: 'short', day: '2-digit' }).toUpperCase()
 
@@ -86,7 +87,7 @@ export function SavedPresets() {
             const active = sameSnapshot(p.snapshot, current)
             return (
               <li key={p.id} className={`saved-preset${active ? ' is-active' : ''}`}>
-                <span className="saved-preset__swatch" style={{ background: `hsl(${p.snapshot.effects.hue} 60% 60%)` }} aria-hidden />
+                <span className="saved-preset__swatch" style={{ background: `hsl(${p.snapshot.effects.hue} ${PIP_SAT * 100}% 60%)` }} aria-hidden />
                 <span className="saved-preset__name">
                   {p.name}
                   <small>

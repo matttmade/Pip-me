@@ -32,7 +32,7 @@ const slug = (l: Limb) => l.toLowerCase().replace(/\s+/g, '-')
 /**
  * STAT > STATUS: an EFFECTS tile column on the left, the figure with short limb condition
  * bars (label + condition) around it, a one-line name plate, then the loadout row (WEAPON +
- * DMG, EMOTE, then TEMP / RADS / CAPS / QUESTS tiles). LEVEL, HP and AP live in the bottom status bar.
+ * DMG, then TEMP / RADS / CAPS / QUESTS tiles). EMOTE sits top-right, across from EFFECTS. LEVEL, HP and AP live in the bottom status bar.
  * Figure and detail options live in DATA > SYSTEM > FIGURE. The panel is a size container;
  * dweller.css picks the portrait / short / wide layout from it.
  */
@@ -91,6 +91,8 @@ export default function StatusPanel() {
     <div className="status-panel">
       <div className="status-grid">
         <EffectsList />
+        {/* top-right, across from EFFECTS; its menu drops down */}
+        {!failed && <EmoteFlyout {...menuProps('emotes')} />}
         <div className="status-stage">
           <div className="status-figure">
             {offline ? (
@@ -148,7 +150,6 @@ export default function StatusPanel() {
 
         <div className="status-loadout">
           <WeaponSlot {...menuProps('weapon')} />
-          {!failed && <EmoteFlyout {...menuProps('emotes')} />}
           <ReadoutStrip />
         </div>
       </div>

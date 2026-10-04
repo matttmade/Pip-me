@@ -566,13 +566,35 @@
   position: relative;
   height: var(--load-h);
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 4.3fr);
-  grid-template-areas: "weapon dmg emote strip";
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 4.3fr);
+  grid-template-areas: "weapon dmg strip";
   gap: 4px;
 }
 .status-loadout > .flyout--weapon { grid-area: weapon; }
 .status-loadout > .loadout-dmg { grid-area: dmg; }
-.status-loadout > .flyout--emotes { grid-area: emote; }
+
+/* EMOTE: a tile in the stage's top-right corner, across from the EFFECTS column */
+.status-grid > .flyout--emotes {
+  grid-area: stage;
+  justify-self: end;
+  align-self: start;
+  position: relative;
+  z-index: 3;
+  bottom: auto;
+  display: block;
+  width: max(var(--tile), 40px);
+}
+.status-grid > .flyout--emotes .flyout__trigger { height: max(var(--tile), var(--touch)); }
+.status-grid > .flyout--emotes .flyout__caption { display: none; }
+.status-grid > .flyout--emotes .flyout__menu {
+  top: calc(100% + 6px);
+  bottom: auto;
+  right: 0;
+  left: auto;
+  flex-direction: column;
+  transform-origin: calc(100% - 20px) 0;
+}
+.status-grid > .flyout--emotes .flyout__item { order: 0; }
 .status-strip {
   grid-area: strip;
   display: grid;
@@ -581,7 +603,7 @@
 }
 
 /* one tile shape for everything in the row */
-.status-loadout .flyout__trigger,
+.status-panel .flyout__trigger,
 .loadout-dmg,
 .readout {
   position: relative;
@@ -600,17 +622,17 @@
   transition: background-color .15s ease, box-shadow .15s ease;
 }
 /* WEAPON + EMOTE are the solid (inverted) tiles */
-.status-loadout .flyout__trigger { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; }
-.status-loadout .flyout__trigger svg { filter: none; }
-.status-loadout .flyout__trigger:hover { background: var(--band), var(--pip-hi); }
-.status-loadout .flyout__trigger:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
-.status-loadout .flyout__trigger:active { transform: scale(.96); }
+.status-panel .flyout__trigger { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; }
+.status-panel .flyout__trigger svg { filter: none; }
+.status-panel .flyout__trigger:hover { background: var(--band), var(--pip-hi); }
+.status-panel .flyout__trigger:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
+.status-panel .flyout__trigger:active { transform: scale(.96); }
 
 .status-loadout .flyout { position: static; display: block; min-width: 0; }
-.status-loadout .flyout__ring,
-.status-loadout .flyout.is-open .flyout__ring,
-.status-loadout .flyout.is-lit .flyout__ring,
-.status-loadout .flyout.weapon--nuke .flyout__ring {
+.status-panel .flyout__ring,
+.status-panel .flyout.is-open .flyout__ring,
+.status-panel .flyout.is-lit .flyout__ring,
+.status-panel .flyout.weapon--nuke .flyout__ring {
   width: auto;
   height: auto;
   border: 0;
@@ -622,21 +644,21 @@
   animation: none;
   transform: none;
 }
-.status-loadout .flyout__ring::before { display: none; }
-.status-loadout .flyout .flyout__ring > * { color: inherit; }
-.status-loadout .flyout__ring .st-glyph,
-.status-loadout .flyout__ring .weapon__glyph { width: 24px; height: 24px; }
-.status-loadout .flyout--weapon .flyout__ring .weapon__glyph { width: 28px; height: 28px; }
-.status-loadout .flyout__caption { font-size: var(--fs-2xs); line-height: 10px; letter-spacing: var(--track-wide); opacity: 1; }
+.status-panel .flyout__ring::before { display: none; }
+.status-panel .flyout .flyout__ring > * { color: inherit; }
+.status-panel .flyout__ring .st-glyph,
+.status-panel .flyout__ring .weapon__glyph { width: 24px; height: 24px; }
+.status-panel .flyout--weapon .flyout__ring .weapon__glyph { width: 28px; height: 28px; }
+.status-panel .flyout__caption { font-size: var(--fs-2xs); line-height: 10px; letter-spacing: var(--track-wide); opacity: 1; }
 /* open / just fired: the tile flips to an outline */
-.status-loadout .flyout.is-open .flyout__trigger,
-.status-loadout .flyout.is-lit .flyout__trigger { background: var(--frost-bg-strong); color: var(--pip-hi); box-shadow: inset 0 0 0 2px var(--pip); }
+.status-panel .flyout.is-open .flyout__trigger,
+.status-panel .flyout.is-lit .flyout__trigger { background: var(--frost-bg-strong); color: var(--pip-hi); box-shadow: inset 0 0 0 2px var(--pip); }
 /* MINI NUKE: hazard stripes; strobes while it waits for the second tap */
-.status-loadout .flyout.weapon--nuke .flyout__trigger {
+.status-panel .flyout.weapon--nuke .flyout__trigger {
   background: repeating-linear-gradient(-45deg, var(--pip) 0 6px, var(--pip-60) 6px 12px);
 }
-.status-loadout .flyout.is-armed .flyout__trigger { animation: weapon-armed .5s steps(2, jump-none) infinite; }
-.status-loadout .flyout.is-armed .flyout__caption { color: inherit; }
+.status-panel .flyout.is-armed .flyout__trigger { animation: weapon-armed .5s steps(2, jump-none) infinite; }
+.status-panel .flyout.is-armed .flyout__caption { color: inherit; }
 /* menus open up from the row's left edge */
 .status-loadout .flyout__menu { left: 0; right: auto; bottom: calc(100% + 6px); transform-origin: 30px 100%; }
 
@@ -760,12 +782,16 @@
   .status-loadout, .status-strip { gap: 3px; }
   .loadout-dmg b, .readout__value { font-size: var(--fs-md); }
   .readout__icon, .loadout-dmg .st-glyph { width: 15px; height: 15px; }
-  .status-loadout .flyout__caption { font-size: 8px; letter-spacing: var(--track-mid); }
+  .status-panel .flyout__caption { font-size: 8px; letter-spacing: var(--track-mid); }
 }
 
-/* short stages (small phones, ON ARM, landscape): long menus go two columns so they fit */
+/* short stages (small phones, ON ARM, landscape): smaller tiles */
 @container status (max-height: 560px) {
   .status-grid { --tile: 36px; }
+}
+
+/* very short stages (landscape, ON ARM): the emote menu goes two columns so it fits */
+@container status (max-height: 420px) {
   .flyout--emotes .flyout__menu {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -773,9 +799,7 @@
     width: min(390px, calc(100cqw - 8px));
     min-width: 0;
   }
-  .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: var(--fs-md); }
-  /* reversed, so WAVE sits bottom-left nearest the row like the stacked list */
-  .flyout--emotes .flyout__item { order: calc(20 - var(--i, 0)); }
+  .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: var(--fs-sm); }
   .flyout--emotes .flyout__meta { display: none; }
 }
 
@@ -795,7 +819,7 @@
     height: auto;
     align-self: end;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-areas: "weapon weapon dmg emote" "strip strip strip strip";
+    grid-template-areas: "weapon weapon dmg dmg" "strip strip strip strip";
     grid-auto-rows: 48px;
   }
   .status-effects__tiles { gap: 3px; }
@@ -820,14 +844,14 @@
   .status-grid { --tile: 52px; --load-h: 66px; }
   .readout__meta { display: block; }
   .loadout-dmg b, .readout__value { font-size: var(--fs-xl); }
-  .status-loadout .flyout__ring .st-glyph { width: 28px; height: 28px; }
-  .status-loadout .flyout--weapon .flyout__ring .weapon__glyph { width: 34px; height: 34px; }
-  .status-loadout .flyout__caption { font-size: var(--fs-xs); line-height: 12px; }
+  .status-panel .flyout__ring .st-glyph { width: 28px; height: 28px; }
+  .status-panel .flyout--weapon .flyout__ring .weapon__glyph { width: 34px; height: 34px; }
+  .status-panel .flyout__caption { font-size: var(--fs-xs); line-height: 12px; }
   .status-effects[data-open] .status-effects__list { width: 300px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .readout, .status-loadout .flyout__trigger { transition: none; }
+  .readout, .status-panel .flyout__trigger { transition: none; }
 }
 
 /* ---------- SPECIAL + PERKS ---------- */

@@ -42,7 +42,7 @@ button, input, select, textarea {
     max(8px, env(safe-area-inset-right))
     max(8px, env(safe-area-inset-bottom))
     max(8px, env(safe-area-inset-left));
-  background: radial-gradient(ellipse at center, #0b0d0b, #000 70%);
+  background: radial-gradient(ellipse at center, hsl(var(--pip-hue) var(--pip-sat) 4%), #000 70%);
 }
 
 .pip-screen {
@@ -54,7 +54,7 @@ button, input, select, textarea {
   overflow: hidden;
   background: var(--screen-bg);
   border-radius: calc(8px + var(--curve) * 36px);
-  box-shadow: 0 0 0 2px #111, 0 0 40px hsl(var(--pip-hue) var(--pip-sat) 50% / .08);
+  box-shadow: 0 0 0 2px hsl(var(--shade-hsl)), 0 0 40px hsl(var(--pip-hue) var(--pip-sat) 50% / .08);
   isolation: isolate;
 }
 

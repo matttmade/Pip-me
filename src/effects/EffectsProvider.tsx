@@ -3,6 +3,7 @@ import { usePrefersReducedMotion } from '../lib/hooks'
 import { useStored } from '../lib/store'
 import { applyPreset, DEFAULT_EFFECTS, normalizeConfig, patchConfig, stillVersion } from './presets'
 import type { EffectsConfig, EffectsPatch } from './types'
+import { PIP_SAT } from './color'
 
 type Ctx = [EffectsConfig, (patch: EffectsPatch) => void]
 const EffectsContext = createContext<Ctx | null>(null)
@@ -36,7 +37,7 @@ export function EffectsProvider({ children }: { children: ReactNode }) {
     root.dataset.fxScanMove = String(cfg.scanlines.speed > 0)
     root.dataset.fxFlicker = String(cfg.flicker.on && cfg.flicker.amount > 0)
     root.dataset.fxRoll = String(cfg.rollBar.on)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', `hsl(${cfg.hue} 60% 4%)`)
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', `hsl(${cfg.hue} ${PIP_SAT * 100}% 4%)`)
   }, [cfg])
 
   const value = useMemo<Ctx>(() => [cfg, update], [cfg, update])

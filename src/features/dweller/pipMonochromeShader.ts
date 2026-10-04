@@ -1,6 +1,7 @@
 import { Color, DataTexture, LinearFilter, RGBAFormat, SRGBColorSpace, Vector2 } from 'three'
 import { hslToRgb, pipRgb } from '../../lib/contracts'
 import { bakeRamp } from './fidelity'
+import { PIP_SAT } from '../../effects/color'
 
 /**
  * Pip-Boy monochrome post-process: luminance → 4 tones of the current Pip hue with
@@ -76,9 +77,9 @@ type Uniforms = typeof PipMonochromeShader.uniforms
 
 const srgb = (c: Color, [r, g, b]: [number, number, number]) => c.setRGB(r / 255, g / 255, b / 255, SRGBColorSpace)
 
-/** Point the 4-tone ramp at a hue. Darkest tone = the screen background, hsl(hue 60% 4%). */
+/** Point the 4-tone ramp at a hue. Darkest tone = the screen background, hsl(hue PIP_SAT 4%). */
 export function setPipHue(u: Uniforms, hue: number): void {
-  srgb(u.tone0.value, hslToRgb(hue, 0.6, 0.04))
+  srgb(u.tone0.value, hslToRgb(hue, PIP_SAT, 0.04))
   srgb(u.tone1.value, pipRgb(hue, 0.2))
   srgb(u.tone2.value, pipRgb(hue, 0.4))
   srgb(u.tone3.value, pipRgb(hue, 0.62))
