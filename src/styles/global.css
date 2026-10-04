@@ -10,8 +10,8 @@ html, body, #root {
 body {
   color: var(--pip);
   font-family: var(--font-ui);
-  font-size: 15px;
-  letter-spacing: .04em;
+  font-size: var(--fs-md);
+  letter-spacing: var(--track-tight);
   text-transform: uppercase;
   text-shadow: var(--glow);
   font-variant-numeric: tabular-nums;
@@ -113,7 +113,7 @@ button, input, select, textarea {
   font-size: clamp(22px, 4.6vw, 32px);
   line-height: 1;
   letter-spacing: clamp(.02em, .6vw - .5px, var(--track-display));
-  opacity: .72;
+  opacity: var(--o-mid);
   transition: opacity .15s;
 }
 .top-tab:hover { opacity: .95; }
@@ -162,8 +162,8 @@ button, input, select, textarea {
   background: none;
   border: 0;
   cursor: pointer;
-  font-size: 16px;
-  letter-spacing: .1em;
+  font-size: var(--fs-md);
+  letter-spacing: var(--track-wide);
   transition: opacity .2s;
 }
 .sub-tab.is-active { font-weight: bold; text-shadow: var(--bloom); }
@@ -261,8 +261,8 @@ button, input, select, textarea {
   animation: pip-cursor-in .16s steps(2, end);
 }
 @keyframes pip-cursor-in { from { opacity: 0; } }
-.pip-row.is-disabled { opacity: .45; cursor: default; }
-.pip-row__right { opacity: .85; white-space: nowrap; }
+.pip-row.is-disabled { opacity: var(--o-faint); cursor: default; }
+.pip-row__right { opacity: var(--o-soft); white-space: nowrap; }
 
 .pip-detail {
   min-height: 0;
@@ -281,7 +281,7 @@ button, input, select, textarea {
   margin: 0;
   font-family: var(--font-display);
   font-weight: normal;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   letter-spacing: var(--track-display);
   text-shadow: var(--bloom);
   border-bottom: 1px solid var(--pip-60);
@@ -331,7 +331,7 @@ button, input, select, textarea {
 }
 .pip-detail:has(> .pip-frame) { border-top: 0; padding-top: 0; }
 
-.pip-note { margin: 0; opacity: .7; font-size: 13px; text-transform: none; }
+.pip-note { margin: 0; opacity: var(--o-mid); font-size: var(--fs-sm); text-transform: none; }
 
 /* ---------- controls ---------- */
 .pip-btn {
@@ -366,7 +366,7 @@ button, input, select, textarea {
   width: 20px;
   height: 20px;
   border: 2px solid var(--pip);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1;
 }
 
@@ -377,7 +377,7 @@ button, input, select, textarea {
   gap: 10px;
   min-height: var(--touch);
 }
-.pip-slider.is-disabled { opacity: .4; }
+.pip-slider.is-disabled { opacity: var(--o-faint); }
 .pip-slider output { text-align: right; }
 .pip-slider__track {
   position: relative;
@@ -439,7 +439,7 @@ button, input, select, textarea {
   grid-auto-flow: column;
   gap: var(--rail-gap);
   font-size: clamp(12px, 2.6vw, 16px);
-  letter-spacing: .06em;
+  letter-spacing: var(--track-mid);
 }
 .status-box {
   position: relative;
@@ -485,7 +485,7 @@ button, input, select, textarea {
 .status-box--meta { gap: 8px; font-size: .9em; }
 .status-sep { width: 1px; height: 1em; background: var(--pip-60); }
 @media (max-width: 480px) {
-  .status-bar { --rail-gap: 5px; letter-spacing: .02em; }
+  .status-bar { --rail-gap: 5px; letter-spacing: var(--track-tight); }
   .status-box { padding: 2px 4px; gap: 4px; border-inline-width: var(--hair); }
 }
 
@@ -543,9 +543,9 @@ button, input, select, textarea {
 
 /* ---------- misc ---------- */
 .disclaimer {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   line-height: 1.35;
-  opacity: .55;
+  opacity: var(--o-dim);
   text-shadow: none;
   text-transform: none;
   padding: 0 8px 8px;
@@ -595,7 +595,7 @@ button, input, select, textarea {
 .saved-preset.is-active { border-color: var(--pip); box-shadow: 0 0 8px var(--pip-30); }
 .saved-preset__swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
 .saved-preset__name { display: grid; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.saved-preset__name small { font-size: 11px; opacity: .7; }
+.saved-preset__name small { font-size: var(--fs-xs); opacity: var(--o-mid); }
 .saved-preset__actions { display: flex; gap: 4px; }
 .saved-preset__actions .pip-btn { padding: 4px 8px; }
 .saved-preset__code {
@@ -604,7 +604,7 @@ button, input, select, textarea {
   padding: 4px 8px;
   background: transparent;
   border: 1px dashed var(--pip-60);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   text-transform: none;
 }
 @media (max-width: 480px) {
@@ -616,11 +616,11 @@ button, input, select, textarea {
 @media (max-height: 520px) {
   .pip-layout { padding: 4px clamp(10px, 2vw, 18px) 6px; gap: 4px; }
   .top-tabs { padding: 2px 6px 0; }
-  .top-tab { min-height: 30px; padding: 2px 10px 2px; font-size: 20px; }
+  .top-tab { min-height: 30px; padding: 2px 10px 2px; font-size: var(--fs-lg); }
   .top-tab.is-active { padding-inline: 12px; }
   .sub-tabs { padding: 2px 0 1px; }
-  .sub-tab { min-height: 24px; font-size: 13px; }
-  .status-bar { font-size: 12px; }
+  .sub-tab { min-height: 24px; font-size: var(--fs-sm); }
+  .status-bar { font-size: var(--fs-xs); }
   .status-box { min-height: 26px; padding: 1px 6px; }
 }
 

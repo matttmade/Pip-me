@@ -53,7 +53,7 @@
       }
       html, body { margin: 0; background: #000; }
       #pip-loader {
-        --h: 150;
+        --h: 152;
         --s: 60%;
         --pl: hsl(var(--h) var(--s) 55%);
         --pl-hi: hsl(var(--h) var(--s) 78%);
@@ -335,7 +335,7 @@
       ;(function () {
         var el = document.getElementById('pip-loader')
         if (!el) return
-        var hue = 150, returning = false
+        var hue = 152, returning = false
         // Read-only storage lookups (the documented exceptions to "storage only in
         // src/lib/store.ts"): the hue, so returning users see their colour before the bundle
         // loads, and the session's booted flag (written by store.ts) for the short re-boot.
@@ -386,7 +386,7 @@
         setTimeout(function () { mark('font') }, 2500) // never wait on the face for long
 
         // ---- boot log: original copy ----
-        var hueName = hue === 150 || hue === 137 || hue === 135 ? 'GREEN' : hue === 38 ? 'AMBER' : hue === 200 ? 'BLUE' : hue === 85 ? 'LCD' : 'H' + Math.round(hue)
+        var hueName = hue === 152 || hue === 150 || hue === 137 || hue === 135 ? 'GREEN' : hue === 38 ? 'AMBER' : hue === 200 ? 'BLUE' : hue === 85 ? 'LCD' : 'H' + Math.round(hue)
         var d = new Date(), p2 = function (n) { return (n < 10 ? '0' : '') + n }
         var clock = p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds())
         var seed = 0x2f6e

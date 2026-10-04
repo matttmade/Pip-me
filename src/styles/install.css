@@ -23,7 +23,7 @@
   font-family: var(--font-ui);
   text-transform: none;
   text-shadow: 0 0 4px var(--pip-60);
-  background: linear-gradient(180deg, hsl(var(--pip-hue) 60% 8% / .72), hsl(var(--pip-hue) 60% 4% / .82));
+  background: var(--frost-bg-strong);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   backdrop-filter: blur(16px) saturate(150%);
   border: 2px solid var(--pip);
@@ -31,13 +31,13 @@
   box-shadow: 0 0 24px hsl(var(--pip-hue) var(--pip-sat) 50% / .35), 0 18px 40px #000;
 }
 .install__icon { width: 56px; height: 56px; border-radius: 13px; box-shadow: 0 0 12px var(--pip-60); }
-.install__head h2 { margin: 0; font-family: var(--font-display); font-weight: normal; font-size: 26px; letter-spacing: .08em; }
-.install__head p { margin: 2px 0 0; font-size: 13px; line-height: 1.35; opacity: .85; }
+.install__head h2 { margin: 0; font-family: var(--font-display); font-weight: normal; font-size: var(--fs-2xl); letter-spacing: var(--track-mid); }
+.install__head p { margin: 2px 0 0; font-size: var(--fs-sm); line-height: 1.35; opacity: var(--o-soft); }
 .install__steps, .install__note, .install__cta, .install__later { grid-column: 1 / -1; }
-.install__steps { margin: 2px 0 0; padding-left: 22px; display: grid; gap: 8px; font-size: 14px; line-height: 1.35; }
-.install__steps small { opacity: .65; }
+.install__steps { margin: 2px 0 0; padding-left: 22px; display: grid; gap: 8px; font-size: var(--fs-sm); line-height: 1.35; }
+.install__steps small { opacity: var(--o-mid); }
 .install__steps b, .install__note b { color: var(--pip-hi); font-weight: normal; }
-.install__note { margin: 0; font-size: 14px; line-height: 1.4; }
+.install__note { margin: 0; font-size: var(--fs-sm); line-height: 1.4; }
 .install__glyph { width: 18px; height: 18px; vertical-align: -3px; fill: none; stroke: var(--pip-hi); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .install__cta, .install__later, .install__x {
   min-height: 44px;
@@ -45,11 +45,11 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  letter-spacing: .12em;
+  letter-spacing: var(--track-wide);
   border-radius: 10px;
   cursor: pointer;
 }
-.install__cta { background: var(--pip); color: var(--screen-bg); text-shadow: none; font-size: 16px; }
-.install__later { border-color: transparent; opacity: .7; font-size: 13px; }
-.install__x { position: absolute; top: 6px; right: 6px; min-height: 36px; width: 36px; border: 0; font-size: 22px; line-height: 1; opacity: .7; }
+.install__cta { background: var(--pip); color: var(--screen-bg); text-shadow: none; font-size: var(--fs-md); }
+.install__later { border-color: transparent; opacity: var(--o-mid); font-size: var(--fs-sm); }
+.install__x { position: absolute; top: 6px; right: 6px; min-height: 36px; width: 36px; border: 0; font-size: var(--fs-xl); line-height: 1; opacity: var(--o-mid); }
 @media (prefers-reduced-motion: reduce) { .install { animation: none; } }

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, type ComponentType } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
 import { DeviceStage } from './device/DeviceStage'
 import { InstallPrompt } from './features/install/InstallPrompt'
 import { EffectsProvider, useEffectsConfig } from './effects/EffectsProvider'
@@ -8,7 +8,7 @@ import { emit } from './lib/events'
 import { closeOverlay, useOverlay, type OverlayId } from './lib/overlay'
 import type { OverlayProps } from './lib/contracts'
 import { useStored } from './lib/store'
-import { stepSection, stepTab } from './shell/nav'
+import { sectionMove, stepSection, stepTab, type SectionMove } from './shell/nav'
 import { PipBoyScreen } from './shell/PipBoyScreen'
 import { StatusBar } from './shell/StatusBar'
 import { SubTabs } from './shell/SubTabs'
@@ -116,6 +116,13 @@ function PipBoy() {
 
   const Overlay = overlay ? OVERLAYS[overlay.id] : null
 
+  // Section transitions: the new section slides in from the side you moved toward; a new top
+  // tab also gets a CRT scan sweep. Keyed on the section, so each change replays it.
+  const [move, setMove] = useState<SectionMove>(() => ({ tab: nav.tab, sub: subIndex, dir: 'next', kind: 'sub' }))
+  const nextMove = sectionMove(move, nav.tab, subIndex, TABS.length)
+  if (nextMove !== move) setMove(nextMove)
+  const { dir, kind } = nextMove
+
   return (
     <PipBoyScreen>
       <div className="pip-layout">
@@ -132,6 +139,7 @@ function PipBoy() {
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
+          <div key={Overlay ? 'overlay' : `${tab.id}/${sub}`} className="pip-section" data-dir={dir} data-kind={kind}>
           {Overlay ? (
             <div className="pip-overlay">
               <Suspense fallback={<p className="loading">LOADING<span className="cursor">▌</span></p>}>
@@ -149,6 +157,7 @@ function PipBoy() {
           ) : (
             <RadioTab />
           )}
+          </div>
         </main>
         <StatusBar />
       </div>

@@ -1,5 +1,5 @@
-import { expect, test } from 'vitest'
-import { applyPreset, DEFAULT_EFFECTS, patchConfig, PRESETS, stillVersion } from './presets'
+import { describe, expect, it, test } from 'vitest'
+import { applyPreset, DEFAULT_EFFECTS, HUES, normalizeConfig, patchConfig, PRESETS, stillVersion } from './presets'
 
 test('every preset produces a complete config', () => {
   for (const name of Object.keys(PRESETS) as (keyof typeof PRESETS)[]) {
@@ -13,7 +13,7 @@ test('every preset produces a complete config', () => {
 
 test('default is the PIP-ME house preset', () => {
   expect(DEFAULT_EFFECTS.preset).toBe('PIP-ME')
-  expect(DEFAULT_EFFECTS.hue).toBe(150)
+  expect(DEFAULT_EFFECTS.hue).toBe(152)
   expect(DEFAULT_EFFECTS.rollBar.interval).toBe(17)
 })
 
@@ -59,4 +59,13 @@ test('partial or malformed stored configs are repaired', async () => {
   expect(fixed.glitch).toEqual(DEFAULT_EFFECTS.glitch)
   expect(fixed.glow).toBe(DEFAULT_EFFECTS.glow)
   expect(normalizeConfig(null)).toBe(DEFAULT_EFFECTS)
+})
+
+describe('retired greens', () => {
+  it('moves stored configs on an old default green to the current mint', () => {
+    for (const hue of [135, 137, 150]) expect(normalizeConfig({ ...DEFAULT_EFFECTS, hue }).hue).toBe(HUES.GREEN)
+  })
+  it('leaves other hues alone', () => {
+    expect(normalizeConfig({ ...DEFAULT_EFFECTS, hue: 38 }).hue).toBe(38)
+  })
 })

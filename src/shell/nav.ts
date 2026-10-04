@@ -22,3 +22,16 @@ export function stepSection(nav: Nav, counts: number[], dir: 1 | -1): Nav {
 
 /** Shift + ← / →: jump whole top tabs, keeping each tab's remembered sub-tab. */
 export const stepTab = (nav: Nav, count: number, dir: 1 | -1): Nav => ({ ...nav, tab: mod(nav.tab + dir, count) })
+
+export type SectionMove = { tab: number; sub: number; dir: 'next' | 'prev'; kind: 'tab' | 'sub' }
+
+/**
+ * Which way a section change went, for the transition: a new top tab is a 'tab' move, else
+ * 'sub'. Wrapping from the last top tab to the first (or back) still reads as forward (or back).
+ */
+export function sectionMove(prev: SectionMove, tab: number, sub: number, tabCount: number): SectionMove {
+  if (prev.tab === tab && prev.sub === sub) return prev
+  const wrapped = tabCount > 2 && Math.abs(tab - prev.tab) === tabCount - 1
+  const forward = tab !== prev.tab ? tab > prev.tab : sub > prev.sub
+  return { tab, sub, dir: forward !== wrapped ? 'next' : 'prev', kind: tab !== prev.tab ? 'tab' : 'sub' }
+}

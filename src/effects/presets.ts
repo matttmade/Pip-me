@@ -2,8 +2,10 @@ import type { EffectsConfig, EffectsPatch, PresetName } from './types'
 
 type Look = Omit<EffectsConfig, 'preset' | 'hue'>
 
-export const HUES = { GREEN: 150, AMBER: 38, BLUE: 200, TEAL: 160, LCD: 85 } as const
+export const HUES = { GREEN: 152, AMBER: 38, BLUE: 200, TEAL: 160, LCD: 85 } as const
 export const DEFAULT_HUE = HUES.GREEN
+/** Earlier default greens; stored configs on these move to the current mint. */
+const RETIRED_GREENS = [135, 137, 150]
 
 export const PRESETS: Record<Exclude<PresetName, 'CUSTOM'>, Look> = {
   /** The house default, tuned by the project owner. */
@@ -114,5 +116,6 @@ export function normalizeConfig(raw: unknown, fallback: EffectsConfig = DEFAULT_
     if (def && typeof def === 'object') out[k] = v && typeof v === 'object' ? { ...def, ...(v as object) } : def
     else if (v !== undefined && typeof v === typeof def) out[k] = v
   }
+  if (RETIRED_GREENS.includes(out.hue as number)) out.hue = HUES.GREEN
   return out as EffectsConfig
 }

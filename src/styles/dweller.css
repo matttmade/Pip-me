@@ -81,15 +81,15 @@
 }
 .dweller-detail__label {
   margin-right: 8px;
-  font-size: 13px;
-  letter-spacing: .1em;
-  opacity: .7;
+  font-size: var(--fs-sm);
+  letter-spacing: var(--track-wide);
+  opacity: var(--o-mid);
 }
 .dweller-detail__opt {
   min-width: var(--touch);
   padding: 4px 10px;
-  font-size: 13px;
-  letter-spacing: .06em;
+  font-size: var(--fs-sm);
+  letter-spacing: var(--track-mid);
 }
 .dweller-detail__opt + .dweller-detail__opt { border-left: 0; }
 .dweller-detail__opt:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 2px; }
@@ -113,11 +113,11 @@
 }
 .limb { display: grid; justify-items: center; gap: 3px; }
 .limb__label {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   line-height: 1;
-  letter-spacing: .1em;
+  letter-spacing: var(--track-wide);
   white-space: nowrap;
-  opacity: .8;
+  opacity: var(--o-soft);
 }
 .limb__label b { font-weight: normal; color: var(--pip-hi); opacity: 1; }
 .limb--head  { top: calc(var(--top0) + var(--fh) * .05); left: 50%; transform: translateX(-50%); }
@@ -143,8 +143,8 @@
   white-space: nowrap;
 }
 .status-id__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.status-id__sep { flex: none; width: var(--rule); height: .9em; background: currentColor; opacity: .75; }
-.status-id__vault { flex: none; opacity: .85; }
+.status-id__sep { flex: none; width: var(--rule); height: .9em; background: currentColor; opacity: var(--o-mid); }
+.status-id__vault { flex: none; opacity: var(--o-soft); }
 
 /* ---------- fly-out triggers + menus (EMOTES, WEAPON) ----------
    A round phosphor trigger in a bottom corner of the stage; its menu stacks up out of it,
@@ -204,11 +204,11 @@
 .flyout__ring .st-glyph,
 .flyout__ring .weapon__glyph { position: relative; width: 24px; height: 24px; }
 .flyout__caption {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   line-height: 12px;
-  letter-spacing: .14em;
+  letter-spacing: var(--track-wide);
   white-space: nowrap;
-  opacity: .8;
+  opacity: var(--o-soft);
 }
 .flyout__trigger:hover .flyout__ring,
 .flyout__trigger:focus-visible .flyout__ring,
@@ -224,7 +224,7 @@
 .flyout.is-open .flyout__ring svg,
 .flyout.is-lit .flyout__ring svg { filter: none; }
 .flyout.is-open .flyout__ring::before,
-.flyout.is-lit .flyout__ring::before { border-color: var(--screen-bg); opacity: .4; }
+.flyout.is-lit .flyout__ring::before { border-color: var(--screen-bg); opacity: var(--o-faint); }
 
 .flyout__menu {
   position: absolute;
@@ -258,8 +258,8 @@
   padding: 0 10px 0 8px;
   border: 0;
   background: none;
-  font-size: 16px;
-  letter-spacing: .08em;
+  font-size: var(--fs-md);
+  letter-spacing: var(--track-mid);
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
@@ -270,7 +270,7 @@
 .flyout__icon { display: grid; place-items: center; }
 .flyout__icon svg { width: 24px; height: 24px; }
 .flyout__label { overflow: hidden; text-overflow: ellipsis; }
-.flyout__meta { font-size: 12px; letter-spacing: .08em; opacity: .7; }
+.flyout__meta { font-size: var(--fs-xs); letter-spacing: var(--track-mid); opacity: var(--o-mid); }
 /* FO4 rows: the selected row inverts */
 .flyout__item:hover,
 .flyout__item:focus-visible { background: var(--band), var(--pip); color: var(--screen-bg); text-shadow: none; outline: none; }
@@ -341,7 +341,7 @@
   box-shadow: var(--frost-edge);
   color: var(--pip-hi);
   font-size: var(--fs-xs);
-  letter-spacing: .12em;
+  letter-spacing: var(--track-wide);
   white-space: nowrap;
 }
 .weapon__note { animation: weapon-note .9s ease-out both; }
@@ -378,7 +378,7 @@
 
 @keyframes weapon-pop { from { transform: scale(.4) rotate(-20deg); opacity: 0; } }
 @keyframes weapon-blink { 50% { opacity: .25; } }
-@keyframes weapon-warn { 50% { opacity: .55; } }
+@keyframes weapon-warn { 50% { opacity: var(--o-dim); } }
 @keyframes weapon-note {
   0% { opacity: 0; transform: translateY(6px); }
   15%, 75% { opacity: 1; transform: none; }
@@ -423,8 +423,8 @@
   opacity: 0;
   transition: opacity .6s ease;
 }
-.nuke[data-phase="cloud"] .nuke__dim { opacity: .55; }
-.nuke[data-phase="melt"] .nuke__dim { opacity: .3; }
+.nuke[data-phase="cloud"] .nuke__dim { opacity: var(--o-dim); }
+.nuke[data-phase="melt"] .nuke__dim { opacity: var(--o-faint); }
 /* LOST: clear the way so the tube switch-off shows, then go dark */
 .nuke[data-phase="lost"] .nuke__dim,
 .nuke[data-phase="reboot"] .nuke__dim { background: var(--screen-bg); opacity: 1; transition: opacity .25s ease .3s; }
@@ -439,7 +439,7 @@
   transition: opacity .3s ease;
 }
 .nuke[data-phase="cloud"] .nuke__noise { opacity: .1; }
-.nuke[data-phase="melt"] .nuke__noise { opacity: .45; }
+.nuke[data-phase="melt"] .nuke__noise { opacity: var(--o-faint); }
 .nuke[data-phase="lost"] .nuke__noise,
 .nuke[data-phase="reboot"] .nuke__noise { opacity: .14; transition: opacity .2s ease .35s; }
 
@@ -456,7 +456,7 @@
   0% { opacity: 1; }
   12% { opacity: 1; }
   30% { opacity: .2; }
-  38% { opacity: .75; }
+  38% { opacity: var(--o-mid); }
   100% { opacity: 0; }
 }
 
@@ -498,7 +498,7 @@
 .nuke__puff { fill: url(#nuke-band) var(--pip-30); }
 .nuke__swirl,
 .nuke__collar { fill: none; stroke: var(--pip-hi); stroke-width: 1.2; stroke-linecap: round; }
-.nuke__core { fill: var(--pip-hi); opacity: .55; filter: blur(6px); }
+.nuke__core { fill: var(--pip-hi); opacity: var(--o-dim); filter: blur(6px); }
 .nuke__stem { transform-origin: 50% 100%; transform: scaleY(0); }
 .nuke__cap { transform-origin: 50% 100%; transform: translateY(140px) scale(.2); }
 .nuke__base { transform-origin: 50% 100%; transform: scale(0, 0); }
@@ -523,7 +523,7 @@
 /* MELT: the cloud smears and slides with the UI */
 .nuke[data-phase="melt"] .nuke__cloud { animation: nuke-melt .8s cubic-bezier(.5, 0, .9, .6) forwards; }
 @keyframes nuke-melt {
-  to { transform: skewX(8deg) scale(1.1, 1.4) translateY(14%); filter: blur(6px) drop-shadow(0 0 20px var(--pip)); opacity: .5; }
+  to { transform: skewX(8deg) scale(1.1, 1.4) translateY(14%); filter: blur(6px) drop-shadow(0 0 20px var(--pip)); opacity: var(--o-dim); }
 }
 .nuke[data-phase="lost"] .nuke__cloud,
 .nuke[data-phase="reboot"] .nuke__cloud,
@@ -544,7 +544,7 @@
 .nuke[data-phase="lost"] .nuke__lost,
 .nuke[data-phase="reboot"] .nuke__lost { animation: nuke-lost .36s steps(4, jump-end) .4s forwards; }
 .nuke--reduced[data-phase="lost"] .nuke__lost { animation: none; opacity: 1; transition: opacity .5s ease .4s; }
-.nuke__lost-title { font-size: clamp(28px, 11cqw, 72px); letter-spacing: .12em; }
+.nuke__lost-title { font-size: clamp(28px, 11cqw, 72px); letter-spacing: var(--track-wide); }
 .nuke__lost-sub { font-size: clamp(13px, 3.8cqw, 26px); letter-spacing: .24em; }
 @keyframes nuke-lost {
   0% { opacity: 0; }
@@ -627,7 +627,7 @@
 .status-loadout .flyout__ring .st-glyph,
 .status-loadout .flyout__ring .weapon__glyph { width: 24px; height: 24px; }
 .status-loadout .flyout--weapon .flyout__ring .weapon__glyph { width: 28px; height: 28px; }
-.status-loadout .flyout__caption { font-size: 9px; line-height: 10px; letter-spacing: .12em; opacity: 1; }
+.status-loadout .flyout__caption { font-size: var(--fs-2xs); line-height: 10px; letter-spacing: var(--track-wide); opacity: 1; }
 /* open / just fired: the tile flips to an outline */
 .status-loadout .flyout.is-open .flyout__trigger,
 .status-loadout .flyout.is-lit .flyout__trigger { background: var(--frost-bg-strong); color: var(--pip-hi); box-shadow: inset 0 0 0 2px var(--pip); }
@@ -647,9 +647,9 @@
   overflow: hidden;
   font-family: var(--font-display);
   font-weight: normal;
-  font-size: 20px;
+  font-size: var(--fs-lg);
   line-height: 1;
-  letter-spacing: .02em;
+  letter-spacing: var(--track-tight);
   text-shadow: var(--bloom);
   white-space: nowrap;
 }
@@ -662,10 +662,10 @@
 .readout:focus-visible { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
 .readout__icon { width: 18px; height: 18px; }
 /* labels are in aria-label/title; wide stages show them */
-.readout__meta { display: none; font-size: 10px; letter-spacing: .1em; line-height: 1.1; opacity: .75; }
+.readout__meta { display: none; font-size: var(--fs-2xs); letter-spacing: var(--track-wide); line-height: 1.1; opacity: var(--o-mid); }
 .readout__sub { display: none; }
 .readout.is-dim .readout__value,
-.readout.is-dim .readout__icon { opacity: .45; }
+.readout.is-dim .readout__icon { opacity: var(--o-faint); }
 
 /* ---------- EFFECTS: tile column over the stage's left edge, details in a frosted list ---------- */
 .status-effects {
@@ -708,12 +708,12 @@
 .fx-tile--more,
 .fx-tile--none {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--fs-lg);
   background: var(--pip-15);
   color: var(--pip-hi);
   box-shadow: inset 0 0 0 1px var(--pip-30);
 }
-.fx-tile--none { opacity: .55; }
+.fx-tile--none { opacity: var(--o-dim); }
 .status-effects__tiles:hover .fx-tile,
 .status-effects[data-open] .fx-tile { outline: 1px solid var(--pip-hi); outline-offset: 1px; }
 
@@ -741,26 +741,26 @@
   line-height: 1.25;
 }
 .fx .st-glyph { width: 18px; height: 18px; }
-.fx__name { letter-spacing: .06em; }
+.fx__name { letter-spacing: var(--track-mid); }
 .fx__mod { text-align: right; white-space: nowrap; }
 .fx__note {
   grid-column: 2 / -1;
   font-size: var(--fs-xs);
-  letter-spacing: .04em;
+  letter-spacing: var(--track-tight);
   text-transform: none;
-  opacity: .6;
+  opacity: var(--o-dim);
 }
 .fx--buff .fx__mod { color: var(--pip-hi); }
-.fx--debuff { opacity: .8; }
-.fx--none { display: block; opacity: .6; letter-spacing: .1em; }
+.fx--debuff { opacity: var(--o-soft); }
+.fx--none { display: block; opacity: var(--o-dim); letter-spacing: var(--track-wide); }
 
 /* narrow phones: tighter tiles */
 @container status (max-width: 380px) {
   .status-grid { --tile: 40px; --load-h: 50px; }
   .status-loadout, .status-strip { gap: 3px; }
-  .loadout-dmg b, .readout__value { font-size: 17px; }
+  .loadout-dmg b, .readout__value { font-size: var(--fs-md); }
   .readout__icon, .loadout-dmg .st-glyph { width: 15px; height: 15px; }
-  .status-loadout .flyout__caption { font-size: 8px; letter-spacing: .08em; }
+  .status-loadout .flyout__caption { font-size: 8px; letter-spacing: var(--track-mid); }
 }
 
 /* short stages (small phones, ON ARM, landscape): long menus go two columns so they fit */
@@ -773,7 +773,7 @@
     width: min(390px, calc(100cqw - 8px));
     min-width: 0;
   }
-  .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: 15px; }
+  .flyout--emotes .flyout__item { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; padding-inline: 6px; font-size: var(--fs-md); }
   /* reversed, so WAVE sits bottom-left nearest the row like the stacked list */
   .flyout--emotes .flyout__item { order: calc(20 - var(--i, 0)); }
   .flyout--emotes .flyout__meta { display: none; }
@@ -805,9 +805,9 @@
   .limb--r-arm { right: calc(50cqw - var(--fw) * .72); }
   .limb--l-leg { left: calc(50cqw - var(--fw) * .66); }
   .limb--r-leg { right: calc(50cqw - var(--fw) * .66); }
-  .status-id { font-size: 16px; gap: 8px; align-self: end; max-width: 100%; }
+  .status-id { font-size: var(--fs-md); gap: 8px; align-self: end; max-width: 100%; }
   .flyout { --fly-row: 36px; }
-  .flyout__item { font-size: 14px; }
+  .flyout__item { font-size: var(--fs-sm); }
 }
 @media (pointer: coarse) {
   @container status (min-width: 500px) and (max-height: 480px) {
@@ -819,10 +819,10 @@
 @container status (min-width: 820px) and (min-height: 481px) {
   .status-grid { --tile: 52px; --load-h: 66px; }
   .readout__meta { display: block; }
-  .loadout-dmg b, .readout__value { font-size: 24px; }
+  .loadout-dmg b, .readout__value { font-size: var(--fs-xl); }
   .status-loadout .flyout__ring .st-glyph { width: 28px; height: 28px; }
   .status-loadout .flyout--weapon .flyout__ring .weapon__glyph { width: 34px; height: 34px; }
-  .status-loadout .flyout__caption { font-size: 11px; line-height: 12px; }
+  .status-loadout .flyout__caption { font-size: var(--fs-xs); line-height: 12px; }
   .status-effects[data-open] .status-effects__list { width: 300px; }
 }
 
@@ -838,14 +838,14 @@
   justify-content: space-between;
   font-family: var(--font-display);
   font-weight: normal;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   letter-spacing: var(--track-display);
   text-shadow: var(--bloom);
   border-bottom: 1px solid var(--pip-60);
   padding-bottom: 4px;
 }
 .special-detail p, .perk-detail p { margin: 0; text-transform: none; line-height: 1.4; }
-.special-detail__total { font-size: 12px; opacity: .7; text-transform: uppercase !important; }
+.special-detail__total { font-size: var(--fs-xs); opacity: var(--o-mid); text-transform: uppercase !important; }
 .seg-bar {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
@@ -860,7 +860,7 @@
 
 /* ---------- PERKS ---------- */
 .perk-mark { display: inline-block; width: 1em; }
-.perk-detail__state { font-size: 13px; letter-spacing: .1em; text-transform: uppercase !important; }
+.perk-detail__state { font-size: var(--fs-sm); letter-spacing: var(--track-wide); text-transform: uppercase !important; }
 .perk-badge { width: 96px; height: 96px; justify-self: center; filter: drop-shadow(0 0 4px var(--pip-60)); }
 .perk-badge rect { fill: var(--pip); }
 .perk-badge__ring { fill: var(--pip); }
@@ -885,5 +885,5 @@
   cursor: pointer;
   text-align: center;
 }
-.figure-offline__title { font-family: var(--font-display); font-size: 26px; letter-spacing: var(--track-display); text-shadow: var(--bloom); }
-.figure-offline small { max-width: 32ch; font-size: 10px; opacity: .6; }
+.figure-offline__title { font-family: var(--font-display); font-size: var(--fs-2xl); letter-spacing: var(--track-display); text-shadow: var(--bloom); }
+.figure-offline small { max-width: 32ch; font-size: var(--fs-2xs); opacity: var(--o-dim); }
